@@ -19,7 +19,7 @@ const SolicitarRecuperacion = () => {
     e.preventDefault();
     setMensaje(""); setError("");
     try {
-      const res = await fetch("http://localhost:4000/solicitar-recuperacion", {
+      const res = await fetch("https://sistema-de-gestion-backend.onrender.com/solicitar-recuperacion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email })

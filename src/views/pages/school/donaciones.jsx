@@ -3,7 +3,7 @@ import {
   CCard, CCardBody, CCol, CRow, CForm, CFormInput, CFormSelect, CButton, CAlert
 } from '@coreui/react'
 
-const API = 'http://localhost:4000'
+const API = 'https://sistema-de-gestion-backend.onrender.com'
 
 const RegistrarDonacion = () => {
   const [donantes, setDonantes] = useState([])

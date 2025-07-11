@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CContainer, CCard, CCardHeader, CCardBody, CFormInput, CButton, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter } from '@coreui/react';
 
-const API = 'http://localhost:4000';
+const API = 'https://sistema-de-gestion-backend.onrender.com';
 
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);

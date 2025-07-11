@@ -5,7 +5,7 @@ import {
   CModalTitle, CModalBody, CModalFooter, CToast, CToastBody, CToaster, CPagination, CPaginationItem
 } from '@coreui/react';
 
-const API = 'http://localhost:4000';
+const API = 'https://sistema-de-gestion-backend.onrender.com';
 
 const ComunidadesCrudCoreUI = () => {
   // Filtros geográficos para el formulario

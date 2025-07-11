@@ -4,7 +4,7 @@ import {
   CTableBody, CTableDataCell, CButton, CContainer, CFormInput
 } from '@coreui/react';
 
-const API = 'http://localhost:4000';
+const API = 'https://sistema-de-gestion-backend.onrender.com';
 
 const ListarAfectaciones = () => {
   const [afectaciones, setAfectaciones] = useState([]);

@@ -3,7 +3,7 @@ import {
   CCard, CCardBody, CCardHeader, CForm, CFormSelect, CFormInput, CButton, CContainer, CRow, CCol, CModal, CModalHeader, CModalBody, CAlert, CModalFooter, CFormCheck
 } from '@coreui/react';
 
-const API = 'http://localhost:4000';
+const API = 'https://sistema-de-gestion-backend.onrender.com';
 
 const RegistrarAfectacion = () => {
   // Afectación

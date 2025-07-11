@@ -14,25 +14,46 @@ const Crude = React.lazy(() => import('./views/pages/school/ComunidadCrud'))
 const Donante = React.lazy(() => import('./views/pages/school/donantes'))
 const Victima = React.lazy(() => import('./views/pages/school/victimas'))
 const Cauce = React.lazy(() => import('./views/pages/school/desbordes'))
+const Perdidas = React.lazy(() => import('./views/pages/school/perdidas'))
+const Suceso = React.lazy(() => import('./views/pages/school/suceso'))
+const Afectacion = React.lazy(() => import('./views/pages/school/afectaciones'))
+const Lista = React.lazy(() => import('./views/pages/school/lista'))
+const Listado = React.lazy(() => import('./views/pages/school/listadoafectaciones'))
+const Documentos = React.lazy(() => import('./views/pages/school/documentos'))
+const General = React.lazy(() => import('./views/pages/school/general'))
+const Editar = React.lazy(() => import('./views/pages/school/editarusuario'))
+
+
 
 
 
 
 const routes = [
   { path: '/', exact: true, name: 'Inicio' },
-  { path: '/dashboard', name: 'Panel', element: Dashboard },
+  { path: '/dashboard', name: 'Panel', element: Dashboard},
   { path: '/docents', name: 'Docentes', element: Docents },
-  { path: '/students', name: 'Estudiantes', element: Estudiantes },
-  { path: '/prueba', name: 'pruebaa', element: Prueba },
+  { path: '/estudiantes', name: 'Estudiantes', element: Estudiantes, private: true},
+  { path: '/prueba', name: 'pruebaa', element: Prueba, private: true },
   { path: '/noticias', name: 'noticias', element: Noticias },
-  { path: '/zonas', name: 'zonas', element: Zona },
-  { path: '/damnificados', name: 'personas', element: Damnificados },
-  { path: '/donaciones', name: 'donacion', element: Donaciones },
-  { path: '/comunidad', name: 'comunidad', element: Comunidad },
-  { path: '/ComunidadCrud', name: 'crude', element: Crude },
-  { path: '/donantes', name: 'donante', element: Donante },
-  { path: '/victimas', name: 'victima', element: Victima },
-   { path: '/desbordes', name: 'Cauce', element: Cauce },
+  { path: '/zonas', name: 'zonas', element: Zona, private: true },
+  { path: '/damnificados', name: 'personas', element: Damnificados, private: true },
+  { path: '/donaciones', name: 'donacion', element: Donaciones, private: true},
+  { path: '/comunidad', name: 'comunidad', element: Comunidad, private: true },
+  { path: '/ComunidadCrud', name: 'crude', element: Crude, admin: true },
+  { path: '/donantes', name: 'donante', element: Donante, private: true },
+  { path: '/victimas', name: 'victima', element: Victima, private: true },
+  { path: '/desbordes', name: 'Cauce', element: Cauce, private: true },
+  { path: '/perdidas', name: 'Perdida', element: Perdidas, private: true },
+  { path: '/suceso', name: 'sucesos', element: Suceso , private: true},
+  { path: '/afectaciones', name: 'Afectacion', element: Afectacion},
+  { path: '/listadoafectaciones', name: 'Listadoafectaciones', element: Listado},
+  { path: '/lista', name: 'Lista', element: Lista},
+  { path: '/documentos', name: 'Documentos', element: Documentos},
+  { path: '/general', name: 'General', element: General},
+  { path: '/editarusuario', name: 'Editar', element: Editar},
+
+   
+
 
 ]
 

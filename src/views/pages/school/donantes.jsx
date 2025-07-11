@@ -1,126 +1,152 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react'
 import {
-  CCard, CCardBody, CForm, CFormInput, CFormLabel, CFormSelect, CButton, CCol, CRow, CAlert
-} from "@coreui/react";
+  CCard, CCardBody, CCol, CRow, CForm, CFormInput, CFormSelect, CButton, CAlert
+} from '@coreui/react'
 
-const Donantes = () => {
+const API = 'http://localhost:4000'
+
+const RegistrarDonante = () => {
+  const [tiposDocumento, setTiposDocumento] = useState([])
+  const [tiposDonante, setTiposDonante] = useState([])
   const [form, setForm] = useState({
-    identificador: "",
-    nombre: "",
-    tipo: "",
-    telefono: ""
-  });
-  const [errors, setErrors] = useState({});
+    nombre: '',
+    contac: '',
+    tipodn: '',
+    cedula: '',
+    coddoc: ''
+  })
+  const [msg, setMsg] = useState({ type: '', text: '' })
 
-  const validate = () => {
-    const newErrors = {};
-    // Validación de cédula o RIF: solo números o formato J-12345678-9
-    if (
-      !form.identificador.trim() ||
-      (!/^\d{7,10}$/.test(form.identificador) && !/^([VEJPG]-)?\d{7,9}-?\d?$/.test(form.identificador))
-    ) {
-      newErrors.identificador = "Ingrese una cédula (solo números) o RIF válido (Ej: J-12345678-9)";
+  useEffect(() => {
+    fetch(`${API}/documento`)
+      .then(res => res.json())
+      .then(setTiposDocumento)
+    fetch(`${API}/tipos-donante`)
+      .then(res => res.json())
+      .then(setTiposDonante)
+  }, [])
+
+  const handleChange = e => {
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async e => {
+    e.preventDefault()
+    setMsg({ type: '', text: '' })
+    if (!form.nombre || !form.contac || !form.tipodn || !form.cedula || !form.coddoc) {
+      setMsg({ type: 'danger', text: 'Todos los campos son obligatorios.' })
+      return
     }
-    if (!form.nombre.trim()) newErrors.nombre = "Nombre requerido";
-    if (!form.tipo) newErrors.tipo = "Seleccione el tipo";
-    if (!/^\d{11}$/.test(form.telefono)) newErrors.telefono = "Teléfono debe tener 11 números";
-    return newErrors;
-  };
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: undefined });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const val = validate();
-    if (Object.keys(val).length) {
-      setErrors(val);
-      return;
+    try {
+      const res = await fetch(`${API}/donantes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setMsg({ type: 'success', text: 'Donant registrado correctamente.' })
+        setForm({ nombre: '', contac: '', tipodn: '', cedula: '', coddoc: '' })
+      } else {
+        setMsg({ type: 'danger', text: data.mensaje || 'Error al registrar.' })
+      }
+    } catch {
+      setMsg({ type: 'danger', text: 'Error de conexión.' })
     }
-    alert("Donante registrado correctamente (aquí iría la lógica de guardado)");
-    setForm({
-      identificador: "",
-      nombre: "",
-      tipo: "",
-      telefono: ""
-    });
-    setErrors({});
-  };
+  }
 
   return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "90vh" }}>
-      <CCard className="shadow-lg w-100 " style={{ maxWidth: 500 }}>
-        <CCardBody>
-          <h3 className="mb-4 text-center text-black">Registro de Donante</h3>
-          <CForm onSubmit={handleSubmit} autoComplete="off">
-            <CCol className="mb-3">
-              <CFormLabel>Cédula o RIF</CFormLabel>
-              <CFormInput
-                name="identificador"
-                value={form.identificador}
-                onChange={handleChange}
-                maxLength={12}
-                placeholder="Ej: 12345678 o J-12345678-9"
-                invalid={!!errors.identificador}
-              />
-              {errors.identificador && <CAlert color="danger" className="py-1 my-1">{errors.identificador}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormLabel>Nombre</CFormLabel>
-              <CFormInput
-                name="nombre"
-                value={form.nombre}
-                onChange={handleChange}
-                maxLength={50}
-                placeholder="Ingrese el nombre"
-                invalid={!!errors.nombre}
-              />
-              {errors.nombre && <CAlert color="danger" className="py-1 my-1">{errors.nombre}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormLabel>Tipo de Institución</CFormLabel>
-              <CFormSelect
-                name="tipo"
-                value={form.tipo}
-                onChange={handleChange}
-                invalid={!!errors.tipo}
-              >
-                <option value="">Seleccione...</option>
-                <option value="Persona">Persona</option>
-                <option value="Institución">Institución</option>
-              </CFormSelect>
-              {errors.tipo && <CAlert color="danger" className="py-1 my-1">{errors.tipo}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormLabel>Teléfono</CFormLabel>
-              <CFormInput
-                name="telefono"
-                value={form.telefono}
-                onChange={e => {
-                  if (e.target.value.length <= 11 && /^\d*$/.test(e.target.value)) {
-                    handleChange(e);
-                  }
-                }}
-                maxLength={11}
-                placeholder="Ej: 04141234567"
-                invalid={!!errors.telefono}
-              />
-              {errors.telefono && <CAlert color="danger" className="py-1 my-1">{errors.telefono}</CAlert>}
-            </CCol>
-            <CRow className="mt-4">
-              <CCol className="d-flex justify-content-center">
-                <CButton color="info text-white" type="submit">
-                  Registrar
-                </CButton>
-              </CCol>
-            </CRow>
-          </CForm>
-        </CCardBody>
-      </CCard>
-    </div>
-  );
-};
+    <CRow className="justify-content-center mt-4">
+      <CCol xs={12} md={8} lg={7}>
+        <CCard className="shadow">
+          <CCardBody>
+            <h4 className="mb-4 text-center">Registrar Donante</h4>
+            <div className="mb-3 text-secondary">
+              <strong>¿Cómo registrar un donante?</strong>
+              <ul className="text-start" style={{ paddingLeft: 18, marginBottom: 0, marginTop: 8 }}>
+                <li>Seleccione el tipo de documento y escriba el número de identificación.</li>
+                <li>Elija el tipo de donante (persona o institución).</li>
+                <li>Complete el nombre y un contacto válido.</li>
+                <li>Presione "Registrar" para guardar el donante.</li>
+              </ul>
+            </div>
+            <CForm onSubmit={handleSubmit}>
+              <CRow className="g-3">
+                <CCol xs={12} md={6}>
+                  <CFormSelect
+                    label="Tipo de Documento"
+                    name="coddoc"
+                    value={form.coddoc}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Seleccione tipo</option>
+                    {tiposDocumento.map(t => (
+                      <option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>
+                        {t.TMA_NOMBRE}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                </CCol>
+                <CCol xs={12} md={6}>
+                  <CFormInput
+                    label="N° Documento"
+                    name="cedula"
+                    placeholder='Ejm 1234567'
+                    value={form.cedula}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+                <CCol xs={12} md={6}>
+                  <CFormSelect
+                    label="Tipo de Donante"
+                    name="tipodn"
+                    value={form.tipodn}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Seleccione tipo</option>
+                    {tiposDonante.map(t => (
+                      <option key={t.TTR_TIPODN} value={t.TTR_TIPODN}>
+                        {t.TTR_NOMBRE}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                </CCol>
+                <CCol xs={12} md={6}>
+                  <CFormInput
+                    label="Nombre"
+                    name="nombre"
+                    value={form.nombre}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+                <CCol xs={12} md={6}>
+                  <CFormInput
+                    label="Contacto"
+                    name="contac"
+                    placeholder='Ejm 04147589857'
+                    value={form.contac}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+                <CCol xs={12} md={6} className="d-flex align-items-end">
+                  <CButton style={{backgroundColor:'#ff7043', color:'white'}} type="submit" className="w-100">Registrar</CButton>
+                </CCol>
+              </CRow>
+              {msg.text && (
+                <CAlert color={msg.type} className="text-center mt-3">{msg.text}</CAlert>
+              )}
+            </CForm>
+          </CCardBody>
+        </CCard>
+      </CCol>
+    </CRow>
+  )
+}
 
-export default Donantes;
+export default RegistrarDonante

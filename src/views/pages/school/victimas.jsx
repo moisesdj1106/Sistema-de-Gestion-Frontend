@@ -1,194 +1,161 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import {
-  CCard, CCardBody, CCardHeader, CForm, CFormInput, CFormSelect, CButton, CRow, CCol,
-  CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CAlert, CModal, CModalHeader, CModalTitle, CModalBody
-} from '@coreui/react'
+  CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell,
+  CButton, CFormInput, CPagination, CPaginationItem, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CForm, CFormSelect
+} from '@coreui/react';
 
-// Simulación de comunidades (esto debería venir de la base de datos)
-const comunidadesDB = [
-  'Comunidad 1',
-  'Comunidad 2',
-  'Comunidad 3',
-]
+const API = 'http://localhost:4000';
 
-const Victimas = () => {
-  const [form, setForm] = useState({
-    nombre: '',
-    comunidad: '',
-    nro_acta: '',
-    apoyo_familiar: '',
-  })
-  const [errors, setErrors] = useState({})
-  const [victimas, setVictimas] = useState([])
-  const [showForm, setShowForm] = useState(false)
-  const [selected, setSelected] = useState(null)
+const VictimasModulo = () => {
+  const [data, setData] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
-  const validate = () => {
-    const newErrors = {}
-    if (!form.nombre.trim()) newErrors.nombre = 'Nombre requerido'
-    if (!form.comunidad) newErrors.comunidad = 'Seleccione una comunidad'
-    if (!form.nro_acta.trim()) newErrors.nro_acta = 'Nro. de acta requerido'
-    if (!form.apoyo_familiar.trim()) newErrors.apoyo_familiar = 'Describa el apoyo familiar'
-    return newErrors
-  }
+  // Modal edición
+  const [visible, setVisible] = useState(false);
+  const [editForm, setEditForm] = useState({
+    cedula: '', tipodo: '', nombre: '', apelli: '', coafec: '', certif: ''
+  });
+  const [tiposDoc, setTiposDoc] = useState([]);
+  const [afectaciones, setAfectaciones] = useState([]);
+  const [editId, setEditId] = useState(null);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-    setErrors({ ...errors, [e.target.name]: undefined })
-  }
+  const fetchData = () => {
+    fetch(`${API}/victimas/lista?search=${search}&page=${page}`)
+      .then(res => res.json())
+      .then(res => {
+        setData(res.data);
+        setTotal(res.total);
+      });
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const val = validate()
-    if (Object.keys(val).length) {
-      setErrors(val)
-      return
+  useEffect(() => { fetchData(); }, [search, page]);
+  useEffect(() => {
+    fetch(`${API}/documento`).then(res => res.json()).then(setTiposDoc);
+    fetch(`${API}/afectacion`).then(res => res.json()).then(setAfectaciones);
+  }, []);
+
+  const totalPages = Math.ceil(total / 10);
+
+  const handleDelete = async (id) => {
+    if (window.confirm('¿Eliminar víctima?')) {
+      await fetch(`${API}/victimas/eliminar/${id}`, { method: 'DELETE' });
+      fetchData();
     }
-    if (selected !== null) {
-      // Editar
-      setVictimas(victimas.map((v, idx) => idx === selected ? { ...form } : v))
-    } else {
-      // Crear
-      setVictimas([...victimas, { ...form }])
-    }
-    setForm({ nombre: '', comunidad: '', nro_acta: '', apoyo_familiar: '' })
-    setErrors({})
-    setShowForm(false)
-    setSelected(null)
-  }
+  };
 
-  const handleEdit = (idx) => {
-    setForm({ ...victimas[idx] })
-    setShowForm(true)
-    setSelected(idx)
-    setErrors({})
-  }
+  const openEdit = (v) => {
+    setEditForm({
+      cedula: v.TTR_CEDULA || '',
+      tipodo: v.TTR_TIPODO || '',
+      nombre: v.TTR_NOMBRE || '',
+      apelli: v.TTR_APELLI || '',
+      coafec: v.TTR_COAFEC || '',
+      certif: v.TTR_CERTIF || ''
+    });
+    setEditId(v.TTR_COVICT);
+    setVisible(true);
+  };
 
-  const handleDelete = (idx) => {
-    setVictimas(victimas.filter((_, i) => i !== idx))
-  }
+  const handleEditChange = e => {
+    const { name, value } = e.target;
+    setEditForm({ ...editForm, [name]: value });
+  };
 
-  const handleAdd = () => {
-    setForm({ nombre: '', comunidad: '', nro_acta: '', apoyo_familiar: '' })
-    setShowForm(true)
-    setSelected(null)
-    setErrors({})
-  }
+  const handleEditSubmit = async e => {
+    e.preventDefault();
+    await fetch(`${API}/victimas/editar/${editId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm)
+    });
+    setVisible(false);
+    fetchData();
+  };
 
   return (
-    <CCard className="p-4 shadow-lg">
-      <CCardHeader className="d-flex flex-column flex-md-row justify-content-between align-items-center bg-danger text-white">
-        <h5 className="m-0">Registro de Víctimas Fatales</h5>
-        <CButton color="danger text-black bg-white mt-2 mt-md-0" onClick={handleAdd}>+ Registrar Víctima</CButton>
+    <CCard>
+      <CCardHeader>
+        <strong>Víctimas</strong>
       </CCardHeader>
       <CCardBody>
-        <CTable striped hover responsive align="middle">
-          <CTableHead color="dark">
+        <CFormInput
+          placeholder="Buscar por nombre, apellido o cédula..."
+          value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1); }}
+          className="mb-3"
+        />
+        <CTable responsive hover>
+          <CTableHead style={{textAlign:'center'}}>
             <CTableRow>
+              <CTableHeaderCell>Tipo Doc</CTableHeaderCell>
+              <CTableHeaderCell>Cédula</CTableHeaderCell>
               <CTableHeaderCell>Nombre</CTableHeaderCell>
-              <CTableHeaderCell>Comunidad</CTableHeaderCell>
-              <CTableHeaderCell>Nro. Acta Defunción</CTableHeaderCell>
-              <CTableHeaderCell>Apoyo Familiar</CTableHeaderCell>
-              <CTableHeaderCell className="text-end">Acciones</CTableHeaderCell>
+              <CTableHeaderCell>Apellido</CTableHeaderCell>
+              <CTableHeaderCell>Comunidad afectada</CTableHeaderCell>
+              <CTableHeaderCell>Acciones</CTableHeaderCell>
             </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            {victimas.length > 0 ? victimas.map((v, idx) => (
-              <CTableRow key={idx}>
-                <CTableDataCell>{v.nombre}</CTableDataCell>
-                <CTableDataCell>{v.comunidad}</CTableDataCell>
-                <CTableDataCell>{v.nro_acta}</CTableDataCell>
-                <CTableDataCell>{v.apoyo_familiar}</CTableDataCell>
-                <CTableDataCell className="text-end">
-                  <CButton color="warning" size="sm" className="me-2" onClick={() => handleEdit(idx)}>
-                    Editar
-                  </CButton>
-                  <CButton color="danger" size="sm" onClick={() => handleDelete(idx)}>
-                    Eliminar
-                  </CButton>
+          </CTableHead >
+          <CTableBody style={{textAlign:'center'}}>
+            {data.map(v => (
+              <CTableRow key={v.TTR_COVICT}>
+                <CTableDataCell>{tiposDoc.find(t => t.TMA_CODDOC === v.TTR_TIPODO)?.TMA_NOMBRE || ''}</CTableDataCell>
+                <CTableDataCell>{v.TTR_CEDULA}</CTableDataCell>
+                <CTableDataCell>{v.TTR_NOMBRE}</CTableDataCell>
+                <CTableDataCell>{v.TTR_APELLI}</CTableDataCell>
+                <CTableDataCell>
+                  {afectaciones.find(a => a.TTR_COAFEC === v.TTR_COAFEC)?.comunidad || v.TTR_COAFEC}
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} size="sm" className="me-2" onClick={() => openEdit(v)}>Editar</CButton>
+                  <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} size="sm" onClick={() => handleDelete(v.TTR_COVICT)}>Eliminar</CButton>
                 </CTableDataCell>
               </CTableRow>
-            )) : (
-              <CTableRow>
-                <CTableDataCell colSpan={5} className="text-center text-muted">
-                  No hay víctimas registradas.
-                </CTableDataCell>
-              </CTableRow>
-            )}
+            ))}
           </CTableBody>
         </CTable>
+        <CPagination align="center" className="mt-3">
+          {[...Array(totalPages)].map((_, idx) => (
+            <CPaginationItem key={idx+1} active={page === idx+1} onClick={() => setPage(idx+1)}>
+              {idx+1}
+            </CPaginationItem>
+          ))}
+        </CPagination>
       </CCardBody>
 
-      <CModal visible={showForm} onClose={() => setShowForm(false)}>
+      {/* Modal editar */}
+      <CModal visible={visible} onClose={() => setVisible(false)}>
         <CModalHeader>
-          <CModalTitle>{selected !== null ? "Editar Víctima" : "Registrar Víctima"}</CModalTitle>
+          <CModalTitle>Editar Víctima</CModalTitle>
         </CModalHeader>
         <CModalBody>
-          <CForm onSubmit={handleSubmit} autoComplete="off">
-            <CCol className="mb-3">
-              <CFormInput
-                label="Nombre"
-                name="nombre"
-                value={form.nombre}
-                onChange={handleChange}
-                invalid={!!errors.nombre}
-                placeholder="Nombre de la víctima"
-                maxLength={40}
-              />
-              {errors.nombre && <CAlert color="danger" className="py-1 my-1">{errors.nombre}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormSelect
-                label="Comunidad"
-                name="comunidad"
-                value={form.comunidad}
-                onChange={handleChange}
-                invalid={!!errors.comunidad}
-              >
-                <option value="">Seleccione una comunidad...</option>
-                {comunidadesDB.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </CFormSelect>
-              {errors.comunidad && <CAlert color="danger" className="py-1 my-1">{errors.comunidad}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormInput
-                label="Nro. Acta de Defunción"
-                name="nro_acta"
-                value={form.nro_acta}
-                onChange={handleChange}
-                invalid={!!errors.nro_acta}
-                placeholder="Número de acta"
-                maxLength={20}
-              />
-              {errors.nro_acta && <CAlert color="danger" className="py-1 my-1">{errors.nro_acta}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormInput
-                label="Apoyo Familiar"
-                name="apoyo_familiar"
-                value={form.apoyo_familiar}
-                onChange={handleChange}
-                invalid={!!errors.apoyo_familiar}
-                placeholder="Ej: Donación de alimentos, ayuda económica, etc."
-                maxLength={60}
-              />
-              {errors.apoyo_familiar && <CAlert color="danger" className="py-1 my-1">{errors.apoyo_familiar}</CAlert>}
-            </CCol>
-            <div className="d-flex justify-content-end gap-2 mt-4">
-              <CButton type="button" color="secondary" onClick={() => setShowForm(false)}>
-                Cancelar
-              </CButton>
-              <CButton type="submit" color="danger text-white">
-                {selected !== null ? "Actualizar" : "Registrar"}
-              </CButton>
-            </div>
+          <CForm onSubmit={handleEditSubmit}>
+            <CFormInput className="mb-2" label="Nombre" name="nombre" value={editForm.nombre} onChange={handleEditChange} required />
+            <CFormInput className="mb-2" label="Apellido" name="apelli" value={editForm.apelli} onChange={handleEditChange} required />
+            <CFormInput className="mb-2" label="Cédula" name="cedula" value={editForm.cedula} onChange={handleEditChange} required />
+            <CFormSelect className="mb-2" label="Tipo de documento" name="tipodo" value={editForm.tipodo} onChange={handleEditChange} required>
+              <option value="">Seleccione tipo</option>
+              {tiposDoc.map(t => (
+                <option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>{t.TMA_NOMBRE}</option>
+              ))}
+            </CFormSelect>
+            <CFormSelect className="mb-2" label="Comunidad afectada" name="coafec" value={editForm.coafec} onChange={handleEditChange} required>
+              <option value="">Seleccione afectación</option>
+              {afectaciones.map(a => (
+                <option key={a.TTR_COAFEC} value={a.TTR_COAFEC}>{a.comunidad}</option>
+              ))}
+            </CFormSelect>
+            <CFormInput className="mb-2" label="Certificado" name="certif" value={editForm.certif} onChange={handleEditChange} />
+            <CModalFooter>
+              <CButton color="primary" type="submit">Guardar</CButton>
+              <CButton color="secondary" onClick={() => setVisible(false)}>Cancelar</CButton>
+            </CModalFooter>
           </CForm>
         </CModalBody>
       </CModal>
     </CCard>
-  )
-}
+  );
+};
 
-export default Victimas
+export default VictimasModulo;

@@ -4,28 +4,22 @@ import {
   CCarousel, CCarouselItem, CCarouselCaption, CImage
 } from '@coreui/react'
 
-
 import img1 from 'src/assets/images/rio.jpg'
 import img2 from 'src/assets/images/rio3.png'
 import img3 from 'src/assets/images/rio2.png'
+import img4 from 'src/assets/images/a3-rio.webp'
 
 const imagenes = [
-  {
-    src: img1,
-  },
-  {
-    src: img2,
-  },
-  {
-    src: img3,
-
-  }
+  { src: img1 },
+  { src: img2 },
+  { src: img3 },
+  { src: img4 }
 ]
 
 const Desbordes = () => {
   return (
-    <CRow className="justify-content-center mt-4">
-      <CCol md={10} lg={8}>
+    <CRow className="justify-content-center mt-4" style={{ marginBottom: '50px' }}>
+      <CCol xs={12} md={10} lg={8}>
         <CCard className="shadow-lg border-0" style={{ background: 'rgba(255,255,255,0.97)' }}>
           <CCardHeader className="bg-info text-white text-center py-4 rounded-top">
             <h2 className="fw-bold mb-1">Desbordamientos de Rios</h2>
@@ -65,27 +59,45 @@ const Desbordes = () => {
             <section className="mb-4">
               <h4 className="fw-semibold text-primary mb-2">¿Qué hacer antes, durante y después?</h4>
               <CRow>
-                <CCol md={4} className="mb-3">
-                  <CBadge color="warning" className="mb-2 px-3 py-2 fs-6">Antes</CBadge>
-                  <ul>
+                <CCol xs={12} md={4} className="mb-3 d-flex flex-column align-items-center">
+                  <CBadge
+                    color="warning"
+                    className="mb-2 px-3 py-2 fs-6 w-100 text-center"
+                    style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
+                  >
+                    Antes
+                  </CBadge>
+                  <ul className="ps-3 text-start w-100" style={{ fontSize: 15 }}>
                     <li>Infórmate sobre zonas de riesgo en tu comunidad.</li>
                     <li>Prepara un plan de evacuación familiar.</li>
-                    <li>Guarda documentos y objetos importantes in lugares seguros y elevados.</li>
+                    <li>Guarda documentos y objetos importantes en lugares seguros y elevados.</li>
                     <li>Mantén a la mano un kit de emergencia.</li>
                   </ul>
                 </CCol>
-                <CCol md={4} className="mb-3">
-                  <CBadge color="danger" className="mb-2 px-3 py-2 fs-6">Durante</CBadge>
-                  <ul>
+                <CCol xs={12} md={4} className="mb-3 d-flex flex-column align-items-center">
+                  <CBadge
+                    color="danger"
+                    className="mb-2 px-3 py-2 fs-6 w-100 text-center"
+                    style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
+                  >
+                    Durante
+                  </CBadge>
+                  <ul className="ps-3 text-start w-100" style={{ fontSize: 15 }}>
                     <li>Sigue las indicaciones de las autoridades.</li>
                     <li>Evacúa inmediatamente si es necesario.</li>
                     <li>No cruces zonas inundadas ni a pie ni en vehículo.</li>
                     <li>Desconecta la electricidad si hay riesgo de inundación.</li>
                   </ul>
                 </CCol>
-                <CCol md={4} className="mb-3">
-                  <CBadge color="info" className="mb-2 px-3 py-2 fs-6">Después</CBadge>
-                  <ul>
+                <CCol xs={12} md={4} className="mb-3 d-flex flex-column align-items-center">
+                  <CBadge
+                    color="info"
+                    className="mb-2 px-3 py-2 fs-6 w-100 text-center"
+                    style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
+                  >
+                    Después
+                  </CBadge>
+                  <ul className="ps-3 text-start w-100" style={{ fontSize: 15 }}>
                     <li>No regreses a tu hogar hasta que sea seguro.</li>
                     <li>Evita el contacto con el agua estancada.</li>
                     <li>Revisa daños estructurales antes de ingresar.</li>
@@ -103,7 +115,7 @@ const Desbordes = () => {
               </ul>
             </section>
             <div className="text-center mt-4">
-              <CBadge color="primary" className="fs-5 px-4 py-2">
+              <CBadge color="primary" className="fs-5 px-4 py-2 w-100 w-md-auto" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                 ¡La información y la prevención son tus mejores aliados ante los desbordamientos!
               </CBadge>
             </div>
@@ -111,6 +123,7 @@ const Desbordes = () => {
         </CCard>
       </CCol>
     </CRow>
+    
   )
 }
 

@@ -1,273 +1,193 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react'
 import {
-  CButton, CCard, CCardBody, CCardHeader, CModal, CModalBody, CModalHeader, CModalTitle,
-  CForm, CFormInput, CFormLabel, CFormSelect, CCol, CRow, CTable, CTableHead, CTableRow,
-  CTableHeaderCell, CTableBody, CTableDataCell, CAlert
-} from "@coreui/react";
+  CCard, CCardBody, CCol, CRow, CForm, CFormInput, CFormSelect, CButton, CAlert
+} from '@coreui/react'
 
-// Simulación de donantes y comunidades desde la "base de datos"
-const donantesDB = [
-  { id: 1, nombre: "Juan Pérez" },
-  { id: 2, nombre: "Fundación Esperanza" },
-  { id: 3, nombre: "María Gómez" }
-];
+const API = 'http://localhost:4000'
 
-const comunidadesDB = [
-  "Barrio El Hoyo",
-  "San Sebastian",
-  "La Playa",
-  "La Vega"
-];
-
-const tiposDonacion = [
-  "Ropa",
-  "Alimentos",
-  "Dinero",
-  "Medicinas",
-  "Otros bienes"
-];
-
-const Donaciones = () => {
-  const [showForm, setShowForm] = useState(false);
-  const [donaciones, setDonaciones] = useState([]);
-  const [selectedDonacion, setSelectedDonacion] = useState(null);
-  const [filter, setFilter] = useState("");
+const RegistrarDonacion = () => {
+  const [donantes, setDonantes] = useState([])
+  const [afectaciones, setAfectaciones] = useState([])
+  const [tiposDonacion, setTiposDonacion] = useState([])
   const [form, setForm] = useState({
-    donante: "",
-    tipo_donacion: "",
-    cantidad: "",
-    fecha_donacion: "",
-    comunidad: ""
-  });
-  const [errors, setErrors] = useState({});
+    cantidad: '',
+    fedona: '',
+    coafec: '',
+    codont: '',
+    tipodo: '',
+    descri: ''
+  })
+  const [msg, setMsg] = useState({ type: '', text: '' })
+  const [busquedaDonante, setBusquedaDonante] = useState('') // Nuevo estado para filtro
 
-  // Validaciones
-  const validate = () => {
-    const newErrors = {};
-    if (!form.donante) newErrors.donante = "Seleccione un donante";
-    if (!form.tipo_donacion) newErrors.tipo_donacion = "Seleccione el tipo de donación";
-    if (!form.cantidad || isNaN(form.cantidad) || Number(form.cantidad) <= 0) newErrors.cantidad = "Ingrese una cantidad válida";
-    if (!form.fecha_donacion) newErrors.fecha_donacion = "Seleccione una fecha";
-    if (!form.comunidad) newErrors.comunidad = "Seleccione una comunidad";
-    return newErrors;
-  };
+  useEffect(() => {
+    fetch(`${API}/donantesregistrados`)
+      .then(res => res.json())
+      .then(setDonantes)
+    fetch(`${API}/afectacion`)
+      .then(res => res.json())
+      .then(setAfectaciones)
+    fetch(`${API}/tipos-estilo-donacion`)
+      .then(res => res.json())
+      .then(setTiposDonacion)
+  }, [])
 
-  // Manejo de cambios en el formulario
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: undefined });
-  };
+  // Filtrar donantes por nombre
+  const donantesFiltrados = donantes.filter(d =>
+    d.TMA_NOMBRE.toLowerCase().includes(busquedaDonante.toLowerCase())
+  )
 
-  // Guardar o actualizar donación
-  const handleSave = (e) => {
-    e.preventDefault();
-    const val = validate();
-    if (Object.keys(val).length) {
-      setErrors(val);
-      return;
+  const handleChange = e => {
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async e => {
+    e.preventDefault()
+    setMsg({ type: '', text: '' })
+    if (!form.cantidad || !form.fedona || !form.coafec || !form.codont || !form.tipodo) {
+      setMsg({ type: 'danger', text: 'Todos los campos son obligatorios.' })
+      return
     }
-    if (selectedDonacion) {
-      setDonaciones((prev) =>
-        prev.map((d) => (d.id === selectedDonacion.id ? { ...form, id: d.id } : d))
-      );
-    } else {
-      setDonaciones([...donaciones, { ...form, id: Date.now() }]);
+    try {
+      const res = await fetch(`${API}/donaciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          cantidad: Number(form.cantidad),
+          codont: Number(form.codont),
+          coafec: Number(form.coafec),
+          tipodo: Number(form.tipodo)
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setMsg({ type: 'success', text: 'Donación registrada correctamente.' })
+        setForm({ cantidad: '', fedona: '', coafec: '', codont: '', tipodo: '', descri: '' })
+      } else {
+        setMsg({ type: 'danger', text: data.mensaje || 'Error al registrar.' })
+      }
+    } catch {
+      setMsg({ type: 'danger', text: 'Error de conexión.' })
     }
-    setShowForm(false);
-    setSelectedDonacion(null);
-    setForm({
-      donante: "",
-      tipo_donacion: "",
-      cantidad: "",
-      fecha_donacion: "",
-      comunidad: ""
-    });
-    setErrors({});
-  };
-
-  // Editar
-  const handleEdit = (donacion) => {
-    setSelectedDonacion(donacion);
-    setForm({ ...donacion });
-    setShowForm(true);
-    setErrors({});
-  };
-
-  // Eliminar
-  const handleDelete = (id) => {
-    setDonaciones(donaciones.filter((d) => d.id !== id));
-  };
-
-  // Abrir modal para agregar
-  const handleAdd = () => {
-    setSelectedDonacion(null);
-    setForm({
-      donante: "",
-      tipo_donacion: "",
-      cantidad: "",
-      fecha_donacion: "",
-      comunidad: ""
-    });
-    setShowForm(true);
-    setErrors({});
-  };
-
-  // Filtrado por donante, tipo, comunidad
-  const filtered = donaciones.filter((d) =>
-    (d.donante?.toLowerCase() || "").includes(filter.toLowerCase()) ||
-    (d.tipo_donacion?.toLowerCase() || "").includes(filter.toLowerCase()) ||
-    (d.comunidad?.toLowerCase() || "").includes(filter.toLowerCase())
-  );
+  }
 
   return (
-    <CCard className="p-4 shadow-lg">
-      <CCardHeader className="d-flex flex-column flex-md-row justify-content-between align-items-center bg-info text-white">
-        <h5 className="m-0">Registro de Donaciones</h5>
-        <CFormInput
-          type="text"
-          placeholder="Buscar donación..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="w-100 w-md-25 mt-2 mt-md-0"
-        />
-      </CCardHeader>
-
-      <CCardBody>
-        <div className="d-flex justify-content-end mb-3">
-          <CButton color="info text-white" onClick={handleAdd}>+ Agregar Donación</CButton>
-        </div>
-
-        {/* Modal para agregar/editar donación */}
-        <CModal visible={showForm} onClose={() => setShowForm(false)}>
-          <CModalHeader>
-            <CModalTitle>{selectedDonacion ? "Editar Donación" : "Agregar Donación"}</CModalTitle>
-          </CModalHeader>
-          <CModalBody>
-            <CForm onSubmit={handleSave} autoComplete="off">
-              <CCol className="mb-3">
-                <CFormLabel>Donante</CFormLabel>
-                <CFormSelect
-                  name="donante"
-                  value={form.donante}
-                  onChange={handleChange}
-                  invalid={!!errors.donante}
-                >
-                  <option value="">Seleccione un donante...</option>
-                  {donantesDB.map((d) => (
-                    <option key={d.id} value={d.nombre}>{d.nombre}</option>
-                  ))}
-                </CFormSelect>
-                {errors.donante && <CAlert color="danger" className="py-1 my-1">{errors.donante}</CAlert>}
-              </CCol>
-              <CCol className="mb-3">
-                <CFormLabel>Tipo de Donación</CFormLabel>
-                <CFormSelect
-                  name="tipo_donacion"
-                  value={form.tipo_donacion}
-                  onChange={handleChange}
-                  invalid={!!errors.tipo_donacion}
-                >
-                  <option value="">Seleccione el tipo...</option>
-                  {tiposDonacion.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </CFormSelect>
-                {errors.tipo_donacion && <CAlert color="danger" className="py-1 my-1">{errors.tipo_donacion}</CAlert>}
-              </CCol>
-              <CCol className="mb-3">
-                <CFormLabel>Cantidad</CFormLabel>
-                <CFormInput
-                  name="cantidad"
-                  type="number"
-                  value={form.cantidad}
-                  onChange={handleChange}
-                  min={1}
-                  invalid={!!errors.cantidad}
-                  placeholder="Ingrese la cantidad"
-                />
-                {errors.cantidad && <CAlert color="danger" className="py-1 my-1">{errors.cantidad}</CAlert>}
-              </CCol>
-              <CCol className="mb-3">
-                <CFormLabel>Fecha</CFormLabel>
-                <CFormInput
-                  name="fecha_donacion"
-                  type="date"
-                  value={form.fecha_donacion}
-                  onChange={handleChange}
-                  invalid={!!errors.fecha_donacion}
-                />
-                {errors.fecha_donacion && <CAlert color="danger" className="py-1 my-1">{errors.fecha_donacion}</CAlert>}
-              </CCol>
-              <CCol className="mb-3">
-                <CFormLabel>Comunidad</CFormLabel>
-                <CFormSelect
-                  name="comunidad"
-                  value={form.comunidad}
-                  onChange={handleChange}
-                  invalid={!!errors.comunidad}
-                >
-                  <option value="">Seleccione una comunidad...</option>
-                  {comunidadesDB.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </CFormSelect>
-                {errors.comunidad && <CAlert color="danger" className="py-1 my-1">{errors.comunidad}</CAlert>}
-              </CCol>
-              <CRow className="mt-4">
-                <CCol className="d-flex justify-content-end gap-2">
-                  <CButton type="button" color="secondary" onClick={() => setShowForm(false)}>
-                    Cancelar
-                  </CButton>
-                  <CButton type="submit" color="info text-white">
-                    {selectedDonacion ? "Actualizar" : "Registrar"}
-                  </CButton>
+    <CRow className="justify-content-center mt-4">
+      <CCol xs={12} md={11} lg={10}>
+        <CCard className="shadow">
+          <CCardBody>
+            <h4 className="mb-4 text-center">Registrar Donación</h4>
+            <div className="mb-3 text-secondary">
+              <strong>¿Cómo registrar una donación?</strong>
+              <ul className="text-start" style={{ paddingLeft: 18, marginBottom: 0, marginTop: 8 }}>
+                <li>Seleccione el donante y la afectación a la que va dirigida la donación.</li>
+                <li>Elija el tipo de donación y complete la cantidad y fecha.</li>
+                <li>Puede agregar una descripción si lo desea.</li>
+                <li>Presione "Registrar Donación" para guardar.</li>
+              </ul>
+            </div>
+            <CForm onSubmit={handleSubmit}>
+              <CRow className="g-3 align-items-end">
+                <CCol md={4}>
+                  {/* Filtro de búsqueda */}
+                  <CFormInput
+                    placeholder="Buscar donante por nombre..."
+                    value={busquedaDonante}
+                    onChange={e => setBusquedaDonante(e.target.value)}
+                    className="mb-2"
+                  />
+                  <CFormSelect
+                    label="Donante"
+                    name="codont"
+                    value={form.codont}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Seleccione donante</option>
+                    {donantesFiltrados.map(d => (
+                      <option key={d.TMA_CODONT} value={d.TMA_CODONT}>
+                        {d.TMA_NOMBRE} - {d.TMA_CEDULA}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                </CCol>
+                <CCol md={4}>
+                  <CFormSelect
+                    label="Afectación"
+                    name="coafec"
+                    value={form.coafec}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Seleccione afectación</option>
+                    {afectaciones.map(a => (
+                      <option key={a.TTR_COAFEC} value={a.TTR_COAFEC}>
+                         - {a.comunidad ? a.comunidad : ''}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                </CCol>
+                <CCol md={4}>
+                  <CFormSelect
+                    label="Tipo de Donación"
+                    name="tipodo"
+                    value={form.tipodo}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Seleccione tipo de donación</option>
+                    {tiposDonacion.map(t => (
+                      <option key={t.TTR_ESTIDO} value={t.TTR_ESTIDO}>
+                        {t.TTR_NOMBRE}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                </CCol>
+                <CCol md={4}>
+                  <CFormInput
+                    label="Cantidad"
+                    name="cantidad"
+                    placeholder='Ejm 100'
+                    type="number"
+                    value={form.cantidad}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+                <CCol md={4}>
+                  <CFormInput
+                    label="Fecha de Donación"
+                    name="fedona"
+                    type="date"
+                    value={form.fedona}
+                    onChange={handleChange}
+                    required
+                  />
+                </CCol>
+                <CCol md={4}>
+                  <CFormInput
+                    label="Descripción"
+                    name="descri"
+                    value={form.descri}
+                    onChange={handleChange}
+                    placeholder="Detalle de la donación (opcional)"
+                  />
+                </CCol>
+                <CCol xs={12}>
+                  <CButton style={{backgroundColor:'#ff7043', color:'white'}} type="submit" className="w-100">Registrar Donación</CButton>
                 </CCol>
               </CRow>
+              {msg.text && (
+                <CAlert color={msg.type} className="text-center mt-3">{msg.text}</CAlert>
+              )}
             </CForm>
-          </CModalBody>
-        </CModal>
+          </CCardBody>
+        </CCard>
+      </CCol>
+    </CRow>
+  )
+}
 
-        {/* Tabla CRUD */}
-        <CTable striped hover borderless responsive>
-          <CTableHead color="dark">
-            <CTableRow>
-              <CTableHeaderCell>Donante</CTableHeaderCell>
-              <CTableHeaderCell>Tipo</CTableHeaderCell>
-              <CTableHeaderCell>Cantidad</CTableHeaderCell>
-              <CTableHeaderCell>Fecha</CTableHeaderCell>
-              <CTableHeaderCell>Comunidad</CTableHeaderCell>
-              <CTableHeaderCell className="text-end">Acciones</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            {filtered.length > 0 ? filtered.map((d) => (
-              <CTableRow key={d.id}>
-                <CTableDataCell>{d.donante || "Sin dato"}</CTableDataCell>
-                <CTableDataCell>{d.tipo_donacion || "Sin dato"}</CTableDataCell>
-                <CTableDataCell>{d.cantidad || "Sin dato"}</CTableDataCell>
-                <CTableDataCell>{d.fecha_donacion || "Sin dato"}</CTableDataCell>
-                <CTableDataCell>{d.comunidad || "Sin dato"}</CTableDataCell>
-                <CTableDataCell className="text-end">
-                  <CButton color="warning" size="sm" className="me-2" onClick={() => handleEdit(d)}>
-                    Editar
-                  </CButton>
-                  <CButton color="danger" size="sm" onClick={() => handleDelete(d.id)}>
-                    Eliminar
-                  </CButton>
-                </CTableDataCell>
-              </CTableRow>
-            )) : (
-              <CTableRow>
-                <CTableDataCell colSpan={6} className="text-center text-muted">
-                  No hay donaciones registradas.
-                </CTableDataCell>
-              </CTableRow>
-            )}
-          </CTableBody>
-        </CTable>
-      </CCardBody>
-    </CCard>
-  );
-};
-
-export default Donaciones;
+export default RegistrarDonacion

@@ -1,249 +1,169 @@
-import React from 'react'
-import classNames from 'classnames'
-
+import React, { useEffect, useState } from 'react'
 import {
-  CAvatar,
-  CButton,
-  CButtonGroup,
-  CCard,
-  CCardBody,
-  CCardFooter,
-  CCardHeader,
-  CCol,
-  CProgress,
-  CRow,
-  CTable,
-  CTableBody,
-  CTableDataCell,
-  CTableHead,
-  CTableHeaderCell,
-  CTableRow,
+  CCard, CCardBody, CCol, CRow, CCardHeader,
 } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import {
-  cibCcAmex,
-  cibCcApplePay,
-  cibCcMastercard,
-  cibCcPaypal,
-  cibCcStripe,
-  cibCcVisa,
-  cibGoogle,
-  cibFacebook,
-  cibLinkedin,
-  cifBr,
-  cifEs,
-  cifFr,
-  cifIn,
-  cifPl,
-  cifUs,
-  cibTwitter,
-  cilCloudDownload,
-  cilPeople,
-  cilUser,
-  cilUserFemale,
-} from '@coreui/icons'
-
-import avatar1 from 'src/assets/images/avatars/1.jpg'
-import avatar2 from 'src/assets/images/avatars/2.jpg'
-import avatar3 from 'src/assets/images/avatars/3.jpg'
-import avatar4 from 'src/assets/images/avatars/4.jpg'
-import avatar5 from 'src/assets/images/avatars/5.jpg'
-import avatar6 from 'src/assets/images/avatars/6.jpg'
-
-import WidgetsBrand from '../widgets/WidgetsBrand'
-import WidgetsDropdown from '../widgets/WidgetsDropdown'
 import { Bar, Pie } from 'react-chartjs-2'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title } from 'chart.js'
+import ChartDataLabels from 'chartjs-plugin-datalabels'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title)
-
-// Datos simulados
-const resumen = {
-  fallecidos: 12,
-  heridos: 37,
-  desastreMasFrecuente: 'Inundación',
-}
-
-const desastresPorTipo = [
-  { tipo: 'Inundación', cantidad: 8, fallecidos: 5, heridos: 15 },
-  { tipo: 'Deslizamiento', cantidad: 5, fallecidos: 3, heridos: 10 },
-  { tipo: 'Incendio', cantidad: 2, fallecidos: 2, heridos: 7 },
-  { tipo: 'Sismo', cantidad: 1, fallecidos: 2, heridos: 5 },
-]
-
-// Gráfica de barras: cantidad de desastres por tipo
-const barData = {
-  labels: desastresPorTipo.map(d => d.tipo),
-  datasets: [
-    {
-      label: 'Cantidad de Desastres',
-      data: desastresPorTipo.map(d => d.cantidad),
-      backgroundColor: ['#0d6efd', '#ffc107', '#dc3545', '#20c997'],
-      borderRadius: 8,
-    },
-  ],
-}
-
-// Gráfica de torta: fallecidos/heridos por tipo de desastre
-const pieData = {
-  labels: desastresPorTipo.map(d => d.tipo),
-  datasets: [
-    {
-      label: 'Fallecidos',
-      data: desastresPorTipo.map(d => d.fallecidos),
-      backgroundColor: ['#dc3545', '#ffc107', '#0d6efd', '#20c997'],
-    },
-    {
-      label: 'Heridos',
-      data: desastresPorTipo.map(d => d.heridos),
-      backgroundColor: ['#6c757d', '#fd7e14', '#198754', '#6610f2'],
-    },
-  ],
-}
-
-const pieOptions = {
-  responsive: true,
-  plugins: {
-    legend: { position: 'bottom' },
-    title: { display: true, text: 'Fallecidos y Heridos por Tipo de Desastre' },
-  },
-}
-
-const barOptions = {
-  responsive: true,
-  plugins: {
-    legend: { display: false },
-    title: { display: true, text: 'Cantidad de Desastres por Tipo' },
-  },
-  scales: {
-    y: { beginAtZero: true, stepSize: 1 },
-  },
-}
-
-const donacionesPorTipo = [
-  { tipo: 'Ropa', cantidad: 25 },
-  { tipo: 'Alimentos', cantidad: 40 },
-  { tipo: 'Dinero', cantidad: 15 },
-  { tipo: 'Medicinas', cantidad: 10 },
-  { tipo: 'Otros bienes', cantidad: 5 },
-]
-
-const donacionesPieData = {
-  labels: donacionesPorTipo.map(d => d.tipo),
-  datasets: [
-    {
-      label: 'Donaciones por tipo',
-      data: donacionesPorTipo.map(d => d.cantidad),
-      backgroundColor: [
-        '#0d6efd',
-        '#20c997',
-        '#ffc107',
-        '#dc3545',
-        '#6f42c1'
-      ],
-    },
-  ],
-}
-
-const donacionesPieOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { position: 'bottom' },
-    title: { display: true, text: 'Donaciones por Tipo' },
-  },
-}
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title, ChartDataLabels)
 
 const Dashboard = () => {
+  const [dashboard, setDashboard] = useState(null)
+
+  useEffect(() => {
+    fetch('http://localhost:4000/dashboard')
+      .then(res => res.json())
+      .then(setDashboard)
+  }, [])
+
+  if (!dashboard) return <div>Cargando...</div>
+
+  const { resumen, desastresPorTipo, estadosSalud, perdidasPorTipo } = dashboard
+
+  // Gráfica de barras: cantidad de desastres por tipo
+  const barData = {
+    labels: desastresPorTipo.map(d => d.tipo),
+    datasets: [
+      {
+        label: 'Cantidad de Desastres',
+        data: desastresPorTipo.map(d => d.cantidad),
+        backgroundColor: ['#0d6efd', '#ffc107', '#dc3545', '#20c997', '#6f42c1'],
+        borderRadius: 8,
+      },
+    ],
+  }
+
+  const barOptions = {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: { display: true, text: 'Cantidad de Desastres por Tipo' },
+    },
+    scales: {
+      y: { beginAtZero: true, stepSize: 1 },
+    },
+  }
+
+  // Gráfica de torta: estados de salud de damnificados + víctimas fatales
+  const totalEstados = estadosSalud.reduce((acc, e) => acc + e.cantidad, 0)
+  const estadosSaludPieData = {
+    labels: estadosSalud.map(e => e.estado),
+    datasets: [
+      {
+        label: 'Estados de Salud',
+        data: estadosSalud.map(e => e.cantidad),
+        backgroundColor: [
+          '#dc3545', // rojo
+          '#ffc107', // amarillo
+          '#0d6efd', // azul
+          '#20c997', // verde
+          '#6f42c1', // morado
+          '#fd7e14', // naranja
+          '#343a40', // gris oscuro para "Fallecidos" si quieres
+        ],
+      },
+    ],
+  }
+
+  const estadosSaludPieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' },
+      title: { display: true, text: 'Estados de Salud de Damnificados y Fallecidos' },
+      datalabels: {
+        color: 'white',
+        font: { weight: 'bold' },
+        formatter: (value, context) => {
+          const percent = totalEstados ? (value / totalEstados * 100) : 0
+          return percent > 0 ? percent.toFixed(1) + '%' : ''
+        }
+      }
+    },
+  }
+
+  // Gráfica de torta: pérdidas por tipo
+  const totalPerdidas = perdidasPorTipo.reduce((acc, d) => acc + d.cantidad, 0)
+  const perdidasPieData = {
+    labels: perdidasPorTipo.map(d => d.tipo),
+    datasets: [
+      {
+        label: 'Pérdidas por tipo',
+        data: perdidasPorTipo.map(d => d.cantidad),
+        backgroundColor: [
+          '#0d6efd',
+          '#20c997',
+          '#ffc107',
+          '#dc3545',
+          '#6f42c1'
+        ],
+      },
+    ],
+  }
+
+  const perdidasPieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' },
+      title: { display: true, text: 'Pérdidas por Tipo' },
+      datalabels: {
+        color: 'white',
+        font: { weight: 'bold' },
+        formatter: (value, context) => {
+          const percent = totalPerdidas ? (value / totalPerdidas * 100) : 0
+          return percent > 0 ? percent.toFixed(1) + '%' : ''
+        }
+      }
+    },
+  }
+
   return (
-    <>
-      <WidgetsDropdown className="mb-4" />
-      <WidgetsBrand className="mb-4" withCharts />
+    <div className="container-fluid py-4">
+      <CRow className="mb-4">
+        <CCol md={6}>
+          <CCard className="text-center shadow">
+            <CCardBody>
+              <h5 className="text-danger mb-2">Fallecidos</h5>
+              <div style={{ fontSize: 36, fontWeight: 'bold' }}>{resumen.fallecidos}</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol md={6}>
+          <CCard className="text-center shadow">
+            <CCardBody>
+              <h5 className="text-primary mb-2">Desastre más frecuente</h5>
+              <div style={{ fontSize: 24, fontWeight: 'bold' }}>{resumen.desastreMasFrecuente}</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
 
-      {/* Tarjetas resumen */}
-      <div className="container-fluid py-4">
-        <CRow className="mb-4">
-          <CCol md={4}>
-            <CCard className="text-center shadow">
-              <CCardBody>
-                <h5 className="text-danger mb-2">Fallecidos</h5>
-                <div style={{ fontSize: 36, fontWeight: 'bold' }}>{resumen.fallecidos}</div>
-              </CCardBody>
-            </CCard>
-          </CCol>
-          <CCol md={4}>
-            <CCard className="text-center shadow">
-              <CCardBody>
-                <h5 className="text-warning mb-2">Heridos</h5>
-                <div style={{ fontSize: 36, fontWeight: 'bold' }}>{resumen.heridos}</div>
-              </CCardBody>
-            </CCard>
-          </CCol>
-          <CCol md={4}>
-            <CCard className="text-center shadow">
-              <CCardBody>
-                <h5 className="text-primary mb-2">Desastre más frecuente</h5>
-                <div style={{ fontSize: 24, fontWeight: 'bold' }}>{resumen.desastreMasFrecuente}</div>
-              </CCardBody>
-            </CCard>
-          </CCol>
-        </CRow>
-
-        {/* Gráficas principales */}
-        <CRow>
-          <CCol md={6} className="mb-4">
-            <CCard className="shadow">
-              <CCardBody>
-                <Bar data={barData} options={barOptions} height={300} />
-              </CCardBody>
-            </CCard>
-          </CCol>
-          <CCol md={6} className="mb-4">
-            <CCard className="shadow">
-              <CCardBody>
-                {/* Primera torta */}
-                <div style={{ width: 300, height: 300, margin: "0 auto" }}>
-                  <Pie
-                    data={{
-                      labels: ['Fallecidos', 'Heridos'],
-                      datasets: [
-                        {
-                          label: 'Fallecidos',
-                          data: [
-                            desastresPorTipo.reduce((acc, d) => acc + d.fallecidos, 0),
-                            desastresPorTipo.reduce((acc, d) => acc + d.heridos, 0),
-                          ],
-                          backgroundColor: ['#dc3545', '#ffc107'],
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: { position: 'bottom' },
-                        title: { display: true, text: 'Total Fallecidos vs Heridos' },
-                      },
-                    }}
-                  />
-                </div>
-                {/* Segunda torta pegada debajo */}
-                <div style={{ width: 300, height: 300, margin: "20px auto 0 auto" }}>
-                  <Pie
-                    data={donacionesPieData}
-                    options={donacionesPieOptions}
-                  />
-                </div>
-              </CCardBody>
-            </CCard>
-          </CCol>
-        </CRow>
-      
-
-        {/* Gráfica de donaciones por tipo como torta, alineada debajo de la otra torta */}
-        
-      </div>
-    </>
+      <CRow>
+        <CCol md={6} className="mb-4">
+          <CCard className="shadow">
+            <CCardHeader className="fw-bold">Desastres por Tipo</CCardHeader>
+            <CCardBody>
+              <Bar data={barData} options={barOptions} height={300} />
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol md={6} className="mb-4">
+          <CCard className="shadow">
+            <CCardHeader className="fw-bold">Estados de Salud de Damnificados y Fallecidos</CCardHeader>
+            <CCardBody>
+              <div style={{ width: 300, height: 300, margin: "0 auto"}}>
+                <Pie data={estadosSaludPieData} options={estadosSaludPieOptions} plugins={[ChartDataLabels]} />
+              </div>
+              <div style={{ width: 300, height: 300, margin: "20px auto 0 auto" }}>
+                <Pie data={perdidasPieData} options={perdidasPieOptions} plugins={[ChartDataLabels]} />
+              </div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
+    </div>
   )
 }
 

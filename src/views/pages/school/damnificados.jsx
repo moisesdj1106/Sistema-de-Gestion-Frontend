@@ -1,276 +1,168 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  CButton, CCard, CCardBody, CCardHeader, CModal, CModalBody, CModalHeader, CModalTitle,
-  CFormInput, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell,
-  CFormLabel, CFormSelect, CAlert, CInputGroup, CInputGroupText, CCol
-} from "@coreui/react";
+  CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell,
+  CButton, CFormInput, CPagination, CPaginationItem, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CForm, CFormSelect
+} from '@coreui/react';
 
-const comunidades = [
-  "Comunidad A",
-  "Comunidad B",
-  "Comunidad C",
-  "Comunidad Z"
-];
+const API = 'http://localhost:4000';
 
-const Damnificados = () => {
-  const [showForm, setShowForm] = useState(false);
-  const [damnificados, setDamnificados] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [filter, setFilter] = useState("");
-  const [form, setForm] = useState({
-    nombre: "",
-    apellido: "",
-    cedula: "",
-    telefono: "",
-    comunidad: "",
-    estado_salud: ""
+const DamnificadosModulo = () => {
+  const [data, setData] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  // Modal edición
+  const [visible, setVisible] = useState(false);
+  const [editForm, setEditForm] = useState({
+    nombre: '', apelli: '', fenaci: '', contac: '', coafec: '', esalud: '', cedula: '', tipodo: ''
   });
-  const [errors, setErrors] = useState({});
+  const [tiposDoc, setTiposDoc] = useState([]);
+  const [afectaciones, setAfectaciones] = useState([]);
+  const [editId, setEditId] = useState(null);
 
-  // Validaciones
-  const validate = () => {
-    const newErrors = {};
-    if (!form.nombre.trim()) newErrors.nombre = "Nombre requerido";
-    if (!form.apellido.trim()) newErrors.apellido = "Apellido requerido";
-    if (!/^\d{8}$/.test(form.cedula)) newErrors.cedula = "Cédula debe tener 8 números";
-    if (!/^\d{11}$/.test(form.telefono)) newErrors.telefono = "Teléfono debe tener 11 números";
-    if (!form.comunidad) newErrors.comunidad = "Seleccione una comunidad";
-    if (!form.estado_salud.trim()) newErrors.estado_salud = "Estado de salud requerido";
-    return newErrors;
+  const fetchData = () => {
+    fetch(`${API}/damnificados/lista?search=${search}&page=${page}`)
+      .then(res => res.json())
+      .then(res => {
+        setData(res.data);
+        setTotal(res.total);
+      });
   };
 
-  // Manejo de cambios en el formulario
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: undefined });
+  useEffect(() => { fetchData(); }, [search, page]);
+  useEffect(() => {
+    fetch(`${API}/documento`).then(res => res.json()).then(setTiposDoc);
+    fetch(`${API}/afectacion`).then(res => res.json()).then(setAfectaciones);
+  }, []);
+
+  const totalPages = Math.ceil(total / 10);
+
+  const handleDelete = async (id) => {
+    if (window.confirm('¿Eliminar damnificado?')) {
+      await fetch(`${API}/damnificados/eliminar/${id}`, { method: 'DELETE' });
+      fetchData();
+    }
   };
 
-  // Guardar o actualizar damnificado
-  const handleSave = (e) => {
+  const openEdit = (d) => {
+    setEditForm({
+      nombre: d.TTR_NOMBRE || '',
+      apelli: d.TTR_APELLI || '',
+      fenaci: d.TTR_FENACI ? d.TTR_FENACI.substring(0, 10) : '',
+      contac: d.TTR_CONTAC || '',
+      coafec: d.TTR_COAFEC || '',
+      esalud: d.TTR_ESALUD || '',
+      cedula: d.TTR_CEDULA || '',
+      tipodo: d.TTR_TIPODO || ''
+    });
+    setEditId(d.TTR_CODAMN);
+    setVisible(true);
+  };
+
+  const handleEditChange = e => {
+    const { name, value } = e.target;
+    setEditForm({ ...editForm, [name]: value });
+  };
+
+  const handleEditSubmit = async e => {
     e.preventDefault();
-    const val = validate();
-    if (Object.keys(val).length) {
-      setErrors(val);
-      return;
-    }
-    if (selected) {
-      setDamnificados((prev) =>
-        prev.map((d) => (d.id === selected.id ? { ...form, id: d.id } : d))
-      );
-    } else {
-      setDamnificados([...damnificados, { ...form, id: Date.now() }]);
-    }
-    setShowForm(false);
-    setSelected(null);
-    setForm({
-      nombre: "",
-      apellido: "",
-      cedula: "",
-      telefono: "",
-      comunidad: "",
-      estado_salud: ""
+    await fetch(`${API}/damnificados/editar/${editId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm)
     });
-    setErrors({});
+    setVisible(false);
+    fetchData();
   };
-
-  // Editar
-  const handleEdit = (damnificado) => {
-    setSelected(damnificado);
-    setForm({ ...damnificado });
-    setShowForm(true);
-    setErrors({});
-  };
-
-  // Eliminar
-  const handleDelete = (id) => {
-    setDamnificados(damnificados.filter((d) => d.id !== id));
-  };
-
-  // Abrir modal para agregar
-  const handleAdd = () => {
-    setSelected(null);
-    setForm({
-      nombre: "",
-      apellido: "",
-      cedula: "",
-      telefono: "",
-      comunidad: "",
-      estado_salud: ""
-    });
-    setShowForm(true);
-    setErrors({});
-  };
-
-  // Filtrado por cédula
-  const filtered = damnificados.filter((d) =>
-    d.cedula.toLowerCase().includes(filter.toLowerCase())
-  );
 
   return (
-    <CCard className="p-4 shadow-lg">
-      <CCardHeader className="d-flex flex-column flex-md-row justify-content-between align-items-center bg-info text-white">
-        <h5 className="m-0">Registro de Damnificados</h5>
-        <CInputGroup className="w-auto mt-2 mt-md-0">
-          <CInputGroupText>Buscar cédula</CInputGroupText>
-          <CFormInput
-            type="text"
-            placeholder="Ej: 12345678"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value.replace(/\D/g, ""))}
-            maxLength={8}
-          />
-        </CInputGroup>
+    <CCard>
+      <CCardHeader>
+        <strong>Damnificados</strong>
       </CCardHeader>
-
       <CCardBody>
-        <div className="d-flex justify-content-end mb-3">
-          <CButton color="info text-white" onClick={handleAdd}>+ Agregar Damnificado</CButton>
-        </div>
-
-        <CTable striped hover responsive align="middle">
-          <CTableHead color="dark">
+        <CFormInput
+          placeholder="Buscar por nombre, apellido o cédula..."
+          value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1); }}
+          className="mb-3"
+        />
+        <CTable responsive hover>
+          <CTableHead style={{textAlign:'center'}}>
             <CTableRow>
+              <CTableHeaderCell>Tipo Doc</CTableHeaderCell>
+              <CTableHeaderCell>Cédula</CTableHeaderCell>
               <CTableHeaderCell>Nombre</CTableHeaderCell>
               <CTableHeaderCell>Apellido</CTableHeaderCell>
-              <CTableHeaderCell>Cédula</CTableHeaderCell>
-              <CTableHeaderCell>Teléfono</CTableHeaderCell>
-              <CTableHeaderCell>Comunidad</CTableHeaderCell>
-              <CTableHeaderCell>Estado de Salud</CTableHeaderCell>
-              <CTableHeaderCell className="text-end">Acciones</CTableHeaderCell>
+              <CTableHeaderCell>Contacto</CTableHeaderCell>
+              <CTableHeaderCell>Comunidad afectada</CTableHeaderCell>
+              <CTableHeaderCell>Acciones</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
-          <CTableBody>
-            {filtered.map((d) => (
-              <CTableRow key={d.id}>
-                <CTableDataCell>{d.nombre}</CTableDataCell>
-                <CTableDataCell>{d.apellido}</CTableDataCell>
-                <CTableDataCell>{d.cedula}</CTableDataCell>
-                <CTableDataCell>{d.telefono}</CTableDataCell>
-                <CTableDataCell>{d.comunidad}</CTableDataCell>
-                <CTableDataCell>{d.estado_salud}</CTableDataCell>
-                <CTableDataCell className="text-end">
-                  <CButton color="warning" size="sm" className="me-2" onClick={() => handleEdit(d)}>
-                    Editar
-                  </CButton>
-                  <CButton color="danger" size="sm" onClick={() => handleDelete(d.id)}>
-                    Eliminar
-                  </CButton>
+          <CTableBody style={{textAlign:'center'}}>
+            {data.map(d => (
+              <CTableRow key={d.TTR_CODAMN}>
+                <CTableDataCell>{tiposDoc.find(t => t.TMA_CODDOC === d.TTR_TIPODO)?.TMA_NOMBRE || ''}</CTableDataCell>
+                <CTableDataCell>{d.TTR_CEDULA}</CTableDataCell>
+                <CTableDataCell>{d.TTR_NOMBRE}</CTableDataCell>
+                <CTableDataCell>{d.TTR_APELLI}</CTableDataCell>
+                <CTableDataCell>{d.TTR_CONTAC}</CTableDataCell>
+                
+                <CTableDataCell>
+                  {afectaciones.find(a => a.TTR_COAFEC === d.TTR_COAFEC)?.comunidad || d.TTR_COAFEC}
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} size="sm" className="me-2" onClick={() => openEdit(d)}>Editar</CButton>
+                  <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} size="sm" onClick={() => handleDelete(d.TTR_CODAMN)}>Eliminar</CButton>
                 </CTableDataCell>
               </CTableRow>
             ))}
-            {filtered.length === 0 && (
-              <CTableRow>
-                <CTableDataCell colSpan={7} className="text-center text-muted">
-                  No hay damnificados registrados.
-                </CTableDataCell>
-              </CTableRow>
-            )}
           </CTableBody>
         </CTable>
+        <CPagination align="center" className="mt-3">
+          {[...Array(totalPages)].map((_, idx) => (
+            <CPaginationItem key={idx+1} active={page === idx+1} onClick={() => setPage(idx+1)}>
+              {idx+1}
+            </CPaginationItem>
+          ))}
+        </CPagination>
       </CCardBody>
 
-      {/* Modal para agregar/editar */}
-      <CModal visible={showForm} onClose={() => setShowForm(false)}>
+      {/* Modal editar */}
+      <CModal visible={visible} onClose={() => setVisible(false)}>
         <CModalHeader>
-          <CModalTitle>{selected ? "Editar Damnificado" : "Agregar Damnificado"}</CModalTitle>
+          <CModalTitle>Editar Damnificado</CModalTitle>
         </CModalHeader>
         <CModalBody>
-          <form onSubmit={handleSave} autoComplete="off">
-            <CCol className="mb-3">
-              <CFormLabel>Nombre</CFormLabel>
-              <CFormInput
-                name="nombre"
-                value={form.nombre}
-                onChange={handleChange}
-                invalid={!!errors.nombre}
-                maxLength={30}
-              />
-              {errors.nombre && <CAlert color="danger" className="py-1 my-1">{errors.nombre}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormLabel>Apellido</CFormLabel>
-              <CFormInput
-                name="apellido"
-                value={form.apellido}
-                onChange={handleChange}
-                invalid={!!errors.apellido}
-                maxLength={30}
-              />
-              {errors.apellido && <CAlert color="danger" className="py-1 my-1">{errors.apellido}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormLabel>Cédula</CFormLabel>
-              <CFormInput
-                name="cedula"
-                value={form.cedula}
-                onChange={e => {
-                  // Solo números y máximo 8 caracteres
-                  if (e.target.value.length <= 8 && /^\d*$/.test(e.target.value)) {
-                    handleChange(e);
-                  }
-                }}
-                invalid={!!errors.cedula}
-                maxLength={8}
-                placeholder="Ej: 12345678"
-              />
-              {errors.cedula && <CAlert color="danger" className="py-1 my-1">{errors.cedula}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormLabel>Teléfono</CFormLabel>
-              <CFormInput
-                name="telefono"
-                value={form.telefono}
-                onChange={e => {
-                  // Solo números y máximo 11 caracteres
-                  if (e.target.value.length <= 11 && /^\d*$/.test(e.target.value)) {
-                    handleChange(e);
-                  }
-                }}
-                invalid={!!errors.telefono}
-                maxLength={11}
-                placeholder="Ej: 04141234567"
-              />
-              {errors.telefono && <CAlert color="danger" className="py-1 my-1">{errors.telefono}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormLabel>Comunidad</CFormLabel>
-              <CFormSelect
-                name="comunidad"
-                value={form.comunidad}
-                onChange={handleChange}
-                invalid={!!errors.comunidad}
-              >
-                <option value="">Seleccione una comunidad...</option>
-                {comunidades.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </CFormSelect>
-              {errors.comunidad && <CAlert color="danger" className="py-1 my-1">{errors.comunidad}</CAlert>}
-            </CCol>
-            <CCol className="mb-3">
-              <CFormLabel>Estado de Salud</CFormLabel>
-              <CFormInput
-                name="estado_salud"
-                value={form.estado_salud}
-                onChange={handleChange}
-                invalid={!!errors.estado_salud}
-                maxLength={30}
-              />
-              {errors.estado_salud && <CAlert color="danger" className="py-1 my-1">{errors.estado_salud}</CAlert>}
-            </CCol>
-            <div className="d-flex justify-content-end gap-2 mt-4">
-              <CButton type="button" color="secondary" onClick={() => setShowForm(false)}>
-                Cancelar
-              </CButton>
-              <CButton type="submit" color="info text-white">
-                {selected ? "Actualizar" : "Registrar"}
-              </CButton>
-            </div>
-          </form>
+          <CForm onSubmit={handleEditSubmit}>
+            <CFormInput className="mb-2" label="Nombre" name="nombre" value={editForm.nombre} onChange={handleEditChange} required />
+            <CFormInput className="mb-2" label="Apellido" name="apelli" value={editForm.apelli} onChange={handleEditChange} required />
+            <CFormInput className="mb-2" label="Fecha de nacimiento" type="date" name="fenaci" value={editForm.fenaci} onChange={handleEditChange} required />
+            <CFormInput className="mb-2" label="Contacto" name="contac" value={editForm.contac} onChange={handleEditChange} required />
+            <CFormSelect className="mb-2" label="Tipo de documento" name="tipodo" value={editForm.tipodo} onChange={handleEditChange} required>
+              <option value="">Seleccione tipo</option>
+              {tiposDoc.map(t => (
+                <option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>{t.TMA_NOMBRE}</option>
+              ))}
+            </CFormSelect>
+            <CFormSelect className="mb-2" label="Comunidad afectada" name="coafec" value={editForm.coafec} onChange={handleEditChange} required>
+              <option value="">Seleccione afectación</option>
+              {afectaciones.map(a => (
+                <option key={a.TTR_COAFEC} value={a.TTR_COAFEC}>{a.comunidad}</option>
+              ))}
+            </CFormSelect>
+            <CFormInput className="mb-2" label="Estado de salud" name="esalud" value={editForm.esalud} onChange={handleEditChange} required />
+            <CFormInput className="mb-2" label="Cédula" name="cedula" value={editForm.cedula} onChange={handleEditChange} />
+            <CModalFooter>
+              <CButton color="primary" type="submit">Guardar</CButton>
+              <CButton color="secondary" onClick={() => setVisible(false)}>Cancelar</CButton>
+            </CModalFooter>
+          </CForm>
         </CModalBody>
       </CModal>
     </CCard>
   );
 };
 
-export default Damnificados;
+export default DamnificadosModulo;

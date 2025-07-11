@@ -12,6 +12,7 @@ const DefaultLayout = () => {
         </div>
         <AppFooter />
       </div>
+      
     </div>
   )
 }

@@ -25,15 +25,19 @@ const DisasterInfo = () => {
               </CCardText>
               <CCardText className="mt-3" style={{ textAlign: 'justify', fontSize: 16 }}>
                 <b>Puntos resaltantes:</b>
-                <ul style={{ marginTop: 8 }}>
-                  <li><b>Impacto humano y material:</b> Pueden causar pérdidas de vidas, desplazamientos y daños a infraestructuras.</li>
-                  <li><b>Prevención y preparación:</b> La educación y la planificación son claves para reducir riesgos.</li>
-                  <li><b>Respuesta rápida:</b> La actuación oportuna de autoridades y comunidades salva vidas.</li>
-                  <li><b>Solidaridad:</b> La ayuda mutua y la cooperación son fundamentales en situaciones de emergencia.</li>
-                </ul>
               </CCardText>
+              <ul style={{ marginTop: 8 }}>
+                <li><b>Impacto humano y material:</b> Pueden causar pérdidas de vidas, desplazamientos y daños a infraestructuras.</li>
+                <li><b>Prevención y preparación:</b> La educación y la planificación son claves para reducir riesgos.</li>
+                <li><b>Respuesta rápida:</b> La actuación oportuna de autoridades y comunidades salva vidas.</li>
+                <li><b>Solidaridad:</b> La ayuda mutua y la cooperación son fundamentales en situaciones de emergencia.</li>
+              </ul>
               <div className="text-center mt-4">
-                <CBadge color="info" className="fs-5 px-4 py-2">
+                <CBadge
+                  color="info"
+                  className="fs-5 px-4 py-2 w-100 w-md-auto text-center"
+                  style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
+                >
                   ¡La información y la prevención son tus mejores aliados ante los desastres naturales!
                 </CBadge>
               </div>
@@ -55,7 +59,7 @@ const DisasterInfo = () => {
               <CImage className="d-block w-100" src={img3} alt="Daños por desastre" style={{ maxHeight: 320, objectFit: 'cover' }} />
             </CCarouselItem>
           </CCarousel>
-          {/* Agrega un margen inferior después del carrusel */}
+          {/* Espacio extra antes del footer */}
           <div style={{ marginBottom: '2.5rem' }} />
         </CCol>
       </CRow>

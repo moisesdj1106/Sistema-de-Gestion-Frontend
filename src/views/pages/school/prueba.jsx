@@ -7,6 +7,7 @@ import {
 // Importa tus imágenes locales
 import img1 from 'src/assets/images/epicentro.png'
 import img2 from 'src/assets/images/rio.jpg'
+import img3 from 'src/assets/images/a3-rio.webp'
 
 
 const imagenes = [
@@ -16,12 +17,15 @@ const imagenes = [
   },
   {
     src: img2,
+  },
+  {
+    src: img3,
   }
 ]
 
 const MovimientosTierra = () => {
   return (
-    <CRow className="justify-content-center mt-4">
+    <CRow className="justify-content-center mt-4" style={{ marginBottom: '50px' }}>
       <CCol md={10} lg={8}>
         <CCard className="shadow-lg border-0" style={{ background: 'rgba(255,255,255,0.97)' }}>
           <CCardHeader className="bg-info text-white text-center py-4 rounded-top">
@@ -62,27 +66,45 @@ const MovimientosTierra = () => {
             <section className="mb-4">
               <h4 className="fw-semibold text-warning mb-2">¿Qué hacer antes, durante y después?</h4>
               <CRow>
-                <CCol md={4} className="mb-3">
-                  <CBadge color="info" className="mb-2 px-3 py-2 fs-6">Antes</CBadge>
-                  <ul>
+                <CCol xs={12} md={4} className="mb-3 d-flex flex-column align-items-center">
+                  <CBadge
+                    color="info"
+                    className="mb-2 px-3 py-2 fs-6 w-100 text-center"
+                    style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
+                  >
+                    Antes
+                  </CBadge>
+                  <ul className="ps-3 text-start w-100" style={{ fontSize: 15 }}>
                     <li>Identifica zonas de riesgo en tu comunidad.</li>
                     <li>Refuerza estructuras y asegura objetos pesados.</li>
                     <li>Prepara un plan de emergencia familiar.</li>
                     <li>Participa en simulacros de evacuación.</li>
                   </ul>
                 </CCol>
-                <CCol md={4} className="mb-3">
-                  <CBadge color="danger" className="mb-2 px-3 py-2 fs-6">Durante</CBadge>
-                  <ul>
+                <CCol xs={12} md={4} className="mb-3 d-flex flex-column align-items-center">
+                  <CBadge
+                    color="danger"
+                    className="mb-2 px-3 py-2 fs-6 w-100 text-center"
+                    style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
+                  >
+                    Durante
+                  </CBadge>
+                  <ul className="ps-3 text-start w-100" style={{ fontSize: 15 }}>
                     <li>Protégete bajo una mesa resistente o junto a una pared interior.</li>
                     <li>Aléjate de ventanas y objetos que puedan caer.</li>
                     <li>Si estás en la calle, busca un espacio abierto lejos de edificios y cables.</li>
                     <li>Evita usar ascensores.</li>
                   </ul>
                 </CCol>
-                <CCol md={4} className="mb-3">
-                  <CBadge color="success" className="mb-2 px-3 py-2 fs-6">Después</CBadge>
-                  <ul>
+                <CCol xs={12} md={4} className="mb-3 d-flex flex-column align-items-center">
+                  <CBadge
+                    color="success"
+                    className="mb-2 px-3 py-2 fs-6 w-100 text-center"
+                    style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
+                  >
+                    Después
+                  </CBadge>
+                  <ul className="ps-3 text-start w-100" style={{ fontSize: 15 }}>
                     <li>Verifica tu estado y el de tu familia.</li>
                     <li>Revisa daños estructurales antes de ingresar a edificios.</li>
                     <li>Escucha información oficial y sigue instrucciones.</li>
@@ -100,7 +122,11 @@ const MovimientosTierra = () => {
               </ul>
             </section>
             <div className="text-center mt-4">
-              <CBadge color="warning" className="fs-5 px-4 py-2 text-white">
+              <CBadge
+                color="warning"
+                className="fs-5 px-4 py-2 w-100 w-md-auto text-white text-center"
+                style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
+              >
                 ¡La información y la prevención son tus mejores aliados ante los movimientos de tierra y sismos!
               </CBadge>
             </div>

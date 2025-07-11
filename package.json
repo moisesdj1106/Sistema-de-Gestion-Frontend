@@ -29,6 +29,7 @@
     "@hookform/resolvers": "^5.0.1",
     "@popperjs/core": "^2.11.8",
     "chart.js": "^4.4.9",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "classnames": "^2.5.1",
     "core-js": "^3.40.0",
     "leaflet": "^1.9.4",

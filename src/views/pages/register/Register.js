@@ -1,285 +1,416 @@
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
-  CButton,
-  CCard,
-  CCardBody,
-  CCol,
-  CContainer,
-  CForm,
-  CFormInput,
-  CInputGroup,
-  CInputGroupText,
-  CRow,
-  CFormSelect,
-  CAlert,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilUser, cilPhone, cilCalendar, cilHome, cilAddressBook } from '@coreui/icons'
+    CForm,
+    CRow,
+    CCol,
+    CFormInput,
+    CFormSelect,
+    CButton,
+    CCard,
+    CCardBody,
+    CCardHeader,
+    CModal,
+    CModalHeader,
+    CModalTitle,
+    CModalBody,
+    CModalFooter
+} from '@coreui/react';
 
-const Register = () => {
-  const [form, setForm] = useState({
-    cedula: '',
-    nombres: '',
-    apellidos: '',
-    direccion: '',
-    telefono: '',
-    sexo: '',
-    fecha_nacimiento: '',
-    usuario: '',
-    email: '',
-    password: '',
-    password2: '',
-  })
-  const [errors, setErrors] = useState({})
+const Formulario = () => {
+    const [cedula, setCedula] = useState('');
+    const [nombres, setNombre] = useState('');
+    const [apellidos, setApellidos] = useState('');
+    const [direccion, setDireccion] = useState('');
+    const [telefono, setTelefono] = useState('');
+    const [sexo, setSexo] = useState('');
+    const [fecha_nac, setFechaNacimiento] = useState('');
+    const [usuario, setUsuario] = useState('');
+    const [email, setEmail] = useState('');
+    const [contraseña, setPassword] = useState('');
+    const [repeatPassword, setRepeatPassword] = useState('');
+    const [tipodo, setTipodo] = useState('');
+    const [codpais, setCodpais] = useState('');
+    const [coesta, setCoesta] = useState('');
+    const [comuni, setComuni] = useState('');
+    const [coparr, setCoparr] = useState('');
+    const [codcom, setCodcom] = useState('');
+    const [tipoDocumentos, setTipoDocumentos] = useState([]);
+    const [paises, setPaises] = useState([]);
+    const [estados, setEstados] = useState([]);
+    const [municipios, setMunicipios] = useState([]);
+    const [parroquias, setParroquias] = useState([]);
+    const [comunidades, setComunidades] = useState([]);
+    const [modal, setModal] = useState({ show: false, mensaje: '', success: false });
+    const navigate = useNavigate();
 
-  const validate = () => {
-    const newErrors = {}
-    if (!/^\d{7,8}$/.test(form.cedula)) newErrors.cedula = 'Cédula inválida (7-8 dígitos)'
-    if (!form.nombres.trim()) newErrors.nombres = 'Nombres requeridos'
-    if (!form.apellidos.trim()) newErrors.apellidos = 'Apellidos requeridos'
-    if (!form.direccion.trim()) newErrors.direccion = 'Dirección requerida'
-    if (!/^\d{11}$/.test(form.telefono)) newErrors.telefono = 'Teléfono inválido (11 dígitos)'
-    if (!form.sexo) newErrors.sexo = 'Seleccione el sexo'
-    if (!form.fecha_nacimiento) newErrors.fecha_nacimiento = 'Fecha de nacimiento requerida'
-    if (!form.usuario.trim()) newErrors.usuario = 'Usuario requerido'
-    if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = 'Email inválido'
-    if (!form.password || form.password.length < 6) newErrors.password = 'Contraseña mínima 6 caracteres'
-    if (form.password !== form.password2) newErrors.password2 = 'Las contraseñas no coinciden'
-    return newErrors
-  }
+    // Tipos de documento
+    useEffect(() => {
+        fetch('http://localhost:4000/documento')
+            .then(res => res.json())
+            .then(setTipoDocumentos)
+            .catch(console.error);
+    }, []);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-    setErrors({ ...errors, [e.target.name]: undefined })
-  }
+    // Listar países
+    useEffect(() => {
+        fetch('http://localhost:4000/paises')
+            .then(res => res.json())
+            .then(setPaises)
+            .catch(console.error);
+    }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const val = validate()
-    if (Object.keys(val).length) {
-      setErrors(val)
-      return
-    }
-    // Aquí iría la lógica de registro
-    alert('¡Registro exitoso!')
-    setForm({
-      cedula: '',
-      nombres: '',
-      apellidos: '',
-      direccion: '',
-      telefono: '',
-      sexo: '',
-      fecha_nacimiento: '',
-      usuario: '',
-      email: '',
-      password: '',
-      password2: '',
-    })
-    setErrors({})
-  }
+    // Listar estados al seleccionar país
+    useEffect(() => {
+        if (codpais) {
+            fetch(`http://localhost:4000/estados/${codpais}`)
+                .then(res => res.json())
+                .then(setEstados)
+                .catch(console.error);
+        } else {
+            setEstados([]);
+            setCoesta('');
+        }
+        setMunicipios([]);
+        setComuni('');
+        setParroquias([]);
+        setCoparr('');
+        setComunidades([]);
+        setCodcom('');
+    }, [codpais]);
 
-  return (
-    <div
-      className="min-vh-100 d-flex flex-row align-items-center"
-      style={{
-        background: 'linear-gradient(135deg, #FF7043 30%, #1976D2 100%)',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
-        minHeight: '100vh',
-        position: 'relative',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(255,255,255,0.18)',
-          zIndex: 1,
-          pointerEvents: 'none',
-        }}
-      />
-      <CContainer style={{ position: 'relative', zIndex: 2 }}>
-        <CRow className="justify-content-center">
-          <CCol md={12} lg={10} xl={9}>
-            <CCard className="mx-2" style={{ minHeight: 0 }}>
-              <CCardBody className="p-4">
-                <CForm onSubmit={handleSubmit} autoComplete="off">
-                  <h1 className="fw-bold text-black mb-3">Registro</h1>
-                  <p className="text-body-secondary mb-4">Crea tu cuenta para gestionar desastres</p>
-                  <CRow>
-                    <CCol md={6}>
-                      <CInputGroup className="mb-3">
-                        <CInputGroupText>
-                          <CIcon icon={cilAddressBook} />
-                        </CInputGroupText>
-                        <CFormInput
-                          placeholder="Cédula"
-                          name="cedula"
-                          value={form.cedula}
-                          onChange={handleChange}
-                          maxLength={8}
-                          invalid={!!errors.cedula}
-                        />
-                      </CInputGroup>
-                      {errors.cedula && <CAlert color="danger" className="py-1 my-1">{errors.cedula}</CAlert>}
-                      <CInputGroup className="mb-3">
-                        <CInputGroupText>
-                          <CIcon icon={cilUser} />
-                        </CInputGroupText>
-                        <CFormInput
-                          placeholder="Nombres"
-                          name="nombres"
-                          value={form.nombres}
-                          onChange={handleChange}
-                          maxLength={30}
-                          invalid={!!errors.nombres}
-                        />
-                      </CInputGroup>
-                      {errors.nombres && <CAlert color="danger" className="py-1 my-1">{errors.nombres}</CAlert>}
-                      <CInputGroup className="mb-3">
-                        <CInputGroupText>
-                          <CIcon icon={cilUser} />
-                        </CInputGroupText>
-                        <CFormInput
-                          placeholder="Apellidos"
-                          name="apellidos"
-                          value={form.apellidos}
-                          onChange={handleChange}
-                          maxLength={30}
-                          invalid={!!errors.apellidos}
-                        />
-                      </CInputGroup>
-                      {errors.apellidos && <CAlert color="danger" className="py-1 my-1">{errors.apellidos}</CAlert>}
-                      <CInputGroup className="mb-3">
-                        <CInputGroupText>
-                          <CIcon icon={cilHome} />
-                        </CInputGroupText>
-                        <CFormInput
-                          placeholder="Dirección"
-                          name="direccion"
-                          value={form.direccion}
-                          onChange={handleChange}
-                          maxLength={60}
-                          invalid={!!errors.direccion}
-                        />
-                      </CInputGroup>
-                      {errors.direccion && <CAlert color="danger" className="py-1 my-1">{errors.direccion}</CAlert>}
-                      <CInputGroup className="mb-3">
-                        <CInputGroupText>
-                          <CIcon icon={cilPhone} />
-                        </CInputGroupText>
-                        <CFormInput
-                          placeholder="Teléfono"
-                          name="telefono"
-                          value={form.telefono}
-                          onChange={handleChange}
-                          maxLength={11}
-                          invalid={!!errors.telefono}
-                        />
-                      </CInputGroup>
-                      {errors.telefono && <CAlert color="danger" className="py-1 my-1">{errors.telefono}</CAlert>}
-                    </CCol>
-                    <CCol md={6}>
-                      <CRow className="mb-3">
-                        <CCol xs={6}>
-                          <CFormSelect
-                            name="sexo"
-                            value={form.sexo}
-                            onChange={handleChange}
-                            invalid={!!errors.sexo}
-                          >
-                            <option value="">Sexo</option>
-                            <option value="Masculino">Masculino</option>
-                            <option value="Femenino">Femenino</option>
-                            <option value="Otro">Otro</option>
-                          </CFormSelect>
-                          {errors.sexo && <CAlert color="danger" className="py-1 my-1">{errors.sexo}</CAlert>}
-                        </CCol>
-                        <CCol xs={6}>
-                          <CInputGroup>
-                            <CInputGroupText>
-                              <CIcon icon={cilCalendar} />
-                            </CInputGroupText>
-                            <CFormInput
-                              type="date"
-                              name="fecha_nacimiento"
-                              value={form.fecha_nacimiento}
-                              onChange={handleChange}
-                              invalid={!!errors.fecha_nacimiento}
-                            />
-                          </CInputGroup>
-                          {errors.fecha_nacimiento && <CAlert color="danger" className="py-1 my-1">{errors.fecha_nacimiento}</CAlert>}
-                        </CCol>
-                      </CRow>
-                      <CInputGroup className="mb-3">
-                        <CInputGroupText>
-                          <CIcon icon={cilUser} />
-                        </CInputGroupText>
-                        <CFormInput
-                          placeholder="Usuario"
-                          name="usuario"
-                          value={form.usuario}
-                          onChange={handleChange}
-                          maxLength={20}
-                          invalid={!!errors.usuario}
-                        />
-                      </CInputGroup>
-                      {errors.usuario && <CAlert color="danger" className="py-1 my-1">{errors.usuario}</CAlert>}
-                      <CInputGroup className="mb-3">
-                        <CInputGroupText>@</CInputGroupText>
-                        <CFormInput
-                          placeholder="Email"
-                          name="email"
-                          value={form.email}
-                          onChange={handleChange}
-                          maxLength={40}
-                          invalid={!!errors.email}
-                        />
-                      </CInputGroup>
-                      {errors.email && <CAlert color="danger" className="py-1 my-1">{errors.email}</CAlert>}
-                      <CInputGroup className="mb-3">
-                        <CInputGroupText>
-                          <CIcon icon={cilLockLocked} />
-                        </CInputGroupText>
-                        <CFormInput
-                          type="password"
-                          placeholder="Contraseña"
-                          name="password"
-                          value={form.password}
-                          onChange={handleChange}
-                          autoComplete="new-password"
-                          invalid={!!errors.password}
-                        />
-                      </CInputGroup>
-                      {errors.password && <CAlert color="danger" className="py-1 my-1">{errors.password}</CAlert>}
-                      <CInputGroup className="mb-4">
-                        <CInputGroupText>
-                          <CIcon icon={cilLockLocked} />
-                        </CInputGroupText>
-                        <CFormInput
-                          type="password"
-                          placeholder="Repetir contraseña"
-                          name="password2"
-                          value={form.password2}
-                          onChange={handleChange}
-                          autoComplete="new-password"
-                          invalid={!!errors.password2}
-                        />
-                      </CInputGroup>
-                      {errors.password2 && <CAlert color="danger" className="py-1 my-1">{errors.password2}</CAlert>}
-                    </CCol>
-                  </CRow>
-                  <div className="d-grid mt-2">
-                    <CButton color="info text-white">Crear Cuenta</CButton>
-                  </div>
-                </CForm>
-              </CCardBody>
+    // Listar municipios al seleccionar estado
+    useEffect(() => {
+        if (coesta) {
+            fetch(`http://localhost:4000/municipios/${coesta}`)
+                .then(res => res.json())
+                .then(setMunicipios)
+                .catch(console.error);
+        } else {
+            setMunicipios([]);
+            setComuni('');
+        }
+        setParroquias([]);
+        setCoparr('');
+        setComunidades([]);
+        setCodcom('');
+    }, [coesta]);
+
+    // Listar parroquias al seleccionar municipio
+    useEffect(() => {
+        if (comuni) {
+            fetch(`http://localhost:4000/parroquias/${comuni}`)
+                .then(res => res.json())
+                .then(setParroquias)
+                .catch(console.error);
+        } else {
+            setParroquias([]);
+            setCoparr('');
+        }
+        setComunidades([]);
+        setCodcom('');
+    }, [comuni]);
+
+    // Listar comunidades al seleccionar parroquia
+    useEffect(() => {
+        if (coparr) {
+            fetch(`http://localhost:4000/comunidades/${coparr}`)
+                .then(res => res.json())
+                .then(setComunidades)
+                .catch(console.error);
+        } else {
+            setComunidades([]);
+            setCodcom('');
+        }
+    }, [coparr]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (contraseña !== repeatPassword) {
+            setModal({ show: true, mensaje: 'Las contraseñas no coinciden', success: false });
+            return;
+        }
+        try {
+            const response = await fetch('http://localhost:4000/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cedula,
+                    nombres,
+                    apellidos,
+                    direccion,
+                    telefono,
+                    sexo,
+                    fecha_nac,
+                    usuario,
+                    email,
+                    contraseña,
+                    tipodo,
+                    codcom
+                })
+            });
+
+            if (response.ok) {
+                setModal({ show: true, mensaje: 'Usuario registrado correctamente', success: true });
+            } else {
+                const data = await response.json();
+                setModal({ show: true, mensaje: data.message || 'Error al registrar el usuario', success: false });
+            }
+        } catch (error) {
+            setModal({ show: true, mensaje: 'Error al registrar el usuario', success: false });
+        }
+    };
+
+    const handleCloseModal = () => {
+        setModal({ show: false, mensaje: '', success: false });
+        if (modal.success) {
+            navigate('/login');
+        }
+    };
+
+    return (
+        <div
+            style={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundImage: "url('src/assets/images/carro.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+            }}
+        >
+            <CCard className="shadow" style={{ maxWidth: '800px', width: '100%' }}>
+                <CCardHeader className=" text-white text-center" style={{ backgroundColor: '#FF7043' }}>
+                    <h4>Registro de Usuario</h4>
+                </CCardHeader>
+                <CCardBody>
+                    <CForm onSubmit={handleSubmit}>
+                        <CRow>
+                            <CCol md={6}>
+                                {/* Orden lógico: Tipo de documento, Cédula, Nombres, Apellidos, Sexo, Fecha de nacimiento, Usuario, Contraseña, Repetir contraseña */}
+                                <CFormSelect
+                                    label="Tipo de Documento"
+                                    value={tipodo}
+                                    onChange={e => setTipodo(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                >
+                                    <option value="">Seleccione tipo de documento</option>
+                                    {tipoDocumentos.map(tipo => (
+                                        <option key={tipo.TMA_CODDOC} value={tipo.TMA_CODDOC}>
+                                            {tipo.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
+                                <CFormInput
+                                    type="text"
+                                    label="Documento de identidad"
+                                    placeholder="Ingrese el N° documento"
+                                    value={cedula}
+                                    onChange={e => setCedula(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                />
+                                <CFormInput
+                                    type="text"
+                                    label="Nombres"
+                                    placeholder="Ingrese sus nombres"
+                                    value={nombres}
+                                    onChange={e => setNombre(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                />
+                                <CFormInput
+                                    type="text"
+                                    label="Apellidos"
+                                    placeholder="Ingrese sus apellidos"
+                                    value={apellidos}
+                                    onChange={e => setApellidos(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                />
+                                <CFormSelect
+                                    label="Sexo"
+                                    value={sexo}
+                                    onChange={e => setSexo(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                >
+                                    <option value="">Seleccione sexo</option>
+                                    <option value="M">Masculino</option>
+                                    <option value="F">Femenino</option>
+                                </CFormSelect>
+                                <CFormInput
+                                    type="date"
+                                    label="Fecha de Nacimiento"
+                                    placeholder="Ingrese su fecha de nacimiento"
+                                    value={fecha_nac}
+                                    onChange={e => setFechaNacimiento(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                />
+                                <CFormInput
+                                    type="text"
+                                    label="Usuario"
+                                    placeholder="Ingrese su usuario"
+                                    value={usuario}
+                                    onChange={e => setUsuario(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                />
+                                <CFormInput
+                                    type="password"
+                                    label="Contraseña"
+                                    placeholder="Ingrese su contraseña"
+                                    value={contraseña}
+                                    onChange={e => setPassword(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                />
+                                <CFormInput
+                                    type="password"
+                                    label="Repetir contraseña"
+                                    placeholder="Repita su contraseña"
+                                    value={repeatPassword}
+                                    onChange={e => setRepeatPassword(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                />
+                            </CCol>
+                            <CCol md={6}>
+                                {/* Orden lógico: País, Estado, Municipio, Parroquia, Comunidad, Dirección, Teléfono, Email */}
+                                <CFormSelect
+                                    label="País"
+                                    value={codpais}
+                                    onChange={e => setCodpais(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                >
+                                    <option value="">Seleccione país</option>
+                                    {paises.map(pais => (
+                                        <option key={pais.TMA_COPAIS} value={pais.TMA_COPAIS}>
+                                            {pais.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
+                                <CFormSelect
+                                    label="Estado"
+                                    value={coesta}
+                                    onChange={e => setCoesta(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    disabled={!codpais}
+                                >
+                                    <option value="">Seleccione estado</option>
+                                    {estados.map(edo => (
+                                        <option key={edo.TMA_COESTA} value={edo.TMA_COESTA}>
+                                            {edo.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
+                                <CFormSelect
+                                    label="Municipio"
+                                    value={comuni}
+                                    onChange={e => setComuni(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    disabled={!coesta}
+                                >
+                                    <option value="">Seleccione municipio</option>
+                                    {municipios.map(muni => (
+                                        <option key={muni.TMA_COMUNI} value={muni.TMA_COMUNI}>
+                                            {muni.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
+                                <CFormSelect
+                                    label="Parroquia"
+                                    value={coparr}
+                                    onChange={e => setCoparr(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    disabled={!comuni}
+                                >
+                                    <option value="">Seleccione parroquia</option>
+                                    {parroquias.map(parr => (
+                                        <option key={parr.TMA_COPARR} value={parr.TMA_COPARR}>
+                                            {parr.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
+                                <CFormSelect
+                                    label="Comunidad"
+                                    value={codcom}
+                                    onChange={e => setCodcom(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    disabled={!coparr}
+                                >
+                                    <option value="">Seleccione comunidad</option>
+                                    {comunidades.map(comu => (
+                                        <option key={comu.TMA_CODCOM} value={comu.TMA_CODCOM}>
+                                            {comu.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
+                                <CFormInput
+                                    type="text"
+                                    label="Dirección"
+                                    placeholder="Ingrese su dirección"
+                                    value={direccion}
+                                    onChange={e => setDireccion(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                />
+                                <CFormInput
+                                    type="text"
+                                    label="Teléfono"
+                                    placeholder="Ejm 04147415896"
+                                    value={telefono}
+                                    onChange={e => setTelefono(e.target.value)}
+                                    className="mb-3"
+                                />
+                                <CFormInput
+                                    type="email"
+                                    label="Correo"
+                                    placeholder="Ejm correo@gmail.com"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                />
+                            </CCol>
+                        </CRow>
+                        <div className="text-center">
+                            <CButton style={{ backgroundColor: '#FF7043', color: 'white' }} type="submit">
+                                Enviar
+                            </CButton>
+                            <Link to="/login">
+                                <CButton style={{ backgroundColor: 'white', color: 'black', borderColor: '#FF7043', marginLeft: '10px' }} type="button">
+                                    Login
+                                </CButton>
+                            </Link>
+                        </div>
+                    </CForm>
+                </CCardBody>
             </CCard>
-          </CCol>
-        </CRow>
-      </CContainer>
-    </div>
-  )
-}
+            {/* Modal para mensajes */}
+            <CModal alignment="center" visible={modal.show} onClose={handleCloseModal}>
+                <CModalHeader>
+                    <CModalTitle>{modal.success ? 'Registro exitoso' : 'Error'}</CModalTitle>
+                </CModalHeader>
+                <CModalBody className="text-center">
+                    {modal.mensaje}
+                </CModalBody>
+                <CModalFooter>
+                    <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={handleCloseModal}>
+                        Aceptar
+                    </CButton>
+                </CModalFooter>
+            </CModal>
+        </div>
+    );
+};
 
-export default Register
+export default Formulario;

@@ -55,3 +55,10 @@
     
 }
 
+/* Puedes poner esto en tu archivo App.css o similar */
+.page-item.active .page-link {
+  background-color: #ffffff !important;
+  color: #ff7043 !important;
+  border-color: #ff7043 !important;
+  border-radius: 6px !important;
+}

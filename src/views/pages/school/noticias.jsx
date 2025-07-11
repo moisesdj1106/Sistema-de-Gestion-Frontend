@@ -16,7 +16,7 @@ const BotonEliminarNoticia = ({ noticiaId, onEliminada }) => {
     setError(null)
     setSuccess(null)
     try {
-      const res = await fetch(`http://localhost:4000/noticias/${noticiaId}`, {
+      const res = await fetch(`https://sistema-de-gestion-backend.onrender.com/noticias/${noticiaId}`, {
         method: 'DELETE'
       })
       const data = await res.json()
@@ -97,13 +97,13 @@ const NoticiasBlog = () => {
   const rol = localStorage.getItem('rol') || 'usuario'
 
   useEffect(() => {
-    fetch('http://localhost:4000/desastres')
+    fetch('https://sistema-de-gestion-backend.onrender.com/desastres')
       .then(res => res.json())
       .then(data => setDesastres(data))
   }, [])
 
   useEffect(() => {
-    fetch('http://localhost:4000/noticias')
+    fetch('https://sistema-de-gestion-backend.onrender.com/noticias')
       .then(res => res.json())
       .then(data => setNoticias(data))
   }, [recargar])
@@ -130,7 +130,7 @@ const NoticiasBlog = () => {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    await fetch('http://localhost:4000/noticias', {
+    await fetch('https://sistema-de-gestion-backend.onrender.com/noticias', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)

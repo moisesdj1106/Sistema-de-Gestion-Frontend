@@ -15,7 +15,7 @@ const DescargarDonacionesPDF = () => {
     }
     setDescargando(true);
     try {
-      const res = await fetch(`/donaciones/reporte/pdf?desde=${desde}&hasta=${hasta}`);
+      const res = await fetch(`https://sistema-de-gestion-backend.onrender.com/donaciones/reporte/pdf?desde=${desde}&hasta=${hasta}`);
       if (!res.ok) throw new Error('Error al generar PDF');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);

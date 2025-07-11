@@ -9,7 +9,7 @@ app.options('/api/registro', (req, res) => {
 
 export const registrarUsuario = async (datos) => {
   try {
-    const respuesta = await fetch('http://localhost:4000/users', {  // Asegúrate de usar /users
+    const respuesta = await fetch('https://sistema-de-gestion-backend.onrender.com/users', {  // Asegúrate de usar /users
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)

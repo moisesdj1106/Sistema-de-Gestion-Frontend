@@ -4,7 +4,7 @@ import {
   CButton, CModal, CModalHeader, CModalBody, CModalFooter, CForm, CFormInput, CFormSelect, CAlert, CPagination, CPaginationItem
 } from '@coreui/react'
 
-const API = 'http://localhost:4000'
+const API = 'https://sistema-de-gestion-backend.onrender.com'
 
 const ListaDonantesFull = () => {
   const [donantes, setDonantes] = useState([])

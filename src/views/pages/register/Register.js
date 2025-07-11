@@ -48,7 +48,7 @@ const Formulario = () => {
 
     // Tipos de documento
     useEffect(() => {
-        fetch('http://localhost:4000/documento')
+        fetch('https://sistema-de-gestion-backend.onrender.com/documento')
             .then(res => res.json())
             .then(setTipoDocumentos)
             .catch(console.error);
@@ -56,7 +56,7 @@ const Formulario = () => {
 
     // Listar países
     useEffect(() => {
-        fetch('http://localhost:4000/paises')
+        fetch('https://sistema-de-gestion-backend.onrender.com/paises')
             .then(res => res.json())
             .then(setPaises)
             .catch(console.error);
@@ -65,7 +65,7 @@ const Formulario = () => {
     // Listar estados al seleccionar país
     useEffect(() => {
         if (codpais) {
-            fetch(`http://localhost:4000/estados/${codpais}`)
+            fetch(`https://sistema-de-gestion-backend.onrender.com/estados/${codpais}`)
                 .then(res => res.json())
                 .then(setEstados)
                 .catch(console.error);
@@ -84,7 +84,7 @@ const Formulario = () => {
     // Listar municipios al seleccionar estado
     useEffect(() => {
         if (coesta) {
-            fetch(`http://localhost:4000/municipios/${coesta}`)
+            fetch(`https://sistema-de-gestion-backend.onrender.com/municipios/${coesta}`)
                 .then(res => res.json())
                 .then(setMunicipios)
                 .catch(console.error);
@@ -101,7 +101,7 @@ const Formulario = () => {
     // Listar parroquias al seleccionar municipio
     useEffect(() => {
         if (comuni) {
-            fetch(`http://localhost:4000/parroquias/${comuni}`)
+            fetch(`https://sistema-de-gestion-backend.onrender.com/parroquias/${comuni}`)
                 .then(res => res.json())
                 .then(setParroquias)
                 .catch(console.error);
@@ -116,7 +116,7 @@ const Formulario = () => {
     // Listar comunidades al seleccionar parroquia
     useEffect(() => {
         if (coparr) {
-            fetch(`http://localhost:4000/comunidades/${coparr}`)
+            fetch(`https://sistema-de-gestion-backend.onrender.com/comunidades/${coparr}`)
                 .then(res => res.json())
                 .then(setComunidades)
                 .catch(console.error);
@@ -133,7 +133,7 @@ const Formulario = () => {
             return;
         }
         try {
-            const response = await fetch('http://localhost:4000/users', {
+            const response = await fetch('https://sistema-de-gestion-backend.onrender.com/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

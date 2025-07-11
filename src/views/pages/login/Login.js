@@ -6,7 +6,7 @@ import {
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
 import { cilUser, cilLockLocked } from '@coreui/icons';
-
+import imgBackground from 'src/assets/images/carro.jpg'
 const Login = () => {
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState('');
@@ -39,8 +39,8 @@ const Login = () => {
 
   return (
     <div className="min-vh-100 d-flex flex-row align-items-center"
-      style={{
-        backgroundImage: "url('src/assets/images/carro.jpg')",
+      style={{ 
+        backgroundImage: `url(${imgBackground})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}>

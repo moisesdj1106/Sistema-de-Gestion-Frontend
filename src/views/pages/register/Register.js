@@ -17,6 +17,8 @@ import {
     CModalFooter
 } from '@coreui/react';
 
+import bg  from 'src/assets/images/carro.jpg';
+
 const Formulario = () => {
     const [cedula, setCedula] = useState('');
     const [nombres, setNombre] = useState('');
@@ -175,7 +177,7 @@ const Formulario = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundImage: "url('src/assets/images/carro.jpg')",
+                backgroundImage: `url(${bg})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
             }}

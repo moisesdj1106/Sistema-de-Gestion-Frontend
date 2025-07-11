@@ -2,7 +2,7 @@ import  { React, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CForm, CFormInput, CButton, CAlert, CContainer, CRow, CCol, CCard, CCardBody, CCardTitle } from "@coreui/react";
   
-
+import bg from '/src/assets/images/carro.jpg';
 const SolicitarRecuperacion = () => {
   const [email, setEmail] = useState("");
   const [mensaje, setMensaje] = useState("");
@@ -11,7 +11,7 @@ const SolicitarRecuperacion = () => {
 
   useEffect(() => {
     const original = document.body.style.background;
-    document.body.style.background = 'url("/src/assets/images/carro.jpg") center center / cover no-repeat fixed';
+    document.body.style.background = `url(${bg}) center center / cover no-repeat fixed`;
     return () => { document.body.style.background = original; };
   }, []);
 

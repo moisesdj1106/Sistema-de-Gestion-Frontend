@@ -14,7 +14,8 @@ import {
   CCardHeader
 } from "@coreui/react";
 
-console.log("restablecer contra")
+const API = "https://sistema-de-gestion-backend.onrender.com"; // Cambia aquí si tu backend cambia
+
 const RestablecerContrasena = () => {
   const { token } = useParams();
   const [nuevaContrasena, setNuevaContrasena] = useState("");
@@ -22,6 +23,12 @@ const RestablecerContrasena = () => {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
 
+  // Cambiar fondo del body
+useEffect(() => {
+  const original = document.body.style.background;
+  document.body.style.background = 'url("/src/assets/images/carro.jpg") center center / cover no-repeat fixed';
+  return () => { document.body.style.background = original; };
+}, []);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -31,7 +38,7 @@ const RestablecerContrasena = () => {
       return;
     }
     try {
-      const res = await fetch(`https://sistema-de-gestion-backend.onrender.com/restablecer/${token}`, {
+      const res = await fetch(`${API}/restablecer/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nuevaContrasena })

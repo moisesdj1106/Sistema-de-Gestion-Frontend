@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect } from 'react'
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { CSpinner, useColorModes } from '@coreui/react'
-import RestablecerContrasena from "src/components/RestablecerContrasena.js";
+import RestablecerContrasena from "./components/RestablecerContrasena.js";
 import SolicitarRecuperacion from './views/pages/school/contraseña.jsx';
 import './scss/style.scss'
 import './scss/examples.scss'

@@ -36,7 +36,7 @@ useEffect(() => {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:4000/restablecer/${token}`, {
+      const res = await fetch(`https://sistema-de-gestion-backend.onrender.com/restablecer/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nuevaContrasena })

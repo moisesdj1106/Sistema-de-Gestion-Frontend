@@ -13,7 +13,7 @@ import {
   CCardTitle,
   CCardHeader
 } from "@coreui/react";
-import bg from "../assets/images/carro.jpg";
+
 console.log("restablecer contra")
 const RestablecerContrasena = () => {
   const { token } = useParams();
@@ -22,12 +22,6 @@ const RestablecerContrasena = () => {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
 
-  // Cambiar fondo del body
-useEffect(() => {
-  const original = document.body.style.background;
-  document.body.style.background = `url(${bg}) center center / cover no-repeat fixed`;
-  return () => { document.body.style.background = original; };
-}, []);
 
   const handleSubmit = async e => {
     e.preventDefault();

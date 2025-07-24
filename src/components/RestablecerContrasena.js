@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import {
   CForm,
   CFormInput,
@@ -14,21 +13,20 @@ import {
   CCardHeader
 } from "@coreui/react";
 
-const API = "https://sistema-de-gestion-backend.onrender.com"; // Cambia aquí si tu backend cambia
+const API = "https://sistema-de-gestion-backend.onrender.com";
 
 const RestablecerContrasena = () => {
-  const { token } = useParams();
+  const [email, setEmail] = useState("");
   const [nuevaContrasena, setNuevaContrasena] = useState("");
   const [repeat, setRepeat] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
 
-  // Cambiar fondo del body
-useEffect(() => {
-  const original = document.body.style.background;
-  document.body.style.background = 'url("/src/assets/images/carro.jpg") center center / cover no-repeat fixed';
-  return () => { document.body.style.background = original; };
-}, []);
+  useEffect(() => {
+    const original = document.body.style.background;
+    document.body.style.background = 'url("/src/assets/images/carro.jpg") center center / cover no-repeat fixed';
+    return () => { document.body.style.background = original; };
+  }, []);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -38,10 +36,10 @@ useEffect(() => {
       return;
     }
     try {
-      const res = await fetch(`${API}/restablecer/${token}`, {
+      const res = await fetch(`${API}/restablecer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nuevaContrasena })
+        body: JSON.stringify({ email, nuevaContrasena })
       });
       const data = await res.json();
       if (res.ok) setMensaje(data.mensaje);
@@ -63,9 +61,19 @@ useEffect(() => {
             </CCardHeader>
             <CCardBody style={{ background: "#f8f9fa" }}>
               <p className="text-center mb-4" style={{ color: "#114c5f" }}>
-                Ingresa tu nueva contraseña y confírmala para restablecer el acceso.
+                Ingresa tu correo y la nueva contraseña para restablecer el acceso.
               </p>
               <CForm onSubmit={handleSubmit}>
+                <CFormInput
+                  type="email"
+                  placeholder="Correo"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  className="mb-3"
+                  floatingLabel="Correo"
+                  autoComplete="email"
+                />
                 <CFormInput
                   type="password"
                   placeholder="Nueva contraseña"
@@ -96,7 +104,7 @@ useEffect(() => {
                 </CButton>
                 <CButton
                   onClick={() => window.location.href = "/login"}
-                  type="submit"
+                  type="button"
                   color="primary"
                   className="w-100 py-2"
                   style={{ fontWeight: 600, fontSize: "1.1rem", background: "white",color:'#ff7043', borderColor: "#ff7043"}}

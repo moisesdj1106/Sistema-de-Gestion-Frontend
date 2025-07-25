@@ -22,7 +22,7 @@ const Listado = React.lazy(() => import('./views/pages/school/listadoafectacione
 const Documentos = React.lazy(() => import('./views/pages/school/documentos'))
 const General = React.lazy(() => import('./views/pages/school/general'))
 const Editar = React.lazy(() => import('./views/pages/school/editarusuario'))
-
+const Cambiar = React.lazy(() => import('./views/pages/school/RestablecerContrasena'))
 
 
 
@@ -51,6 +51,7 @@ const routes = [
   { path: '/documentos', name: 'Documentos', element: Documentos},
   { path: '/general', name: 'General', element: General},
   { path: '/editarusuario', name: 'Editar', element: Editar},
+  { path: '/RestablecerContrasena', name: 'Cambiar', element: Cambiar},
 
    
 

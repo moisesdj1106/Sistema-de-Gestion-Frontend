@@ -13,6 +13,7 @@ import {
   CCardTitle,
   CCardHeader
 } from "@coreui/react";
+import fondoCarro from "../../assets/images/carro.jpg"; // importa la imagen
 
 const RestablecerContrasena = () => {
   const { token } = useParams();
@@ -22,11 +23,11 @@ const RestablecerContrasena = () => {
   const [error, setError] = useState("");
 
   // Cambiar fondo del body
-useEffect(() => {
-  const original = document.body.style.background;
-  document.body.style.background = 'url("/src/assets/images/carro.jpg") center center / cover no-repeat fixed';
-  return () => { document.body.style.background = original; };
-}, []);
+  useEffect(() => {
+    const original = document.body.style.background;
+    document.body.style.background = `url(${fondoCarro}) center center / cover no-repeat fixed`;
+    return () => { document.body.style.background = original; };
+  }, []);
 
   const handleSubmit = async e => {
     e.preventDefault();

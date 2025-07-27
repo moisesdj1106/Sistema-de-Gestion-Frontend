@@ -252,16 +252,15 @@ const ComunidadesCrudCoreUI = () => {
         )}
       </CModal>
       <CRow>
-        <CCol md={5}>
+        <CCol xs={12} md={5} className="mb-4 mb-md-0">
           <CCard>
             <CCardHeader className="d-flex justify-content-between align-items-center">
               <strong>Registrar Comunidad</strong>
             </CCardHeader>
             <CCardBody>
               <CForm onSubmit={handleSubmit}>
-                {/* Selects pequeños y dependientes */}
                 <CRow className="mb-2">
-                  <CCol xs={3}>
+                  <CCol xs={6} sm={3}>
                     <CFormSelect
                       size="sm"
                       value={codpais}
@@ -275,7 +274,7 @@ const ComunidadesCrudCoreUI = () => {
                       ))}
                     </CFormSelect>
                   </CCol>
-                  <CCol xs={3}>
+                  <CCol xs={6} sm={3}>
                     <CFormSelect
                       size="sm"
                       value={coesta}
@@ -290,7 +289,7 @@ const ComunidadesCrudCoreUI = () => {
                       ))}
                     </CFormSelect>
                   </CCol>
-                  <CCol xs={3}>
+                  <CCol xs={6} sm={3}>
                     <CFormSelect
                       size="sm"
                       value={comuni}
@@ -305,7 +304,7 @@ const ComunidadesCrudCoreUI = () => {
                       ))}
                     </CFormSelect>
                   </CCol>
-                  <CCol xs={3}>
+                  <CCol xs={6} sm={3}>
                     <CFormSelect
                       size="sm"
                       value={coparr}
@@ -371,84 +370,87 @@ const ComunidadesCrudCoreUI = () => {
             </CCardBody>
           </CCard>
         </CCol>
-        <CCol md={7}>
+        <CCol xs={12} md={7}>
           <CCard>
             <CCardHeader>
               <strong>Comunidades Registradas</strong>
             </CCardHeader>
             <CCardBody style={{ padding: 0 }}>
-              <CTable
-                align="middle"
-                hover
-                className="mb-0"
-                style={{
-                  tableLayout: 'auto',
-                  fontSize: '0.93rem',
-                  textAlign: 'center',
-                  width: '100%',
-                }}
-              >
-                <CTableHead color="light">
-                  <CTableRow>
-                    <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Nombre</CTableHeaderCell>
-                    <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Dirección</CTableHeaderCell>
-                    <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Habitantes</CTableHeaderCell>
-                    <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Parroquia</CTableHeaderCell>
-                    <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Latitud</CTableHeaderCell>
-                    <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Longitud</CTableHeaderCell>
-                    {rol === 'admin' && (
-                      <CTableHeaderCell className="text-center" style={{ whiteSpace: 'normal' }}>Acciones</CTableHeaderCell>
-                    )}
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  {comunidadesToShow.map(comu => (
-                    <CTableRow key={comu.TMA_CODCOM}>
-                      <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_NOMBRE}</CTableDataCell>
-                      <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_DIRECC}</CTableDataCell>
-                      <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_HABITA}</CTableDataCell>
-                      <CTableDataCell style={{ textAlign: 'center' }}>
-                        {parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || comu.TMA_COPARR}
-                      </CTableDataCell>
-                      <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LATITU}</CTableDataCell>
-                      <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LONGIT}</CTableDataCell>
+              <div style={{ overflowX: 'auto' }}>
+                <CTable
+                  align="middle"
+                  hover
+                  className="mb-0"
+                  style={{
+                    tableLayout: 'auto',
+                    fontSize: '0.93rem',
+                    textAlign: 'center',
+                    width: '100%',
+                    minWidth: 600
+                  }}
+                >
+                  <CTableHead color="light">
+                    <CTableRow>
+                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Nombre</CTableHeaderCell>
+                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Dirección</CTableHeaderCell>
+                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Habitantes</CTableHeaderCell>
+                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Parroquia</CTableHeaderCell>
+                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Latitud</CTableHeaderCell>
+                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Longitud</CTableHeaderCell>
                       {rol === 'admin' && (
-                        <CTableDataCell>
-                          <div className="d-flex flex-column align-items-center">
-                            <CButton
-                              style={{
-                                backgroundColor: 'white',
-                                color: '#ff7043',
-                                minWidth: 90,
-                                maxWidth: 90,
-                                borderColor: '#ff7043'
-                              }}
-                              size="sm"
-                              className="mb-1"
-                              onClick={() => handleEditar(comu)}
-                            >
-                              Editar
-                            </CButton>
-                            <CButton
-                              size="sm"
-                              style={{
-                                minWidth: 90,
-                                maxWidth: 90,
-                                backgroundColor: 'white',
-                                color: 'red',
-                                borderColor: 'red'
-                              }}
-                              onClick={() => handleEliminar(comu.TMA_CODCOM)}
-                            >
-                              Eliminar
-                            </CButton>
-                          </div>
-                        </CTableDataCell>
+                        <CTableHeaderCell className="text-center" style={{ whiteSpace: 'normal' }}>Acciones</CTableHeaderCell>
                       )}
                     </CTableRow>
-                  ))}
-                </CTableBody>
-              </CTable>
+                  </CTableHead>
+                  <CTableBody>
+                    {comunidadesToShow.map(comu => (
+                      <CTableRow key={comu.TMA_CODCOM}>
+                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_NOMBRE}</CTableDataCell>
+                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_DIRECC}</CTableDataCell>
+                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_HABITA}</CTableDataCell>
+                        <CTableDataCell style={{ textAlign: 'center' }}>
+                          {parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || comu.TMA_COPARR}
+                        </CTableDataCell>
+                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LATITU}</CTableDataCell>
+                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LONGIT}</CTableDataCell>
+                        {rol === 'admin' && (
+                          <CTableDataCell>
+                            <div className="d-flex flex-column align-items-center">
+                              <CButton
+                                style={{
+                                  backgroundColor: 'white',
+                                  color: '#ff7043',
+                                  minWidth: 90,
+                                  maxWidth: 90,
+                                  borderColor: '#ff7043'
+                                }}
+                                size="sm"
+                                className="mb-1"
+                                onClick={() => handleEditar(comu)}
+                              >
+                                Editar
+                              </CButton>
+                              <CButton
+                                size="sm"
+                                style={{
+                                  minWidth: 90,
+                                  maxWidth: 90,
+                                  backgroundColor: 'white',
+                                  color: 'red',
+                                  borderColor: 'red'
+                                }}
+                                onClick={() => handleEliminar(comu.TMA_CODCOM)}
+                              >
+                                Eliminar
+                              </CButton>
+                            </div>
+                          </CTableDataCell>
+                        )}
+                      </CTableRow>
+                    ))}
+                  </CTableBody>
+                </CTable>
+              </div>
               {/* Paginación */}
               <div className="d-flex justify-content-center my-3">
                 <CPagination align="center" className="mb-0">
@@ -466,9 +468,9 @@ const ComunidadesCrudCoreUI = () => {
                       style={
                         currentPage === idx + 1
                           ? {
-                              backgroundColor: '#ff7043 !important',
-                              color: 'white !important',
-                              borderColor: '#ff7043 !important',
+                              backgroundColor: '#ff7043',
+                              color: 'white',
+                              borderColor: '#ff7043',
                               borderRadius: '6px'
                             }
                           : {}

@@ -7,6 +7,7 @@ import {
 import CIcon from '@coreui/icons-react';
 import { cilUser, cilLockLocked } from '@coreui/icons';
 import imgBackground from 'src/assets/images/carro.jpg'
+
 const Login = () => {
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState('');
@@ -39,7 +40,7 @@ const Login = () => {
 
   return (
     <div className="min-vh-100 d-flex flex-row align-items-center"
-      style={{ 
+      style={{
         backgroundImage: `url(${imgBackground})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -48,7 +49,7 @@ const Login = () => {
         <CRow className="justify-content-center">
           <CCol md={8}>
             <CCardGroup>
-              <CCard className="p-4" style={{ background: '#fff', borderRight: '4px solidrgb(255, 255, 255)' }}>
+              <CCard className="p-4" style={{ background: '#fff', borderRight: '4px solid rgb(255, 255, 255)' }}>
                 <CCardBody>
                   <CForm onSubmit={handleLogin}>
                     <h1 className="text-black fw-bold mb-3">Iniciar Sesión</h1>
@@ -96,8 +97,17 @@ const Login = () => {
                       </CCol>
                     </CRow>
                   </CForm>
+                  {/* Botón registro para pantallas pequeñas */}
+                  <div className="d-block d-md-none mt-4 text-center">
+                    <Link to="/register">
+                      <CButton color="primary" className="fw-bold" style={{ background: "#FF7043", border: "none" }}>
+                        ¡Regístrate ahora!
+                      </CButton>
+                    </Link>
+                  </div>
                 </CCardBody>
               </CCard>
+              {/* Pantallas medianas y grandes */}
               <CCard
                 className="text-white py-5 d-none d-md-block"
                 style={{

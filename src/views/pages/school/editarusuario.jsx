@@ -130,7 +130,17 @@ const Usuarios = () => {
             onChange={e => setBusqueda(e.target.value)}
           />
           <div style={{ overflowX: 'auto' }}>
-            <table border="1" cellPadding={8} style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+            <table
+              border="1"
+              cellPadding={8}
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                minWidth: 600,
+                fontSize: '0.97rem',
+                textAlign: 'center'
+              }}
+            >
               <thead>
                 <tr>
                   <th>Cédula</th>
@@ -156,15 +166,18 @@ const Usuarios = () => {
                     <td>{u.usuario}</td>
                     <td>{u.rol}</td>
                     <td>
-                      <CButton style={{ color:'white', borderColor:'#ff7043', backgroundColor:'#ff7043' }} size="sm" onClick={() => handleEditar(u)}>Editar</CButton>
-                      <CButton
-                        color="danger text-white"
-                        size="sm"
-                        style={{ marginLeft: 8 }}
-                        onClick={() => handleEliminar(u.cedula)}
-                      >
-                        Eliminar
-                      </CButton>
+                      <div className="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
+                        <CButton style={{ color:'white', borderColor:'#ff7043', backgroundColor:'#ff7043' }} size="sm" onClick={() => handleEditar(u)}>
+                          Editar
+                        </CButton>
+                        <CButton
+                          color="danger text-white"
+                          size="sm"
+                          onClick={() => handleEliminar(u.cedula)}
+                        >
+                          Eliminar
+                        </CButton>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -173,7 +186,7 @@ const Usuarios = () => {
           </div>
           {/* Paginación */}
           {totalPaginas > 1 && (
-            <div className="d-flex justify-content-center align-items-center mt-4">
+            <div className="d-flex justify-content-center align-items-center mt-4 flex-wrap">
               <CButton
                 style={{ marginRight: 8 }}
                 color="secondary"

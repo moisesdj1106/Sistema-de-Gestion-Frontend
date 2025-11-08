@@ -292,10 +292,6 @@ const Formulario = () => {
         setTelefono(e.target.value.replace(/\D/g, ''));
     };
 
-    // cálculo de fecha máxima (mayor de 18 años)
-    const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-    const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
-
     return (
         <div
             style={{

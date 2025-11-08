@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
     CForm,
@@ -247,6 +247,55 @@ const Formulario = () => {
         if (wasSuccess) navigate('/login');
     };
 
+    // Refs para navegación con Enter
+    const cedulaRef = useRef(null);
+    const nombresRef = useRef(null);
+    const apellidosRef = useRef(null);
+    const sexoRef = useRef(null);
+    const fechaRef = useRef(null);
+    const usuarioRef = useRef(null);
+    const passwordRef = useRef(null);
+    const repeatRef = useRef(null);
+    const paisRef = useRef(null);
+    const estadoRef = useRef(null);
+    const muniRef = useRef(null);
+    const parrRef = useRef(null);
+    const comRef = useRef(null);
+    const direccionRef = useRef(null);
+    const telefonoRef = useRef(null);
+    const emailRef = useRef(null);
+
+    // función helper para avanzar al siguiente campo cuando presionan Enter
+    const handleEnter = (e, nextRef) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (nextRef && nextRef.current) nextRef.current.focus();
+        }
+    };
+
+    // validaciones de entrada en tiempo real (evitan caracteres no permitidos)
+    const handleCedulaChange = e => {
+        // solo dígitos
+        setCedula(e.target.value.replace(/\D/g, ''));
+    };
+
+    const handleNombresChange = e => {
+        // solo letras, espacios, acentos, guion y apóstrofe
+        setNombre(e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, ''));
+    };
+
+    const handleApellidosChange = e => {
+        setApellidos(e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, ''));
+    };
+
+    const handleTelefonoChange = e => {
+        setTelefono(e.target.value.replace(/\D/g, ''));
+    };
+
+    // cálculo de fecha máxima (mayor de 18 años)
+    const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
+
     return (
         <div
             style={{
@@ -273,6 +322,7 @@ const Formulario = () => {
                                     onChange={e => setTipodo(e.target.value)}
                                     required
                                     className="mb-3"
+                                    ref={paisRef} /* pequeño ajuste: no afecta el select navigation si no se usa */
                                 >
                                     <option value="">Seleccione tipo de documento</option>
                                     {tipoDocumentos.map(tipo => (
@@ -281,44 +331,57 @@ const Formulario = () => {
                                         </option>
                                     ))}
                                 </CFormSelect>
+
                                 <CFormInput
                                     type="text"
                                     label="Documento de identidad"
                                     placeholder="Ingrese el N° documento"
                                     value={cedula}
-                                    onChange={e => setCedula(e.target.value)}
+                                    onChange={handleCedulaChange}
                                     required
                                     className="mb-3"
+                                    ref={cedulaRef}
+                                    onKeyDown={e => handleEnter(e, nombresRef)}
                                 />
+
                                 <CFormInput
                                     type="text"
                                     label="Nombres"
                                     placeholder="Ingrese sus nombres"
                                     value={nombres}
-                                    onChange={e => setNombre(e.target.value)}
+                                    onChange={handleNombresChange}
                                     required
                                     className="mb-3"
+                                    ref={nombresRef}
+                                    onKeyDown={e => handleEnter(e, apellidosRef)}
                                 />
+
                                 <CFormInput
                                     type="text"
                                     label="Apellidos"
                                     placeholder="Ingrese sus apellidos"
                                     value={apellidos}
-                                    onChange={e => setApellidos(e.target.value)}
+                                    onChange={handleApellidosChange}
                                     required
                                     className="mb-3"
+                                    ref={apellidosRef}
+                                    onKeyDown={e => handleEnter(e, sexoRef)}
                                 />
+
                                 <CFormSelect
                                     label="Sexo"
                                     value={sexo}
                                     onChange={e => setSexo(e.target.value)}
                                     required
                                     className="mb-3"
+                                    ref={sexoRef}
+                                    onKeyDown={e => handleEnter(e, fechaRef)}
                                 >
                                     <option value="">Seleccione sexo</option>
                                     <option value="M">Masculino</option>
                                     <option value="F">Femenino</option>
                                 </CFormSelect>
+
                                 <CFormInput
                                     type="date"
                                     label="Fecha de Nacimiento"
@@ -327,7 +390,10 @@ const Formulario = () => {
                                     required
                                     className="mb-3"
                                     max={maxFechaNacimiento}
+                                    ref={fechaRef}
+                                    onKeyDown={e => handleEnter(e, usuarioRef)}
                                 />
+
                                 <CFormInput
                                     type="text"
                                     label="Usuario"
@@ -336,7 +402,10 @@ const Formulario = () => {
                                     onChange={e => setUsuario(e.target.value)}
                                     required
                                     className="mb-3"
+                                    ref={usuarioRef}
+                                    onKeyDown={e => handleEnter(e, passwordRef)}
                                 />
+
                                 <CFormInput
                                     type="password"
                                     label="Contraseña"
@@ -345,7 +414,10 @@ const Formulario = () => {
                                     onChange={e => setPassword(e.target.value)}
                                     required
                                     className="mb-3"
+                                    ref={passwordRef}
+                                    onKeyDown={e => handleEnter(e, repeatRef)}
                                 />
+
                                 <CFormInput
                                     type="password"
                                     label="Repetir contraseña"
@@ -354,8 +426,11 @@ const Formulario = () => {
                                     onChange={e => setRepeatPassword(e.target.value)}
                                     required
                                     className="mb-3"
+                                    ref={repeatRef}
+                                    onKeyDown={e => handleEnter(e, paisRef)}
                                 />
                             </CCol>
+
                             <CCol md={6}>
                                 <CFormSelect
                                     label="País"
@@ -363,6 +438,8 @@ const Formulario = () => {
                                     onChange={e => setCodpais(e.target.value)}
                                     required
                                     className="mb-3"
+                                    ref={paisRef}
+                                    onKeyDown={e => handleEnter(e, estadoRef)}
                                 >
                                     <option value="">Seleccione país</option>
                                     {paises.map(pais => (
@@ -371,6 +448,7 @@ const Formulario = () => {
                                         </option>
                                     ))}
                                 </CFormSelect>
+
                                 <CFormSelect
                                     label="Estado"
                                     value={coesta}
@@ -378,6 +456,8 @@ const Formulario = () => {
                                     required
                                     className="mb-3"
                                     disabled={!codpais}
+                                    ref={estadoRef}
+                                    onKeyDown={e => handleEnter(e, muniRef)}
                                 >
                                     <option value="">Seleccione estado</option>
                                     {estados.map(edo => (
@@ -386,6 +466,7 @@ const Formulario = () => {
                                         </option>
                                     ))}
                                 </CFormSelect>
+
                                 <CFormSelect
                                     label="Municipio"
                                     value={comuni}
@@ -393,6 +474,8 @@ const Formulario = () => {
                                     required
                                     className="mb-3"
                                     disabled={!coesta}
+                                    ref={muniRef}
+                                    onKeyDown={e => handleEnter(e, parrRef)}
                                 >
                                     <option value="">Seleccione municipio</option>
                                     {municipios.map(muni => (
@@ -401,6 +484,7 @@ const Formulario = () => {
                                         </option>
                                     ))}
                                 </CFormSelect>
+
                                 <CFormSelect
                                     label="Parroquia"
                                     value={coparr}
@@ -408,6 +492,8 @@ const Formulario = () => {
                                     required
                                     className="mb-3"
                                     disabled={!comuni}
+                                    ref={parrRef}
+                                    onKeyDown={e => handleEnter(e, comRef)}
                                 >
                                     <option value="">Seleccione parroquia</option>
                                     {parroquias.map(parr => (
@@ -416,6 +502,7 @@ const Formulario = () => {
                                         </option>
                                     ))}
                                 </CFormSelect>
+
                                 <CFormSelect
                                     label="Comunidad"
                                     value={codcom}
@@ -423,6 +510,8 @@ const Formulario = () => {
                                     required
                                     className="mb-3"
                                     disabled={!coparr}
+                                    ref={comRef}
+                                    onKeyDown={e => handleEnter(e, direccionRef)}
                                 >
                                     <option value="">Seleccione comunidad</option>
                                     {comunidades.map(comu => (
@@ -431,6 +520,7 @@ const Formulario = () => {
                                         </option>
                                     ))}
                                 </CFormSelect>
+
                                 <CFormInput
                                     type="text"
                                     label="Dirección"
@@ -439,15 +529,21 @@ const Formulario = () => {
                                     onChange={e => setDireccion(e.target.value)}
                                     required
                                     className="mb-3"
+                                    ref={direccionRef}
+                                    onKeyDown={e => handleEnter(e, telefonoRef)}
                                 />
+
                                 <CFormInput
                                     type="text"
                                     label="Teléfono"
                                     placeholder="Ejm 04147415896"
                                     value={telefono}
-                                    onChange={e => setTelefono(e.target.value)}
+                                    onChange={handleTelefonoChange}
                                     className="mb-3"
+                                    ref={telefonoRef}
+                                    onKeyDown={e => handleEnter(e, emailRef)}
                                 />
+
                                 <CFormInput
                                     type="email"
                                     label="Correo"
@@ -456,6 +552,7 @@ const Formulario = () => {
                                     onChange={e => setEmail(e.target.value)}
                                     required
                                     className="mb-3"
+                                    ref={emailRef}
                                 />
                             </CCol>
                         </CRow>

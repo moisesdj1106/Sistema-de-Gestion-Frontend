@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   CContainer, CRow, CCol, CCard, CCardBody, CCardHeader, CButton, CTable, CTableHead, CTableRow,
   CTableHeaderCell, CTableBody, CTableDataCell, CForm, CFormInput, CFormSelect, CModal, CModalHeader,
-  CModalTitle, CModalBody, CModalFooter, CToast, CToastBody, CToaster, CPagination, CPaginationItem
+  CModalTitle, CModalBody, CModalFooter, CToast, CToaster, CPagination, CPaginationItem
 } from '@coreui/react';
 
 const API = 'https://sistema-de-gestion-backend.onrender.com';
@@ -39,7 +39,34 @@ const ComunidadesCrudCoreUI = () => {
   const itemsPerPage = 5;
 
   // Simulación de rol
-  const [rol, setRol] = useState(localStorage.getItem('rol') || 'usuario');
+  const [rol] = useState(localStorage.getItem('rol') || 'usuario');
+
+  // responsive: show cards on xs
+  const [isSmall, setIsSmall] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const onResize = () => setIsSmall(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Refs para atajos (Enter -> next)
+  const paisRef = useRef(null);
+  const estadoRef = useRef(null);
+  const muniRef = useRef(null);
+  const parrRef = useRef(null);
+  const nombreRef = useRef(null);
+  const direccionRef = useRef(null);
+  const habitaRef = useRef(null);
+  const latRef = useRef(null);
+  const longRef = useRef(null);
+  const submitRef = useRef(null);
+
+  const handleEnter = (e, nextRef) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (nextRef && nextRef.current) nextRef.current.focus();
+    }
+  };
 
   // Cargar países al inicio
   useEffect(() => {
@@ -103,12 +130,14 @@ const ComunidadesCrudCoreUI = () => {
   const cargarComunidades = () => {
     fetch(`${API}/comunidades`)
       .then(res => res.json())
-      .then(data => setComunidades(data));
+      .then(data => setComunidades(data))
+      .catch(console.error);
   };
   const cargarParroquias = () => {
     fetch(`${API}/parroquias`)
       .then(res => res.json())
-      .then(data => setParroquias(data));
+      .then(data => setParroquias(data))
+      .catch(console.error);
   };
 
   useEffect(() => {
@@ -116,10 +145,15 @@ const ComunidadesCrudCoreUI = () => {
     cargarParroquias();
   }, []);
 
-  // Manejar cambios en el formulario
+  // Manejar cambios en el formulario (con limpieza básica)
   const handleChange = e => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    // Si es número de habitantes permitir solo dígitos
+    if (name === 'habita') {
+      setForm({ ...form, [name]: value.replace(/\D/g, '') });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
     if (name === 'coparr') setCoparr(value);
   };
 
@@ -139,6 +173,8 @@ const ComunidadesCrudCoreUI = () => {
       setComuni('');
       setCoparr('');
       cargarComunidades();
+      // focus primer campo
+      if (paisRef.current) paisRef.current.focus();
     } else {
       const error = await res.json();
       setErrorModal({ show: true, message: error.message || 'Error al registrar' });
@@ -157,6 +193,11 @@ const ComunidadesCrudCoreUI = () => {
     });
     setEditId(comunidad.TMA_CODCOM);
     setVisible(true);
+    // small delay to let modal render then focus
+    setTimeout(() => {
+      const el = document.querySelector('#modal-nombre');
+      if (el) el.focus();
+    }, 150);
   };
 
   // Guardar edición
@@ -211,7 +252,7 @@ const ComunidadesCrudCoreUI = () => {
   };
 
   // PAGINACIÓN: calcular datos a mostrar
-  const totalPages = Math.ceil(comunidades.length / itemsPerPage);
+  const totalPages = Math.ceil(comunidades.length / itemsPerPage) || 1;
   const comunidadesToShow = comunidades.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -239,7 +280,6 @@ const ComunidadesCrudCoreUI = () => {
           {/* Si es confirmación de eliminar, muestra los botones originales */}
           {typeof errorModal.message !== 'string' && errorModal.show && errorModal.message}
         </CModalBody>
-        {/* Solo muestra el botón aceptar si no es confirmación de eliminar */}
         {(toast.show || (errorModal.show && typeof errorModal.message === 'string')) && (
           <CModalFooter>
             <CButton style={{backgroundColor:'white',color:'#ff7043', borderColor:'#ff7043'}} onClick={() => {
@@ -251,15 +291,17 @@ const ComunidadesCrudCoreUI = () => {
           </CModalFooter>
         )}
       </CModal>
-      <CRow>
-        <CCol xs={12} md={5} className="mb-4 mb-md-0">
-          <CCard>
+
+      <CRow className="g-3">
+        {/* FORM */}
+        <CCol xs={12} md={5}>
+          <CCard className="shadow-sm">
             <CCardHeader className="d-flex justify-content-between align-items-center">
               <strong>Registrar Comunidad</strong>
             </CCardHeader>
             <CCardBody>
               <CForm onSubmit={handleSubmit}>
-                <CRow className="mb-2">
+                <CRow className="g-2 mb-2">
                   <CCol xs={6} sm={3}>
                     <CFormSelect
                       size="sm"
@@ -267,6 +309,8 @@ const ComunidadesCrudCoreUI = () => {
                       onChange={e => setCodpais(e.target.value)}
                       aria-label="País"
                       required
+                      ref={paisRef}
+                      onKeyDown={e => handleEnter(e, estadoRef)}
                     >
                       <option value="">País</option>
                       {paises.map(p => (
@@ -282,6 +326,8 @@ const ComunidadesCrudCoreUI = () => {
                       aria-label="Estado"
                       required
                       disabled={!codpais}
+                      ref={estadoRef}
+                      onKeyDown={e => handleEnter(e, muniRef)}
                     >
                       <option value="">Estado</option>
                       {estados.map(e => (
@@ -297,6 +343,8 @@ const ComunidadesCrudCoreUI = () => {
                       aria-label="Municipio"
                       required
                       disabled={!coesta}
+                      ref={muniRef}
+                      onKeyDown={e => handleEnter(e, parrRef)}
                     >
                       <option value="">Municipio</option>
                       {municipios.map(m => (
@@ -313,6 +361,8 @@ const ComunidadesCrudCoreUI = () => {
                       required
                       disabled={!comuni}
                       name="coparr"
+                      ref={parrRef}
+                      onKeyDown={e => handleEnter(e, nombreRef)}
                     >
                       <option value="">Parroquia</option>
                       {parroquiasForm.map(p => (
@@ -321,6 +371,7 @@ const ComunidadesCrudCoreUI = () => {
                     </CFormSelect>
                   </CCol>
                 </CRow>
+
                 <CFormInput
                   label="Nombre"
                   name="nombre"
@@ -329,6 +380,8 @@ const ComunidadesCrudCoreUI = () => {
                   onChange={handleChange}
                   required
                   className="mb-3"
+                  ref={nombreRef}
+                  onKeyDown={e => handleEnter(e, direccionRef)}
                 />
                 <CFormInput
                   label="Dirección"
@@ -338,6 +391,8 @@ const ComunidadesCrudCoreUI = () => {
                   onChange={handleChange}
                   required
                   className="mb-3"
+                  ref={direccionRef}
+                  onKeyDown={e => handleEnter(e, habitaRef)}
                 />
                 <CFormInput
                   label="Habitantes"
@@ -348,6 +403,8 @@ const ComunidadesCrudCoreUI = () => {
                   onChange={handleChange}
                   required
                   className="mb-3"
+                  ref={habitaRef}
+                  onKeyDown={e => handleEnter(e, latRef)}
                 />
                 <CFormInput
                   label="Latitud"
@@ -356,6 +413,8 @@ const ComunidadesCrudCoreUI = () => {
                   value={form.latitud}
                   onChange={handleChange}
                   className="mb-3"
+                  ref={latRef}
+                  onKeyDown={e => handleEnter(e, longRef)}
                 />
                 <CFormInput
                   label="Longitud"
@@ -364,93 +423,89 @@ const ComunidadesCrudCoreUI = () => {
                   value={form.longitud}
                   onChange={handleChange}
                   className="mb-3"
+                  ref={longRef}
+                  onKeyDown={e => handleEnter(e, submitRef)}
                 />
-                <CButton style={{backgroundColor:'#FF7043', color:'white'}} type="submit" className="w-100">Registrar</CButton>
+                <div className="d-grid">
+                  <CButton ref={submitRef} style={{ backgroundColor: '#FF7043', color: 'white' }} type="submit">
+                    Registrar
+                  </CButton>
+                </div>
               </CForm>
             </CCardBody>
           </CCard>
         </CCol>
+
+        {/* LISTADO: tabla para md+ y tarjetas para xs */}
         <CCol xs={12} md={7}>
-          <CCard>
+          <CCard className="shadow-sm">
             <CCardHeader>
               <strong>Comunidades Registradas</strong>
             </CCardHeader>
-            <CCardBody style={{ padding: 0 }}>
-              <div style={{ overflowX: 'auto' }}>
-                <CTable
-                  align="middle"
-                  hover
-                  className="mb-0"
-                  style={{
-                    tableLayout: 'auto',
-                    fontSize: '0.93rem',
-                    textAlign: 'center',
-                    width: '100%',
-                    minWidth: 600
-                  }}
-                >
-                  <CTableHead color="light">
-                    <CTableRow>
-                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Nombre</CTableHeaderCell>
-                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Dirección</CTableHeaderCell>
-                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Habitantes</CTableHeaderCell>
-                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Parroquia</CTableHeaderCell>
-                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Latitud</CTableHeaderCell>
-                      <CTableHeaderCell style={{ textAlign: 'center', whiteSpace: 'normal' }}>Longitud</CTableHeaderCell>
-                      {rol === 'admin' && (
-                        <CTableHeaderCell className="text-center" style={{ whiteSpace: 'normal' }}>Acciones</CTableHeaderCell>
-                      )}
-                    </CTableRow>
-                  </CTableHead>
-                  <CTableBody>
-                    {comunidadesToShow.map(comu => (
-                      <CTableRow key={comu.TMA_CODCOM}>
-                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_NOMBRE}</CTableDataCell>
-                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_DIRECC}</CTableDataCell>
-                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_HABITA}</CTableDataCell>
-                        <CTableDataCell style={{ textAlign: 'center' }}>
-                          {parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || comu.TMA_COPARR}
-                        </CTableDataCell>
-                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LATITU}</CTableDataCell>
-                        <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LONGIT}</CTableDataCell>
+            <CCardBody>
+              {/* Tarjetas para pantallas pequeñas */}
+              {isSmall && (
+                <div className="d-flex flex-column gap-3">
+                  {comunidadesToShow.map(comu => (
+                    <CCard key={comu.TMA_CODCOM} className="p-3" style={{ borderRadius: 10 }}>
+                      <div className="d-flex justify-content-between align-items-start">
+                        <div>
+                          <h6 style={{ margin: 0 }}>{comu.TMA_NOMBRE}</h6>
+                          <small className="text-muted">{parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || comu.TMA_COPARR}</small>
+                          <p className="mb-1" style={{ fontSize: 13 }}>{comu.TMA_DIRECC}</p>
+                          <div style={{ fontSize: 13 }}><strong>Habitantes:</strong> {comu.TMA_HABITA}</div>
+                        </div>
                         {rol === 'admin' && (
-                          <CTableDataCell>
-                            <div className="d-flex flex-column align-items-center">
-                              <CButton
-                                style={{
-                                  backgroundColor: 'white',
-                                  color: '#ff7043',
-                                  minWidth: 90,
-                                  maxWidth: 90,
-                                  borderColor: '#ff7043'
-                                }}
-                                size="sm"
-                                className="mb-1"
-                                onClick={() => handleEditar(comu)}
-                              >
-                                Editar
-                              </CButton>
-                              <CButton
-                                size="sm"
-                                style={{
-                                  minWidth: 90,
-                                  maxWidth: 90,
-                                  backgroundColor: 'white',
-                                  color: 'red',
-                                  borderColor: 'red'
-                                }}
-                                onClick={() => handleEliminar(comu.TMA_CODCOM)}
-                              >
-                                Eliminar
-                              </CButton>
-                            </div>
-                          </CTableDataCell>
+                          <div className="d-flex flex-column align-items-end">
+                            <CButton size="sm" className="mb-2" style={{ backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043' }} onClick={() => handleEditar(comu)}>Editar</CButton>
+                            <CButton size="sm" style={{ backgroundColor: 'white', color: 'red', borderColor: 'red' }} onClick={() => handleEliminar(comu.TMA_CODCOM)}>Eliminar</CButton>
+                          </div>
                         )}
+                      </div>
+                    </CCard>
+                  ))}
+                </div>
+              )}
+
+              {/* Tabla para md+ */}
+              {!isSmall && (
+                <div style={{ overflowX: 'auto' }}>
+                  <CTable align="middle" hover className="mb-0" style={{ minWidth: 650 }}>
+                    <CTableHead color="light">
+                      <CTableRow>
+                        <CTableHeaderCell>Nombre</CTableHeaderCell>
+                        <CTableHeaderCell>Dirección</CTableHeaderCell>
+                        <CTableHeaderCell>Habitantes</CTableHeaderCell>
+                        <CTableHeaderCell>Parroquia</CTableHeaderCell>
+                        <CTableHeaderCell>Latitud</CTableHeaderCell>
+                        <CTableHeaderCell>Longitud</CTableHeaderCell>
+                        {rol === 'admin' && <CTableHeaderCell>Acciones</CTableHeaderCell>}
                       </CTableRow>
-                    ))}
-                  </CTableBody>
-                </CTable>
-              </div>
+                    </CTableHead>
+                    <CTableBody>
+                      {comunidadesToShow.map(comu => (
+                        <CTableRow key={comu.TMA_CODCOM}>
+                          <CTableDataCell>{comu.TMA_NOMBRE}</CTableDataCell>
+                          <CTableDataCell>{comu.TMA_DIRECC}</CTableDataCell>
+                          <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_HABITA}</CTableDataCell>
+                          <CTableDataCell>{parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || comu.TMA_COPARR}</CTableDataCell>
+                          <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LATITU}</CTableDataCell>
+                          <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LONGIT}</CTableDataCell>
+                          {rol === 'admin' && (
+                            <CTableDataCell>
+                              <div className="d-flex gap-2">
+                                <CButton size="sm" style={{ backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043' }} onClick={() => handleEditar(comu)}>Editar</CButton>
+                                <CButton size="sm" style={{ backgroundColor: 'white', color: 'red', borderColor: 'red' }} onClick={() => handleEliminar(comu.TMA_CODCOM)}>Eliminar</CButton>
+                              </div>
+                            </CTableDataCell>
+                          )}
+                        </CTableRow>
+                      ))}
+                    </CTableBody>
+                  </CTable>
+                </div>
+              )}
+
               {/* Paginación */}
               <div className="d-flex justify-content-center my-3">
                 <CPagination align="center" className="mb-0">
@@ -465,16 +520,7 @@ const ComunidadesCrudCoreUI = () => {
                       key={idx + 1}
                       active={currentPage === idx + 1}
                       onClick={() => setCurrentPage(idx + 1)}
-                      style={
-                        currentPage === idx + 1
-                          ? {
-                              backgroundColor: '#ff7043',
-                              color: 'white',
-                              borderColor: '#ff7043',
-                              borderRadius: '6px'
-                            }
-                          : {}
-                      }
+                      style={ currentPage === idx + 1 ? { backgroundColor: '#ff7043', color: 'white', borderColor: '#ff7043', borderRadius: 6 } : {}}
                     >
                       {idx + 1}
                     </CPaginationItem>
@@ -500,6 +546,7 @@ const ComunidadesCrudCoreUI = () => {
         <CModalBody>
           <CForm>
             <CFormInput
+              id="modal-nombre"
               label="Nombre"
               name="nombre"
               value={form.nombre}

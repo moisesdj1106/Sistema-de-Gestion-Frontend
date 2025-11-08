@@ -29,6 +29,7 @@ const ComunidadesCrudCoreUI = () => {
     latitud: '',
     longitud: ''
   });
+  const [errors, setErrors] = useState({}); // mensajes por campo
   const [editId, setEditId] = useState(null);
   const [visible, setVisible] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', color: 'success' });
@@ -68,98 +69,144 @@ const ComunidadesCrudCoreUI = () => {
     }
   };
 
-  // Cargar países al inicio
+  // Cargar datos iniciales
   useEffect(() => {
-    fetch(`${API}/paises`)
-      .then(res => res.json())
-      .then(setPaises)
-      .catch(console.error);
-  }, []);
-
-  // Cargar estados al seleccionar país
-  useEffect(() => {
-    if (codpais) {
-      fetch(`${API}/estados/${codpais}`)
-        .then(res => res.json())
-        .then(setEstados)
-        .catch(console.error);
-    } else {
-      setEstados([]);
-      setCoesta('');
-    }
-    setMunicipios([]);
-    setComuni('');
-    setParroquiasForm([]);
-    setCoparr('');
-  }, [codpais]);
-
-  // Cargar municipios al seleccionar estado
-  useEffect(() => {
-    if (coesta) {
-      fetch(`${API}/municipios/${coesta}`)
-        .then(res => res.json())
-        .then(setMunicipios)
-        .catch(console.error);
-    } else {
-      setMunicipios([]);
-      setComuni('');
-    }
-    setParroquiasForm([]);
-    setCoparr('');
-  }, [coesta]);
-
-  // Cargar parroquias al seleccionar municipio
-  useEffect(() => {
-    if (comuni) {
-      fetch(`${API}/parroquias/${comuni}`)
-        .then(res => res.json())
-        .then(setParroquiasForm)
-        .catch(console.error);
-    } else {
-      setParroquiasForm([]);
-      setCoparr('');
-    }
-  }, [comuni]);
-
-  // Cuando cambia coparr en el formulario, actualiza el form principal
-  useEffect(() => {
-    setForm(f => ({ ...f, coparr }));
-  }, [coparr]);
-
-  // Cargar comunidades y parroquias para la tabla y edición
-  const cargarComunidades = () => {
-    fetch(`${API}/comunidades`)
-      .then(res => res.json())
-      .then(data => setComunidades(data))
-      .catch(console.error);
-  };
-  const cargarParroquias = () => {
-    fetch(`${API}/parroquias`)
-      .then(res => res.json())
-      .then(data => setParroquias(data))
-      .catch(console.error);
-  };
-
-  useEffect(() => {
+    fetch(`${API}/paises`).then(res=>res.json()).then(setPaises).catch(console.error);
     cargarComunidades();
     cargarParroquias();
   }, []);
 
-  // Manejar cambios en el formulario (con limpieza básica)
+  const cargarComunidades = () => {
+    fetch(`${API}/comunidades`).then(res=>res.json()).then(setComunidades).catch(console.error);
+  };
+  const cargarParroquias = () => {
+    fetch(`${API}/parroquias`).then(res=>res.json()).then(setParroquias).catch(console.error);
+  };
+
+  // Cargar estados, municipios y parroquias según selección
+  useEffect(() => {
+    if (codpais) {
+      fetch(`${API}/estados/${codpais}`).then(r=>r.json()).then(setEstados).catch(console.error);
+    } else {
+      setEstados([]); setCoesta('');
+    }
+    setMunicipios([]); setComuni(''); setParroquiasForm([]); setCoparr('');
+  }, [codpais]);
+
+  useEffect(() => {
+    if (coesta) {
+      fetch(`${API}/municipios/${coesta}`).then(r=>r.json()).then(setMunicipios).catch(console.error);
+    } else {
+      setMunicipios([]); setComuni('');
+    }
+    setParroquiasForm([]); setCoparr('');
+  }, [coesta]);
+
+  useEffect(() => {
+    if (comuni) {
+      fetch(`${API}/parroquias/${comuni}`).then(r=>r.json()).then(setParroquiasForm).catch(console.error);
+    } else {
+      setParroquiasForm([]); setCoparr('');
+    }
+  }, [comuni]);
+
+  useEffect(() => {
+    setForm(f => ({ ...f, coparr }));
+  }, [coparr]);
+
+  // Validación por campo -> devuelve true si válido y actualiza errors
+  const validateField = (name, value) => {
+    let msg = '';
+    const v = String(value ?? '').trim();
+
+    if (name === 'nombre') {
+      if (!v) msg = 'Nombre es obligatorio';
+      else if (v.length < 3) msg = 'Nombre demasiado corto';
+    }
+
+    if (name === 'direccion') {
+      if (!v) msg = 'Dirección es obligatoria';
+    }
+
+    if (name === 'habita') {
+      if (!v) msg = 'Habitantes es obligatorio';
+      else if (!/^\d+$/.test(v)) msg = 'Solo números enteros';
+    }
+
+    if (name === 'coparr') {
+      if (!v) msg = 'Seleccione una parroquia';
+    }
+
+    if (name === 'latitud') {
+      if (!v) msg = 'Latitud es obligatoria';
+      else if (!/^-?\d+(\.\d+)?$/.test(v)) msg = 'Formato inválido (ej. 7.1548 o -7.1548)';
+      else {
+        const num = parseFloat(v);
+        if (num < -90 || num > 90) msg = 'Latitud debe estar entre -90 y 90';
+      }
+    }
+
+    if (name === 'longitud') {
+      if (!v) msg = 'Longitud es obligatoria';
+      else if (!/^-\d+(\.\d+)?$/.test(v)) msg = 'La longitud debe ser un número negativo (ej. -72.1245)';
+      else {
+        const num = parseFloat(v);
+        if (num < -180 || num >= 0) msg = 'Longitud debe estar entre -180 y 0 (negativa)';
+      }
+    }
+
+    setErrors(prev => ({ ...prev, [name]: msg }));
+    return msg === '';
+  };
+
+  // validar todo antes de enviar -> devuelve array de campos inválidos
+  const validateAll = () => {
+    const fields = ['nombre', 'direccion', 'habita', 'coparr', 'latitud', 'longitud'];
+    const invalids = [];
+    // validar uno por uno y recoger los que fallan
+    fields.forEach(f => {
+      const value = f === 'coparr' ? coparr : form[f];
+      const ok = validateField(f, value);
+      if (!ok) invalids.push(f);
+    });
+    return invalids;
+  };
+
+  // Manejar cambios en el formulario (con limpieza/validación en tiempo real)
   const handleChange = e => {
     const { name, value } = e.target;
-    // Si es número de habitantes permitir solo dígitos
+    let val = value;
     if (name === 'habita') {
-      setForm({ ...form, [name]: value.replace(/\D/g, '') });
-    } else {
-      setForm({ ...form, [name]: value });
+      val = value.replace(/\D/g, '');
     }
-    if (name === 'coparr') setCoparr(value);
+    if (name === 'latitud' || name === 'longitud') {
+      val = value.replace(/[^0-9\.\-]/g, '');
+      const partsMinus = val.split('-');
+      if (partsMinus.length > 2) val = '-' + partsMinus.slice(1).join('');
+      if (val.indexOf('-') > 0) val = val.replace(/-/g, '');
+      const dots = val.split('.');
+      if (dots.length > 2) val = dots.slice(0, 2).join('.');
+    }
+
+    setForm(prev => ({ ...prev, [name]: val }));
+    if (name === 'coparr') setCoparr(val);
+
+    // validar en tiempo real (actualiza errores visibles)
+    validateField(name, name === 'coparr' ? val : val);
   };
 
   // Crear comunidad
   const handleSubmit = async e => {
     e.preventDefault();
+    const invalids = validateAll();
+    if (invalids.length > 0) {
+      // enfocar el primer campo con error
+      const map = { nombre: nombreRef, direccion: direccionRef, habita: habitaRef, coparr: parrRef, latitud: latRef, longitud: longRef };
+      const first = invalids[0];
+      if (map[first] && map[first].current) map[first].current.focus();
+      return;
+    }
+
     const res = await fetch(`${API}/comunidades`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -168,12 +215,8 @@ const ComunidadesCrudCoreUI = () => {
     if (res.ok) {
       setToast({ show: true, message: 'Comunidad registrada', color: 'success' });
       setForm({ nombre: '', direccion: '', habita: '', coparr: '', latitud: '', longitud: '' });
-      setCodpais('');
-      setCoesta('');
-      setComuni('');
-      setCoparr('');
+      setCodpais(''); setCoesta(''); setComuni(''); setCoparr(''); setErrors({});
       cargarComunidades();
-      // focus primer campo
       if (paisRef.current) paisRef.current.focus();
     } else {
       const error = await res.json();
@@ -193,7 +236,6 @@ const ComunidadesCrudCoreUI = () => {
     });
     setEditId(comunidad.TMA_CODCOM);
     setVisible(true);
-    // small delay to let modal render then focus
     setTimeout(() => {
       const el = document.querySelector('#modal-nombre');
       if (el) el.focus();
@@ -202,20 +244,26 @@ const ComunidadesCrudCoreUI = () => {
 
   // Guardar edición
   const handleUpdate = async () => {
-    const res = await fetch(`${API}/comunidades/${editId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
-    });
-    if (res.ok) {
-      setToast({ show: true, message: 'Comunidad actualizada', color: 'info' });
-      setVisible(false);
-      setEditId(null);
-      setForm({ nombre: '', direccion: '', habita: '', coparr: '', latitud: '', longitud: '' });
-      cargarComunidades();
+    if (!validateAll().length) {
+      const res = await fetch(`${API}/comunidades/${editId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      if (res.ok) {
+        setToast({ show: true, message: 'Comunidad actualizada', color: 'info' });
+        setVisible(false); setEditId(null);
+        setForm({ nombre: '', direccion: '', habita: '', coparr: '', latitud: '', longitud: '' });
+        cargarComunidades();
+      } else {
+        const error = await res.json();
+        setErrorModal({ show: true, message: error.message || 'Error al actualizar' });
+      }
     } else {
-      const error = await res.json();
-      setErrorModal({ show: true, message: error.message || 'Error al actualizar' });
+      // foco al primer error del modal
+      const map = { nombre: nombreRef, direccion: direccionRef, habita: habitaRef, coparr: parrRef, latitud: latRef, longitud: longRef };
+      const first = validateAll()[0];
+      if (map[first] && map[first].current) map[first].current.focus();
     }
   };
 
@@ -227,7 +275,7 @@ const ComunidadesCrudCoreUI = () => {
         <span>
           ¿Seguro que deseas eliminar esta comunidad?
           <div className="mt-3 d-flex flex-column align-items-end">
-            <CButton  size="sm" className="mb-2"
+            <CButton size="sm" className="mb-2"
               style={{ minWidth: 70, backgroundColor:'white',color:'#ff7043', borderColor:'#ff7043' }}
               onClick={async () => {
                 const res = await fetch(`${API}/comunidades/${codcom}`, { method: 'DELETE' });
@@ -242,7 +290,7 @@ const ComunidadesCrudCoreUI = () => {
               }}>
               Eliminar
             </CButton>
-            <CButton  size="sm" style={{ minWidth: 70,backgroundColor:'white',color:'red', borderColor:'red' }} onClick={() => setErrorModal({ show: false, message: '' })}>
+            <CButton size="sm" style={{ minWidth: 70,backgroundColor:'white',color:'red', borderColor:'red' }} onClick={() => setErrorModal({ show: false, message: '' })}>
               Cancelar
             </CButton>
           </div>
@@ -265,27 +313,21 @@ const ComunidadesCrudCoreUI = () => {
         alignment="center"
         visible={toast.show || errorModal.show}
         onClose={() => {
-          setToast({ ...toast, show: false })
-          setErrorModal({ show: false, message: '' })
+          setToast({ ...toast, show: false });
+          setErrorModal({ show: false, message: '' });
         }}
       >
         <CModalHeader>
-          <CModalTitle>
-            {toast.show ? 'Éxito' : 'Mensaje'}
-          </CModalTitle>
+          <CModalTitle>{toast.show ? 'Éxito' : 'Mensaje'}</CModalTitle>
         </CModalHeader>
         <CModalBody className="text-center">
           {toast.show && <span style={{ color: toast.color === 'success' ? 'green' : '#ff7043' }}>{toast.message}</span>}
           {errorModal.show && <span style={{ color: 'red' }}>{typeof errorModal.message === 'string' ? errorModal.message : ''}</span>}
-          {/* Si es confirmación de eliminar, muestra los botones originales */}
           {typeof errorModal.message !== 'string' && errorModal.show && errorModal.message}
         </CModalBody>
         {(toast.show || (errorModal.show && typeof errorModal.message === 'string')) && (
           <CModalFooter>
-            <CButton style={{backgroundColor:'white',color:'#ff7043', borderColor:'#ff7043'}} onClick={() => {
-              setToast({ ...toast, show: false })
-              setErrorModal({ show: false, message: '' })
-            }}>
+            <CButton style={{backgroundColor:'white',color:'#ff7043', borderColor:'#ff7043'}} onClick={() => { setToast({ ...toast, show: false }); setErrorModal({ show: false, message: '' }); }}>
               Aceptar
             </CButton>
           </CModalFooter>
@@ -313,9 +355,7 @@ const ComunidadesCrudCoreUI = () => {
                       onKeyDown={e => handleEnter(e, estadoRef)}
                     >
                       <option value="">País</option>
-                      {paises.map(p => (
-                        <option key={p.TMA_COPAIS} value={p.TMA_COPAIS}>{p.TMA_NOMBRE}</option>
-                      ))}
+                      {paises.map(p => <option key={p.TMA_COPAIS} value={p.TMA_COPAIS}>{p.TMA_NOMBRE}</option>)}
                     </CFormSelect>
                   </CCol>
                   <CCol xs={6} sm={3}>
@@ -330,9 +370,7 @@ const ComunidadesCrudCoreUI = () => {
                       onKeyDown={e => handleEnter(e, muniRef)}
                     >
                       <option value="">Estado</option>
-                      {estados.map(e => (
-                        <option key={e.TMA_COESTA} value={e.TMA_COESTA}>{e.TMA_NOMBRE}</option>
-                      ))}
+                      {estados.map(e => <option key={e.TMA_COESTA} value={e.TMA_COESTA}>{e.TMA_NOMBRE}</option>)}
                     </CFormSelect>
                   </CCol>
                   <CCol xs={6} sm={3}>
@@ -347,16 +385,14 @@ const ComunidadesCrudCoreUI = () => {
                       onKeyDown={e => handleEnter(e, parrRef)}
                     >
                       <option value="">Municipio</option>
-                      {municipios.map(m => (
-                        <option key={m.TMA_COMUNI} value={m.TMA_COMUNI}>{m.TMA_NOMBRE}</option>
-                      ))}
+                      {municipios.map(m => <option key={m.TMA_COMUNI} value={m.TMA_COMUNI}>{m.TMA_NOMBRE}</option>)}
                     </CFormSelect>
                   </CCol>
                   <CCol xs={6} sm={3}>
                     <CFormSelect
                       size="sm"
                       value={coparr}
-                      onChange={e => setCoparr(e.target.value)}
+                      onChange={e => { setCoparr(e.target.value); setForm(prev => ({ ...prev, coparr: e.target.value })); }}
                       aria-label="Parroquia"
                       required
                       disabled={!comuni}
@@ -365,9 +401,7 @@ const ComunidadesCrudCoreUI = () => {
                       onKeyDown={e => handleEnter(e, nombreRef)}
                     >
                       <option value="">Parroquia</option>
-                      {parroquiasForm.map(p => (
-                        <option key={p.TMA_COPARR} value={p.TMA_COPARR}>{p.TMA_NOMBRE}</option>
-                      ))}
+                      {parroquiasForm.map(p => <option key={p.TMA_COPARR} value={p.TMA_COPARR}>{p.TMA_NOMBRE}</option>)}
                     </CFormSelect>
                   </CCol>
                 </CRow>
@@ -379,10 +413,12 @@ const ComunidadesCrudCoreUI = () => {
                   value={form.nombre}
                   onChange={handleChange}
                   required
-                  className="mb-3"
+                  className="mb-1"
                   ref={nombreRef}
                   onKeyDown={e => handleEnter(e, direccionRef)}
                 />
+                {errors.nombre && <div className="text-danger small mb-2">{errors.nombre}</div>}
+
                 <CFormInput
                   label="Dirección"
                   name="direccion"
@@ -390,10 +426,12 @@ const ComunidadesCrudCoreUI = () => {
                   value={form.direccion}
                   onChange={handleChange}
                   required
-                  className="mb-3"
+                  className="mb-1"
                   ref={direccionRef}
                   onKeyDown={e => handleEnter(e, habitaRef)}
                 />
+                {errors.direccion && <div className="text-danger small mb-2">{errors.direccion}</div>}
+
                 <CFormInput
                   label="Habitantes"
                   name="habita"
@@ -402,31 +440,41 @@ const ComunidadesCrudCoreUI = () => {
                   value={form.habita}
                   onChange={handleChange}
                   required
-                  className="mb-3"
+                  className="mb-1"
                   ref={habitaRef}
                   onKeyDown={e => handleEnter(e, latRef)}
                 />
+                {errors.habita && <div className="text-danger small mb-2">{errors.habita}</div>}
+
                 <CFormInput
                   label="Latitud"
                   name="latitud"
                   placeholder='Ejm 7.1548'
                   value={form.latitud}
                   onChange={handleChange}
-                  className="mb-3"
+                  className="mb-1"
                   ref={latRef}
                   onKeyDown={e => handleEnter(e, longRef)}
+                  pattern="^-?\d+(\.\d+)?$"
+                  title="Formato decimal válido. Ej: 7.1548 o -7.1548. Rango -90 a 90."
                 />
+                {errors.latitud && <div className="text-danger small mb-2">{errors.latitud}</div>}
+
                 <CFormInput
                   label="Longitud"
                   name="longitud"
                   placeholder='Ejm -72.1245'
                   value={form.longitud}
                   onChange={handleChange}
-                  className="mb-3"
+                  className="mb-1"
                   ref={longRef}
                   onKeyDown={e => handleEnter(e, submitRef)}
+                  pattern="^-\d+(\.\d+)?$"
+                  title="Debe ser un número decimal negativo. Ej: -72.1245. Rango -180 a 0."
                 />
-                <div className="d-grid">
+                {errors.longitud && <div className="text-danger small mb-2">{errors.longitud}</div>}
+
+                <div className="d-grid mt-2">
                   <CButton ref={submitRef} style={{ backgroundColor: '#FF7043', color: 'white' }} type="submit">
                     Registrar
                   </CButton>
@@ -439,19 +487,18 @@ const ComunidadesCrudCoreUI = () => {
         {/* LISTADO: tabla para md+ y tarjetas para xs */}
         <CCol xs={12} md={7}>
           <CCard className="shadow-sm">
-            <CCardHeader>
-              <strong>Comunidades Registradas</strong>
-            </CCardHeader>
+            <CCardHeader><strong>Comunidades Registradas</strong></CCardHeader>
             <CCardBody>
-              {/* Tarjetas para pantallas pequeñas */}
-              {isSmall && (
+              {isSmall ? (
                 <div className="d-flex flex-column gap-3">
                   {comunidadesToShow.map(comu => (
                     <CCard key={comu.TMA_CODCOM} className="p-3" style={{ borderRadius: 10 }}>
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
                           <h6 style={{ margin: 0 }}>{comu.TMA_NOMBRE}</h6>
-                          <small className="text-muted">{parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || comu.TMA_COPARR}</small>
+                          <small className="text-muted">
+                            {parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || comu.TMA_COPARR}
+                          </small>
                           <p className="mb-1" style={{ fontSize: 13 }}>{comu.TMA_DIRECC}</p>
                           <div style={{ fontSize: 13 }}><strong>Habitantes:</strong> {comu.TMA_HABITA}</div>
                         </div>
@@ -465,10 +512,7 @@ const ComunidadesCrudCoreUI = () => {
                     </CCard>
                   ))}
                 </div>
-              )}
-
-              {/* Tabla para md+ */}
-              {!isSmall && (
+              ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <CTable align="middle" hover className="mb-0" style={{ minWidth: 650 }}>
                     <CTableHead color="light">
@@ -509,28 +553,11 @@ const ComunidadesCrudCoreUI = () => {
               {/* Paginación */}
               <div className="d-flex justify-content-center my-3">
                 <CPagination align="center" className="mb-0">
-                  <CPaginationItem
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                  >
-                    &laquo;
-                  </CPaginationItem>
+                  <CPaginationItem disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>&laquo;</CPaginationItem>
                   {[...Array(totalPages)].map((_, idx) => (
-                    <CPaginationItem
-                      key={idx + 1}
-                      active={currentPage === idx + 1}
-                      onClick={() => setCurrentPage(idx + 1)}
-                      style={ currentPage === idx + 1 ? { backgroundColor: '#ff7043', color: 'white', borderColor: '#ff7043', borderRadius: 6 } : {}}
-                    >
-                      {idx + 1}
-                    </CPaginationItem>
+                    <CPaginationItem key={idx + 1} active={currentPage === idx + 1} onClick={() => setCurrentPage(idx + 1)} style={ currentPage === idx + 1 ? { backgroundColor: '#ff7043', color: 'white', borderColor: '#ff7043', borderRadius: 6 } : {}}>{idx + 1}</CPaginationItem>
                   ))}
-                  <CPaginationItem
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    &raquo;
-                  </CPaginationItem>
+                  <CPaginationItem disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>&raquo;</CPaginationItem>
                 </CPagination>
               </div>
             </CCardBody>
@@ -540,69 +567,28 @@ const ComunidadesCrudCoreUI = () => {
 
       {/* Modal para editar */}
       <CModal visible={visible} onClose={() => setVisible(false)}>
-        <CModalHeader>
-          <CModalTitle>Editar Comunidad</CModalTitle>
-        </CModalHeader>
+        <CModalHeader><CModalTitle>Editar Comunidad</CModalTitle></CModalHeader>
         <CModalBody>
           <CForm>
-            <CFormInput
-              id="modal-nombre"
-              label="Nombre"
-              name="nombre"
-              value={form.nombre}
-              onChange={handleChange}
-              required
-              className="mb-3"
-            />
-            <CFormInput
-              label="Dirección"
-              name="direccion"
-              value={form.direccion}
-              onChange={handleChange}
-              required
-              className="mb-3"
-            />
-            <CFormInput
-              label="Habitantes"
-              name="habita"
-              type="number"
-              value={form.habita}
-              onChange={handleChange}
-              required
-              className="mb-3"
-            />
-            <CFormSelect
-              label="Parroquia"
-              name="coparr"
-              value={form.coparr}
-              onChange={handleChange}
-              required
-              className="mb-3"
-            >
+            <CFormInput id="modal-nombre" label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} required className="mb-3" />
+            {errors.nombre && <div className="text-danger small mb-2">{errors.nombre}</div>}
+            <CFormInput label="Dirección" name="direccion" value={form.direccion} onChange={handleChange} required className="mb-3" />
+            {errors.direccion && <div className="text-danger small mb-2">{errors.direccion}</div>}
+            <CFormInput label="Habitantes" name="habita" type="number" value={form.habita} onChange={handleChange} required className="mb-3" />
+            {errors.habita && <div className="text-danger small mb-2">{errors.habita}</div>}
+            <CFormSelect label="Parroquia" name="coparr" value={form.coparr} onChange={handleChange} required className="mb-3">
               <option value="">Seleccione una parroquia</option>
-              {parroquias.map(p => (
-                <option key={p.TMA_COPARR} value={p.TMA_COPARR}>{p.TMA_NOMBRE}</option>
-              ))}
+              {parroquias.map(p => <option key={p.TMA_COPARR} value={p.TMA_COPARR}>{p.TMA_NOMBRE}</option>)}
             </CFormSelect>
-            <CFormInput
-              label="Latitud"
-              name="latitud"
-              value={form.latitud}
-              onChange={handleChange}
-              className="mb-3"
-            />
-            <CFormInput
-              label="Longitud"
-              name="longitud"
-              value={form.longitud}
-              onChange={handleChange}
-              className="mb-3"
-            />
+            <CFormInput label="Latitud" name="latitud" value={form.latitud} onChange={handleChange} className="mb-3" />
+            {errors.latitud && <div className="text-danger small mb-2">{errors.latitud}</div>}
+            <CFormInput label="Longitud" name="longitud" value={form.longitud} onChange={handleChange} className="mb-3" />
+            {errors.longitud && <div className="text-danger small mb-2">{errors.longitud}</div>}
           </CForm>
         </CModalBody>
         <CModalFooter>
           <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={handleUpdate}>Guardar</CButton>
-          <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}}  onClick={() => setVisible(false)}>Cancelar</CButton>
+          <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={() => setVisible(false)}>Cancelar</CButton>
         </CModalFooter>
       </CModal>
     </CContainer>

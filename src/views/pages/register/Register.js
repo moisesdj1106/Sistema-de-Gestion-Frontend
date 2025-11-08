@@ -19,6 +19,8 @@ import {
 
 import bg  from 'src/assets/images/carro.jpg';
 
+const API = 'https://sistema-de-gestion-backend.onrender.com';
+
 const Formulario = () => {
     const [cedula, setCedula] = useState('');
     const [nombres, setNombre] = useState('');
@@ -44,11 +46,17 @@ const Formulario = () => {
     const [parroquias, setParroquias] = useState([]);
     const [comunidades, setComunidades] = useState([]);
     const [modal, setModal] = useState({ show: false, mensaje: '', success: false });
+    const [fieldErrors, setFieldErrors] = useState([]); // lista de errores de validación cliente/servidor
     const navigate = useNavigate();
+
+    // Regex y helpers (coinciden con validaciones del servidor)
+    const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$/;
+    const digitsRegex = /^\d+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     // Tipos de documento
     useEffect(() => {
-        fetch('https://sistema-de-gestion-backend.onrender.com/documento')
+        fetch(`${API}/documento`)
             .then(res => res.json())
             .then(setTipoDocumentos)
             .catch(console.error);
@@ -56,7 +64,7 @@ const Formulario = () => {
 
     // Listar países
     useEffect(() => {
-        fetch('https://sistema-de-gestion-backend.onrender.com/paises')
+        fetch(`${API}/paises`)
             .then(res => res.json())
             .then(setPaises)
             .catch(console.error);
@@ -65,7 +73,7 @@ const Formulario = () => {
     // Listar estados al seleccionar país
     useEffect(() => {
         if (codpais) {
-            fetch(`https://sistema-de-gestion-backend.onrender.com/estados/${codpais}`)
+            fetch(`${API}/estados/${codpais}`)
                 .then(res => res.json())
                 .then(setEstados)
                 .catch(console.error);
@@ -84,7 +92,7 @@ const Formulario = () => {
     // Listar municipios al seleccionar estado
     useEffect(() => {
         if (coesta) {
-            fetch(`https://sistema-de-gestion-backend.onrender.com/municipios/${coesta}`)
+            fetch(`${API}/municipios/${coesta}`)
                 .then(res => res.json())
                 .then(setMunicipios)
                 .catch(console.error);
@@ -101,7 +109,7 @@ const Formulario = () => {
     // Listar parroquias al seleccionar municipio
     useEffect(() => {
         if (comuni) {
-            fetch(`https://sistema-de-gestion-backend.onrender.com/parroquias/${comuni}`)
+            fetch(`${API}/parroquias/${comuni}`)
                 .then(res => res.json())
                 .then(setParroquias)
                 .catch(console.error);
@@ -116,7 +124,7 @@ const Formulario = () => {
     // Listar comunidades al seleccionar parroquia
     useEffect(() => {
         if (coparr) {
-            fetch(`https://sistema-de-gestion-backend.onrender.com/comunidades/${coparr}`)
+            fetch(`${API}/comunidades/${coparr}`)
                 .then(res => res.json())
                 .then(setComunidades)
                 .catch(console.error);
@@ -126,14 +134,65 @@ const Formulario = () => {
         }
     }, [coparr]);
 
+    const validateClient = () => {
+        const errors = [];
+
+        if (!tipodo) errors.push('Seleccione tipo de documento');
+        if (!cedula) errors.push('Documento es obligatorio');
+        else if (!digitsRegex.test(cedula)) errors.push('Documento: solo dígitos');
+
+        if (!nombres) errors.push('Nombres son obligatorios');
+        else if (!nameRegex.test(nombres)) errors.push('Nombres inválidos');
+
+        if (!apellidos) errors.push('Apellidos son obligatorios');
+        else if (!nameRegex.test(apellidos)) errors.push('Apellidos inválidos');
+
+        if (!sexo) errors.push('Seleccione sexo');
+
+        if (!fecha_nac) errors.push('Fecha de nacimiento es obligatoria');
+        else {
+            const f = new Date(fecha_nac);
+            const hoy = new Date(); hoy.setHours(0,0,0,0);
+            f.setHours(0,0,0,0);
+            if (isNaN(f.getTime())) errors.push('Fecha de nacimiento inválida');
+            else if (f > hoy) errors.push('Fecha de nacimiento no puede ser futura');
+        }
+
+        if (!usuario) errors.push('Usuario es obligatorio');
+
+        if (!contraseña) errors.push('Contraseña es obligatoria');
+        else if (contraseña.length < 6) errors.push('Contraseña mínimo 6 caracteres');
+
+        if (contraseña !== repeatPassword) errors.push('Las contraseñas no coinciden');
+
+        if (!codpais) errors.push('Seleccione país');
+        if (!coesta) errors.push('Seleccione estado');
+        if (!comuni) errors.push('Seleccione municipio');
+        if (!coparr) errors.push('Seleccione parroquia');
+        if (!codcom) errors.push('Seleccione comunidad');
+
+        if (!direccion) errors.push('Dirección es obligatoria');
+
+        if (telefono && !digitsRegex.test(telefono)) errors.push('Teléfono: solo dígitos');
+
+        if (!email) errors.push('Correo es obligatorio');
+        else if (!emailRegex.test(email)) errors.push('Correo inválido');
+
+        return errors;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (contraseña !== repeatPassword) {
-            setModal({ show: true, mensaje: 'Las contraseñas no coinciden', success: false });
+        setFieldErrors([]);
+        const clientErrors = validateClient();
+        if (clientErrors.length) {
+            setFieldErrors(clientErrors);
+            setModal({ show: true, mensaje: clientErrors.join('\n'), success: false });
             return;
         }
+
         try {
-            const response = await fetch('https://sistema-de-gestion-backend.onrender.com/users', {
+            const response = await fetch(`${API}/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -154,20 +213,30 @@ const Formulario = () => {
 
             if (response.ok) {
                 setModal({ show: true, mensaje: 'Usuario registrado correctamente', success: true });
-            } else {
+                setFieldErrors([]);
+            } else if (response.status === 400) {
                 const data = await response.json();
+                const mensajes = data.errores || [data.message || 'Error de validación'];
+                setFieldErrors(mensajes);
+                setModal({ show: true, mensaje: mensajes.join('\n'), success: false });
+            } else if (response.status === 409) {
+                const data = await response.json();
+                const detalles = data.detalles || [data.mensaje || 'Conflicto en datos'];
+                setFieldErrors(detalles);
+                setModal({ show: true, mensaje: detalles.join('\n'), success: false });
+            } else {
+                const data = await response.json().catch(()=>({}));
                 setModal({ show: true, mensaje: data.message || 'Error al registrar el usuario', success: false });
             }
         } catch (error) {
-            setModal({ show: true, mensaje: 'Error al registrar el usuario', success: false });
+            setModal({ show: true, mensaje: 'Error de conexión al servidor', success: false });
         }
     };
 
     const handleCloseModal = () => {
+        const wasSuccess = modal.success;
         setModal({ show: false, mensaje: '', success: false });
-        if (modal.success) {
-            navigate('/login');
-        }
+        if (wasSuccess) navigate('/login');
     };
 
     return (
@@ -190,7 +259,6 @@ const Formulario = () => {
                     <CForm onSubmit={handleSubmit}>
                         <CRow>
                             <CCol md={6}>
-                                {/* Orden lógico: Tipo de documento, Cédula, Nombres, Apellidos, Sexo, Fecha de nacimiento, Usuario, Contraseña, Repetir contraseña */}
                                 <CFormSelect
                                     label="Tipo de Documento"
                                     value={tipodo}
@@ -246,7 +314,6 @@ const Formulario = () => {
                                 <CFormInput
                                     type="date"
                                     label="Fecha de Nacimiento"
-                                    placeholder="Ingrese su fecha de nacimiento"
                                     value={fecha_nac}
                                     onChange={e => setFechaNacimiento(e.target.value)}
                                     required
@@ -281,7 +348,6 @@ const Formulario = () => {
                                 />
                             </CCol>
                             <CCol md={6}>
-                                {/* Orden lógico: País, Estado, Municipio, Parroquia, Comunidad, Dirección, Teléfono, Email */}
                                 <CFormSelect
                                     label="País"
                                     value={codpais}
@@ -402,7 +468,7 @@ const Formulario = () => {
                 <CModalHeader>
                     <CModalTitle>{modal.success ? 'Registro exitoso' : 'Error'}</CModalTitle>
                 </CModalHeader>
-                <CModalBody className="text-center">
+                <CModalBody className="text-center" style={{ whiteSpace: 'pre-wrap' }}>
                     {modal.mensaje}
                 </CModalBody>
                 <CModalFooter>

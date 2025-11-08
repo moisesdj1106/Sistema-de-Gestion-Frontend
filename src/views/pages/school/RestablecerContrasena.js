@@ -13,7 +13,7 @@ import {
   CCardTitle,
   CCardHeader
 } from "@coreui/react";
-import fondoCarro from "../../assets/images/carro.jpg"; // importa la imagen
+import fondoCarro from "src/assets/images/carro.jpg"; // importa la imagen
 
 const RestablecerContrasena = () => {
   const { token } = useParams();

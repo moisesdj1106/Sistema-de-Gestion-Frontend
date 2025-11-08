@@ -139,7 +139,8 @@ const ComunidadesCrudCoreUI = () => {
 
     if (name === 'latitud') {
       if (!v) msg = 'Latitud es obligatoria';
-      else if (!/^-?\d+(\.\d+)?$/.test(v)) msg = 'Formato inválido (ej. 7.1548 o -7.1548)';
+      // exigir formato decimal (debe contener punto)
+      else if (!/^-?\d+\.\d+$/.test(v)) msg = 'La latitud debe tener decimales (ej. 7.1548 o -7.1548)';
       else {
         const num = parseFloat(v);
         if (num < -90 || num > 90) msg = 'Latitud debe estar entre -90 y 90';
@@ -455,8 +456,8 @@ const ComunidadesCrudCoreUI = () => {
                   className="mb-1"
                   ref={latRef}
                   onKeyDown={e => handleEnter(e, longRef)}
-                  pattern="^-?\d+(\.\d+)?$"
-                  title="Formato decimal válido. Ej: 7.1548 o -7.1548. Rango -90 a 90."
+                  pattern="^-?\d+\.\d+$"
+                  title="Formato decimal obligatorio. Ej: 7.1548 o -7.1548. Rango -90 a 90."
                 />
                 {errors.latitud && <div className="text-danger small mb-2">{errors.latitud}</div>}
 

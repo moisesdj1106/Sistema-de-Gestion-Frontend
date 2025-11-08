@@ -134,6 +134,11 @@ const Formulario = () => {
         }
     }, [coparr]);
 
+    // cálculo de fecha máxima (mayor de 18 años)
+    const today = new Date();
+    const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
+
     const validateClient = () => {
         const errors = [];
 
@@ -152,10 +157,13 @@ const Formulario = () => {
         if (!fecha_nac) errors.push('Fecha de nacimiento es obligatoria');
         else {
             const f = new Date(fecha_nac);
-            const hoy = new Date(); hoy.setHours(0,0,0,0);
-            f.setHours(0,0,0,0);
             if (isNaN(f.getTime())) errors.push('Fecha de nacimiento inválida');
-            else if (f > hoy) errors.push('Fecha de nacimiento no puede ser futura');
+            else {
+                const fechaMax = new Date(maxBirth);
+                fechaMax.setHours(0,0,0,0);
+                f.setHours(0,0,0,0);
+                if (f > fechaMax) errors.push('Debes ser mayor de 18 años');
+            }
         }
 
         if (!usuario) errors.push('Usuario es obligatorio');
@@ -318,6 +326,7 @@ const Formulario = () => {
                                     onChange={e => setFechaNacimiento(e.target.value)}
                                     required
                                     className="mb-3"
+                                    max={maxFechaNacimiento}
                                 />
                                 <CFormInput
                                     type="text"

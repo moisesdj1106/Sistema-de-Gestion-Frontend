@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import {
   CCard, CCardBody, CCol, CRow, CForm, CFormInput, CFormSelect, CButton, CAlert
 } from '@coreui/react'
@@ -18,6 +18,13 @@ const RegistrarDonante = () => {
   const [msg, setMsg] = useState({ type: '', text: '' })
   const [fieldErrors, setFieldErrors] = useState({})
   const [loading, setLoading] = useState(false)
+
+  // refs para atajos (Enter -> siguiente campo)
+  const cedulaRef = useRef(null)
+  const tipodnRef = useRef(null)
+  const nombreRef = useRef(null)
+  const contacRef = useRef(null)
+  const submitRef = useRef(null)
 
   // regex helpers (coinciden con validaciones servidor)
   const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$/
@@ -40,6 +47,36 @@ const RegistrarDonante = () => {
     setForm(prev => ({ ...prev, [name]: value }))
     setFieldErrors(prev => ({ ...prev, [name]: '' }))
     setMsg({ type: '', text: '' })
+  }
+
+  // helpers de sanitización en tiempo real
+  const handleCedulaChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '') // solo dígitos
+    setForm(prev => ({ ...prev, cedula: value }))
+    setFieldErrors(prev => ({ ...prev, cedula: '' }))
+    setMsg({ type: '', text: '' })
+  }
+
+  const handleNombreChange = (e) => {
+    // solo letras, espacios, guiones y apóstrofe, incluyendo tildes y ñ
+    const value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]/g, '')
+    setForm(prev => ({ ...prev, nombre: value }))
+    setFieldErrors(prev => ({ ...prev, nombre: '' }))
+    setMsg({ type: '', text: '' })
+  }
+
+  const handleContactoChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '') // solo dígitos
+    setForm(prev => ({ ...prev, contac: value }))
+    setFieldErrors(prev => ({ ...prev, contac: '' }))
+    setMsg({ type: '', text: '' })
+  }
+
+  const handleEnter = (e, nextRef) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (nextRef && nextRef.current) nextRef.current.focus()
+    }
   }
 
   const validateClient = () => {
@@ -183,8 +220,13 @@ const RegistrarDonante = () => {
                     name="cedula"
                     placeholder='Ejm 1234567'
                     value={form.cedula}
-                    onChange={handleChange}
+                    onChange={handleCedulaChange}
+                    inputMode="numeric"
+                    pattern="\d*"
+                    ref={cedulaRef}
+                    onKeyDown={e => handleEnter(e, tipodnRef)}
                     aria-invalid={!!fieldErrors.cedula}
+                    title="Solo números"
                   />
                   {fieldErrors.cedula && <div className="text-danger small mt-1">{fieldErrors.cedula}</div>}
                 </CCol>
@@ -194,6 +236,8 @@ const RegistrarDonante = () => {
                     name="tipodn"
                     value={form.tipodn}
                     onChange={handleChange}
+                    ref={tipodnRef}
+                    onKeyDown={e => handleEnter(e, nombreRef)}
                     aria-invalid={!!fieldErrors.tipodn}
                   >
                     <option value="">Seleccione tipo</option>
@@ -210,8 +254,12 @@ const RegistrarDonante = () => {
                     label="Nombre"
                     name="nombre"
                     value={form.nombre}
-                    onChange={handleChange}
+                    onChange={handleNombreChange}
+                    ref={nombreRef}
+                    onKeyDown={e => handleEnter(e, contacRef)}
                     aria-invalid={!!fieldErrors.nombre}
+                    pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$"
+                    title="Solo letras y espacios"
                   />
                   {fieldErrors.nombre && <div className="text-danger small mt-1">{fieldErrors.nombre}</div>}
                 </CCol>
@@ -221,13 +269,17 @@ const RegistrarDonante = () => {
                     name="contac"
                     placeholder='Ejm 04147589857'
                     value={form.contac}
-                    onChange={handleChange}
+                    onChange={handleContactoChange}
+                    inputMode="numeric"
+                    pattern="\d*"
+                    ref={contacRef}
+                    onKeyDown={e => handleEnter(e, submitRef)}
                     aria-invalid={!!fieldErrors.contac}
                   />
                   {fieldErrors.contac && <div className="text-danger small mt-1">{fieldErrors.contac}</div>}
                 </CCol>
                 <CCol xs={12} md={6} className="d-flex align-items-end">
-                  <CButton disabled={loading} style={{backgroundColor:'#ff7043', color:'white'}} type="submit" className="w-100">
+                  <CButton disabled={loading} style={{backgroundColor:'#ff7043', color:'white'}} type="submit" className="w-100" ref={submitRef}>
                     {loading ? 'Registrando...' : 'Registrar'}
                   </CButton>
                 </CCol>

@@ -95,9 +95,11 @@ const RegistrarAfectacion = () => {
     c.TMA_NOMBRE.toLowerCase().includes(comunidadSearch.toLowerCase())
   );
 
- const today = new Date();
- const maxFecha = today.toISOString().split('T')[0]; // Esto da 'YYYY-MM-DD'
-
+const today = new Date();
+const maxFecha = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  .toISOString()
+  .split('T')[0];
+  
   // Handlers generales
   const handleChange = (setter, form) => e => {
     const { name, value } = e.target;

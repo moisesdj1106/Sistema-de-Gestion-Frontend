@@ -95,6 +95,9 @@ const RegistrarAfectacion = () => {
     c.TMA_NOMBRE.toLowerCase().includes(comunidadSearch.toLowerCase())
   );
 
+ const today = new Date();
+ const maxFecha = today.toISOString().split('T')[0]; // Esto da 'YYYY-MM-DD'
+
   // Handlers generales
   const handleChange = (setter, form) => e => {
     const { name, value } = e.target;
@@ -310,6 +313,7 @@ const RegistrarAfectacion = () => {
                   name="feafec"
                   value={formAfectacion.feafec}
                   onChange={handleChange(setFormAfectacion, formAfectacion)}
+                  max={maxFecha}
                   required
                   className="mb-2"
                 />

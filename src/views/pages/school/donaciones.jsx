@@ -32,6 +32,15 @@ const RegistrarDonacion = () => {
       .then(setTiposDonacion)
   }, [])
 
+
+
+
+  const today = new Date();
+  const maxFecha = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  .toISOString()
+  .split('T')[0];
+  
+
   // Filtrar donantes por nombre
   const donantesFiltrados = donantes.filter(d =>
     d.TMA_NOMBRE.toLowerCase().includes(busquedaDonante.toLowerCase())
@@ -152,6 +161,7 @@ const RegistrarDonacion = () => {
                     placeholder='Ejm 100'
                     type="number"
                     value={form.cantidad}
+                    min={1}
                     onChange={handleChange}
                     required
                   />
@@ -163,6 +173,7 @@ const RegistrarDonacion = () => {
                     type="date"
                     value={form.fedona}
                     onChange={handleChange}
+                    max={maxFecha}
                     required
                   />
                 </CCol>

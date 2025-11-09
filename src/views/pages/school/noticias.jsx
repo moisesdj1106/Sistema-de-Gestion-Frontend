@@ -12,6 +12,8 @@ const BotonEliminarNoticia = ({ noticiaId, onEliminada }) => {
   const [success, setSuccess] = useState(null)
   const [showConfirm, setShowConfirm] = useState(false)
 
+
+  
   const handleEliminar = async () => {
     setError(null)
     setSuccess(null)
@@ -107,6 +109,15 @@ const NoticiasBlog = () => {
       .then(res => res.json())
       .then(data => setNoticias(data))
   }, [recargar])
+
+  // refresco automático cada 15 segundos
+  useEffect(() => {
+    const intervalo = setInterval(() => {
+      setRecargar(r => !r) // fuerza re-ejecución del useEffect que carga noticias
+    }, 15000) // 15000 ms = 15s
+
+    return () => clearInterval(intervalo) // limpiar al desmontar
+  }, [])
 
   // Calcular paginación
   const totalPaginas = Math.ceil(noticias.length / noticiasPorPagina);

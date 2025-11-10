@@ -427,6 +427,7 @@ const ComunidadesCrudCoreUI = () => {
                   value={form.direccion}
                   onChange={handleChange}
                   required
+                  max={200}
                   className="mb-1"
                   ref={direccionRef}
                   onKeyDown={e => handleEnter(e, habitaRef)}
@@ -441,6 +442,7 @@ const ComunidadesCrudCoreUI = () => {
                   value={form.habita}
                   onChange={handleChange}
                   required
+                  min={1}
                   className="mb-1"
                   ref={habitaRef}
                   onKeyDown={e => handleEnter(e, latRef)}

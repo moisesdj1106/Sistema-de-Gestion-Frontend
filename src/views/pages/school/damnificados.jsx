@@ -42,7 +42,9 @@ const DamnificadosModulo = () => {
   const totalPages = Math.ceil(total / 10);
 
   const today = new Date();
-  const maxFecha = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().split('T')[0];
+  // evitar desfase de zona horaria al construir YYYY-MM-DD local
+  const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
+  const maxFecha = localToday.toISOString().split('T')[0];
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar damnificado?')) {

@@ -246,7 +246,7 @@ const Formulario = () => {
             });
             clearTimeout(timeoutId);
 
-            // intentar parsear JSON (si hay)
+           
             let data = {};
             try { data = await response.json(); } catch(_) { data = {}; }
 
@@ -309,7 +309,7 @@ const Formulario = () => {
         }
     };
 
-    // validaciones de entrada en tiempo real (evitan caracteres no permitidos)
+   
     const handleCedulaChange = e => {
         // solo dígitos y máximo 9 caracteres
         const cleaned = e.target.value.replace(/\D/g, '').slice(0, 9);

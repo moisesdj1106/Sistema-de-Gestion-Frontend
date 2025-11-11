@@ -238,7 +238,7 @@ const VictimasModulo = () => {
               pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]+$" title="Solo letras y espacios" />
             {errorsEdit.apelli && <div className="text-danger small mb-2">{errorsEdit.apelli}</div>}
 
-            <CFormInput className="mb-2" label="Cédula" name="cedula" value={editForm.cedula} onChange={handleEditChange} required inputMode="numeric" ref={cedulaRef} onKeyDown={e => handleEnter(e, tipodoRef)}
+            <CFormInput className="mb-2" label="Cédula" name="cedula"maxLength={9} minLength={7} value={editForm.cedula} onChange={handleEditChange} required inputMode="numeric" ref={cedulaRef} onKeyDown={e => handleEnter(e, tipodoRef)}
               pattern="^\d{7,9}$" title="7 a 9 dígitos" />
             {errorsEdit.cedula && <div className="text-danger small mb-2">{errorsEdit.cedula}</div>}
 
@@ -250,7 +250,7 @@ const VictimasModulo = () => {
             </CFormSelect>
             {errorsEdit.tipodo && <div className="text-danger small mb-2">{errorsEdit.tipodo}</div>}
 
-            <CFormInput className="mb-2" label="Certificado" name="certif" value={editForm.certif} onChange={handleEditChange} ref={certifRef} onKeyDown={e => handleEnter(e, coafecRef)} inputMode="numeric"
+            <CFormInput className="mb-2" label="Certificado" name="certif" maxLength={9} value={editForm.certif} onChange={handleEditChange} ref={certifRef} onKeyDown={e => handleEnter(e, coafecRef)} inputMode="numeric"
               pattern="^\d{0,9}$" title="Solo números" />
             {errorsEdit.certif && <div className="text-danger small mb-2">{errorsEdit.certif}</div>}
 

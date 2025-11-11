@@ -258,7 +258,7 @@ const DamnificadosModulo = () => {
             </CFormSelect>
             {errorsEdit.tipodo && <div className="text-danger small mb-2">{errorsEdit.tipodo}</div>}
 
-            <CFormInput className="mb-2" label="Cédula" name="cedula" value={editForm.cedula} onChange={handleEditChange} required inputMode="numeric" ref={cedulaRef} onKeyDown={e => handleEnter(e, nombreRef)} />
+            <CFormInput className="mb-2" label="Cédula" name="cedula" maxLength={9} minLength={7} value={editForm.cedula} onChange={handleEditChange} required inputMode="numeric" ref={cedulaRef} onKeyDown={e => handleEnter(e, nombreRef)} />
             {errorsEdit.cedula && <div className="text-danger small mb-2">{errorsEdit.cedula}</div>}
 
             <CFormInput className="mb-2" label="Nombre" name="nombre" value={editForm.nombre} onChange={handleEditChange} required ref={nombreRef} onKeyDown={e => handleEnter(e, apelliRef)} />
@@ -270,7 +270,7 @@ const DamnificadosModulo = () => {
             <CFormInput className="mb-2" label="Fecha de nacimiento" type="date" name="fenaci" value={editForm.fenaci} onChange={handleEditChange} required max={maxFechaNacimiento} ref={fenaciRef} onKeyDown={e => handleEnter(e, contacRef)} />
             {errorsEdit.fenaci && <div className="text-danger small mb-2">{errorsEdit.fenaci}</div>}
 
-            <CFormInput className="mb-2" label="Contacto" name="contac" value={editForm.contac} onChange={handleEditChange} required inputMode="numeric" ref={contacRef} onKeyDown={e => handleEnter(e, esaludRef)} />
+            <CFormInput className="mb-2" label="Contacto" name="contac" maxLength={11} minLength={11} value={editForm.contac} onChange={handleEditChange} required inputMode="numeric" ref={contacRef} onKeyDown={e => handleEnter(e, esaludRef)} />
             {errorsEdit.contac && <div className="text-danger small mb-2">{errorsEdit.contac}</div>}
 
             <CFormInput className="mb-2" label="Estado de salud" name="esalud" value={editForm.esalud} onChange={handleEditChange} required ref={esaludRef} onKeyDown={e => handleEnter(e, coafecRef)} />

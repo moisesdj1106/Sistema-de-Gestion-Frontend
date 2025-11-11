@@ -334,6 +334,8 @@ const ListaPerdidas = () => {
                         onChange={handleEditChange}
                         className="mb-2"
                         required
+                        maxLength={9}
+                        minLength={7}
                         inputMode="numeric"
                         pattern="^\d{7,9}$"
                         title="7 a 9 dígitos"

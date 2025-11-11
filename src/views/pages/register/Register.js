@@ -47,12 +47,20 @@ const Formulario = () => {
     const [comunidades, setComunidades] = useState([]);
     const [modal, setModal] = useState({ show: false, mensaje: '', success: false });
     const [fieldErrors, setFieldErrors] = useState([]); // lista de errores de validación cliente/servidor
+
+    // nuevos estados de error por campo (cedula / telefono)
+    const [cedulaError, setCedulaError] = useState('');
+    const [telefonoError, setTelefonoError] = useState('');
+
     const navigate = useNavigate();
 
     // Regex y helpers (coinciden con validaciones del servidor)
     const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$/;
     const digitsRegex = /^\d+$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // prefijos válidos para teléfono
+    const validPhonePrefixes = ['0424','0426','0414','0416','0412'];
 
     // Tipos de documento
     useEffect(() => {
@@ -145,6 +153,7 @@ const Formulario = () => {
         if (!tipodo) errors.push('Seleccione tipo de documento');
         if (!cedula) errors.push('Documento es obligatorio');
         else if (!digitsRegex.test(cedula)) errors.push('Documento: solo dígitos');
+        else if (cedula.length < 7 || cedula.length > 9) errors.push('Documento debe tener entre 7 y 9 dígitos');
 
         if (!nombres) errors.push('Nombres son obligatorios');
         else if (!nameRegex.test(nombres)) errors.push('Nombres inválidos');
@@ -181,7 +190,14 @@ const Formulario = () => {
 
         if (!direccion) errors.push('Dirección es obligatoria');
 
-        if (telefono && !digitsRegex.test(telefono)) errors.push('Teléfono: solo dígitos');
+        if (telefono) {
+          if (!digitsRegex.test(telefono)) errors.push('Teléfono: solo dígitos');
+          else if (telefono.length !== 11) errors.push('Teléfono debe tener exactamente 11 dígitos');
+          else {
+            const pref = telefono.slice(0,4);
+            if (!validPhonePrefixes.includes(pref)) errors.push('Teléfono debe comenzar con 0424, 0426, 0414, 0416 o 0412');
+          }
+        }
 
         if (!email) errors.push('Correo es obligatorio');
         else if (!emailRegex.test(email)) errors.push('Correo inválido');
@@ -192,6 +208,10 @@ const Formulario = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFieldErrors([]);
+        // limpiar errores por campo
+        setCedulaError('');
+        setTelefonoError('');
+
         const clientErrors = validateClient();
         if (clientErrors.length) {
             setFieldErrors(clientErrors);
@@ -275,8 +295,15 @@ const Formulario = () => {
 
     // validaciones de entrada en tiempo real (evitan caracteres no permitidos)
     const handleCedulaChange = e => {
-        // solo dígitos
-        setCedula(e.target.value.replace(/\D/g, ''));
+        // solo dígitos y máximo 9 caracteres
+        const cleaned = e.target.value.replace(/\D/g, '').slice(0, 9);
+        setCedula(cleaned);
+        // validación inmediata mínima/longitud
+        if (cleaned.length > 0 && (cleaned.length < 7 || cleaned.length > 9)) {
+            setCedulaError('Documento debe tener entre 7 y 9 dígitos');
+        } else {
+            setCedulaError('');
+        }
     };
 
     const handleNombresChange = e => {
@@ -289,7 +316,23 @@ const Formulario = () => {
     };
 
     const handleTelefonoChange = e => {
-        setTelefono(e.target.value.replace(/\D/g, ''));
+        // solo dígitos y máximo 11 caracteres
+        const cleaned = e.target.value.replace(/\D/g, '').slice(0, 11);
+        setTelefono(cleaned);
+
+        // validación inmediata de prefijo y longitud
+        if (cleaned.length > 0 && cleaned.length !== 11) {
+            setTelefonoError('Teléfono debe tener 11 dígitos');
+        } else if (cleaned.length === 11) {
+            const pref = cleaned.slice(0,4);
+            if (!validPhonePrefixes.includes(pref)) {
+                setTelefonoError('Teléfono debe comenzar con 0424, 0426, 0414, 0416 o 0412');
+            } else {
+                setTelefonoError('');
+            }
+        } else {
+            setTelefonoError('');
+        }
     };
 
     return (
@@ -338,7 +381,10 @@ const Formulario = () => {
                                     className="mb-3"
                                     ref={cedulaRef}
                                     onKeyDown={e => handleEnter(e, nombresRef)}
+                                    maxLength={9}
+                                    inputMode="numeric"
                                 />
+                                {cedulaError && <div className="text-danger small mb-2">{cedulaError}</div>}
 
                                 <CFormInput
                                     type="text"
@@ -409,6 +455,7 @@ const Formulario = () => {
                                     value={contraseña}
                                     onChange={e => setPassword(e.target.value)}
                                     required
+                                    min={6}
                                     className="mb-3"
                                     ref={passwordRef}
                                     onKeyDown={e => handleEnter(e, repeatRef)}
@@ -532,13 +579,16 @@ const Formulario = () => {
                                 <CFormInput
                                     type="text"
                                     label="Teléfono"
-                                    placeholder="Ejm 04147415896"
+                                    placeholder="Ejm 04141234567"
                                     value={telefono}
                                     onChange={handleTelefonoChange}
                                     className="mb-3"
                                     ref={telefonoRef}
                                     onKeyDown={e => handleEnter(e, emailRef)}
+                                    maxLength={11}
+                                    inputMode="numeric"
                                 />
+                                {telefonoError && <div className="text-danger small mb-2">{telefonoError}</div>}
 
                                 <CFormInput
                                     type="email"

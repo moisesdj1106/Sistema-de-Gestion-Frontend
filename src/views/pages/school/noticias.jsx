@@ -12,8 +12,6 @@ const BotonEliminarNoticia = ({ noticiaId, onEliminada }) => {
   const [success, setSuccess] = useState(null)
   const [showConfirm, setShowConfirm] = useState(false)
 
-
-  
   const handleEliminar = async () => {
     setError(null)
     setSuccess(null)
@@ -21,7 +19,7 @@ const BotonEliminarNoticia = ({ noticiaId, onEliminada }) => {
       const res = await fetch(`https://sistema-de-gestion-backend.onrender.com/noticias/${noticiaId}`, {
         method: 'DELETE'
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         setError(data.mensaje || 'Error al eliminar')
       } else {
@@ -30,16 +28,19 @@ const BotonEliminarNoticia = ({ noticiaId, onEliminada }) => {
       }
     } catch (err) {
       setError('Error de conexión con el servidor')
+      console.error(err)
+    } finally {
+      setShowConfirm(false)
     }
-    setShowConfirm(false)
   }
 
   return (
     <>
-      <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} size="sm" onClick={() => setShowConfirm(true)}>
+      <CButton style={{ backgroundColor: 'white', color: 'red', borderColor: 'red' }} size="sm" onClick={() => setShowConfirm(true)}>
         Eliminar
       </CButton>
-      <CModal visible={showConfirm} onClose={() => setShow
+
+      <CModal visible={showConfirm} onClose={() => setShowConfirm(false)}>
         <CModalHeader>
           <CModalTitle>Confirmar Eliminación</CModalTitle>
         </CModalHeader>
@@ -47,14 +48,15 @@ const BotonEliminarNoticia = ({ noticiaId, onEliminada }) => {
           ¿Seguro que deseas eliminar esta noticia?
         </CModalBody>
         <CModalFooter>
-          <CButton style={{backgroundColor:'white', color:'blue', borderColor:'blue'}} onClick={() => setShowConfirm(false)}>
+          <CButton style={{ backgroundColor: 'white', color: 'blue', borderColor: 'blue' }} onClick={() => setShowConfirm(false)}>
             Cancelar
           </CButton>
-          <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={handleEliminar}>
+          <CButton style={{ backgroundColor: 'white', color: 'red', borderColor: 'red' }} onClick={handleEliminar}>
             Eliminar
           </CButton>
         </CModalFooter>
       </CModal>
+
       {error && <CAlert color="danger" className="mt-2">{error}</CAlert>}
       {success && <CAlert color="success" className="mt-2">{success}</CAlert>}
     </>
@@ -94,20 +96,22 @@ const NoticiasBlog = () => {
   const [visible, setVisible] = useState(false)
   const [hovered, setHovered] = useState(null)
   const [modalNoticia, setModalNoticia] = useState(null)
-  const [pagina, setPagina] = useState(1);
-  const noticiasPorPagina = 6;
+  const [pagina, setPagina] = useState(1)
+  const noticiasPorPagina = 6
   const rol = localStorage.getItem('rol') || 'usuario'
 
   useEffect(() => {
     fetch('https://sistema-de-gestion-backend.onrender.com/desastres')
       .then(res => res.json())
       .then(data => setDesastres(data))
+      .catch(console.error)
   }, [])
 
   useEffect(() => {
     fetch('https://sistema-de-gestion-backend.onrender.com/noticias')
       .then(res => res.json())
       .then(data => setNoticias(data))
+      .catch(console.error)
   }, [recargar])
 
   // refresco automático cada 15 segundos
@@ -120,11 +124,11 @@ const NoticiasBlog = () => {
   }, [])
 
   // Calcular paginación
-  const totalPaginas = Math.ceil(noticias.length / noticiasPorPagina);
+  const totalPaginas = Math.ceil(noticias.length / noticiasPorPagina)
   const noticiasAMostrar = noticias.slice(
     (pagina - 1) * noticiasPorPagina,
     pagina * noticiasPorPagina
-  );
+  )
 
   const handleChange = e => {
     const { name, value, files } = e.target
@@ -133,7 +137,7 @@ const NoticiasBlog = () => {
       reader.onload = (ev) => {
         setForm({ ...form, imagen: ev.target.result.split(',')[1] })
       }
-      if (files[0]) reader.readAsDataURL(files[0])
+      if (files && files[0]) reader.readAsDataURL(files[0])
     } else {
       setForm({ ...form, [name]: value })
     }
@@ -141,20 +145,24 @@ const NoticiasBlog = () => {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    await fetch('https://sistema-de-gestion-backend.onrender.com/noticias', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
-    })
-    setForm({
-      titulo: '',
-      descripcion: '',
-      fuente: '',
-      codesa: '',
-      imagen: null
-    })
-    setRecargar(r => !r)
-    setVisible(false)
+    try {
+      await fetch('https://sistema-de-gestion-backend.onrender.com/noticias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      })
+      setForm({
+        titulo: '',
+        descripcion: '',
+        fuente: '',
+        codesa: '',
+        imagen: null
+      })
+      setRecargar(r => !r)
+      setVisible(false)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   // Eliminar noticia y recargar
@@ -166,16 +174,16 @@ const NoticiasBlog = () => {
   return (
     <CContainer className="py-4" style={{ minHeight: '100vh' }}>
       <CRow className="mb-4">
-        <CCol style={{backgroundColor:'white', borderColor:'#FF7043', borderRadius:'7px', textAlign:'center'}}>
+        <CCol style={{ backgroundColor: 'white', borderColor: '#FF7043', borderRadius: '7px', textAlign: 'center' }}>
           <h2>Sucesos Ocurridos Recientemente</h2>
         </CCol>
-        
-          <CCol className="text-end">
-            <CButton style={{backgroundColor:'#FF7043', color:'white'}} onClick={() => setVisible(true)}>
-              Agregar Noticia
-            </CButton>
-          </CCol>
-      
+
+        <CCol className="text-end">
+          <CButton style={{ backgroundColor: '#FF7043', color: 'white' }} onClick={() => setVisible(true)}>
+            Agregar Noticia
+          </CButton>
+        </CCol>
+
       </CRow>
 
       {/* Modal para agregar noticia */}
@@ -188,7 +196,7 @@ const NoticiasBlog = () => {
             <CFormInput
               name="titulo"
               label="Título"
-              placeholder='Ingrese el título de la noticia '
+              placeholder="Ingrese el título de la noticia "
               value={form.titulo}
               onChange={handleChange}
               required
@@ -207,11 +215,11 @@ const NoticiasBlog = () => {
             <CFormInput
               name="fuente"
               label="Fuente"
-              placeholder='Ingrese el título de la noticia '
+              placeholder="Ingrese la fuente"
               value={form.fuente}
               onChange={handleChange}
               required
-              maxLength={10}
+              maxLength={50}
               className="mb-3"
             />
             <CFormSelect
@@ -237,10 +245,10 @@ const NoticiasBlog = () => {
             />
           </CModalBody>
           <CModalFooter>
-            <CButton style={{backgroundColor:'white',color:'red',borderColor:'red'}} onClick={() => setVisible(false)}>
+            <CButton style={{ backgroundColor: 'white', color: 'red', borderColor: 'red' }} onClick={() => setVisible(false)}>
               Cancelar
             </CButton>
-            <CButton style={{backgroundColor:'white',color:'#ff7043',borderColor:'#ff7043'}} type="submit">
+            <CButton style={{ backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043' }} type="submit">
               Publicar
             </CButton>
           </CModalFooter>
@@ -263,20 +271,19 @@ const NoticiasBlog = () => {
                 />
               )}
               <div className="mb-2 text-muted" style={{ fontSize: '1em' }}>
-                {new Date(modalNoticia.TTR_FEPUBL).toLocaleDateString()}<br />
+                {modalNoticia.TTR_FEPUBL ? new Date(modalNoticia.TTR_FEPUBL).toLocaleDateString() : ''}<br />
                 Fuente: {modalNoticia.TTR_FUENTE}
               </div>
-              <div style={{ fontSize: '1.1em' }}>{modalNoticia.TTR_DESCRI}</div>
-             
+              <div style={{ fontSize: '1.1em', textAlign: 'justify' }}>{modalNoticia.TTR_DESCRI}</div>
             </CModalBody>
-            <CModalFooter style={{alignItems: 'center', justifyContent: 'center'}}>
-               {/* Botón eliminar solo para admin */}
+            <CModalFooter style={{ alignItems: 'center', justifyContent: 'center' }}>
+              {/* Botón eliminar solo para admin */}
               {rol === 'admin' && (
-                <div className="mt-3" >
-                  <BotonEliminarNoticia  noticiaId={modalNoticia.TTR_CONOTI} onEliminada={() => handleEliminarNoticia(modalNoticia.TTR_CONOTI)} />
+                <div className="mt-3">
+                  <BotonEliminarNoticia noticiaId={modalNoticia.TTR_CONOTI} onEliminada={() => handleEliminarNoticia(modalNoticia.TTR_CONOTI)} />
                 </div>
               )}
-              <CButton style={{backgroundColor:'white', color:'blue', borderColor:'blue'}} className="mt-3" onClick={() => setModalNoticia(null)}>
+              <CButton style={{ backgroundColor: 'white', color: 'blue', borderColor: 'blue' }} className="mt-3" onClick={() => setModalNoticia(null)}>
                 Cerrar
               </CButton>
             </CModalFooter>
@@ -308,11 +315,11 @@ const NoticiasBlog = () => {
               )}
               <CCardBody>
                 <CCardTitle>{noticia.TTR_TITULO}</CCardTitle>
-                <CCardText className="text-muted" style={{ fontSize: '0.95em' }}>
-                  {new Date(noticia.TTR_FEPUBL).toLocaleDateString()}<br />
+                <CCardText className="text-muted" style={{ fontSize: '0.95em', textAlign: 'justify' }}>
+                  {noticia.TTR_FEPUBL ? new Date(noticia.TTR_FEPUBL).toLocaleDateString() : ''}<br />
                   Fuente: {noticia.TTR_FUENTE}
                 </CCardText>
-                <CCardText>{noticia.TTR_DESCRI}</CCardText>
+                <CCardText style={{ textAlign: 'justify' }}>{noticia.TTR_DESCRI}</CCardText>
               </CCardBody>
             </CCard>
           </CCol>
@@ -323,8 +330,7 @@ const NoticiasBlog = () => {
       {totalPaginas > 1 && (
         <div className="d-flex justify-content-center align-items-center mt-4">
           <CButton
-            style={{ marginRight: 8, color:'#ff7043', borderColor:'#ff7043', backgroundColor:'white' }}
-            
+            style={{ marginRight: 8, color: '#ff7043', borderColor: '#ff7043', backgroundColor: 'white' }}
             variant="outline"
             disabled={pagina === 1}
             onClick={() => setPagina(pagina - 1)}
@@ -343,7 +349,7 @@ const NoticiasBlog = () => {
             </CButton>
           ))}
           <CButton
-            style={{ marginLeft: 8,color:'#ff7043', borderColor:'#ff7043', backgroundColor:'white' }}
+            style={{ marginLeft: 8, color: '#ff7043', borderColor: '#ff7043', backgroundColor: 'white' }}
             variant="outline"
             disabled={pagina === totalPaginas}
             onClick={() => setPagina(pagina + 1)}
@@ -353,7 +359,7 @@ const NoticiasBlog = () => {
         </div>
       )}
     </CContainer>
-  );
+  )
 }
 
 export default NoticiasBlog

@@ -42,8 +42,7 @@ const DamnificadosModulo = () => {
   const totalPages = Math.ceil(total / 10);
 
   const today = new Date();
-  const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-  const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
+  const maxFecha = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().split('T')[0];
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar damnificado?')) {
@@ -266,7 +265,7 @@ const DamnificadosModulo = () => {
             <CFormInput className="mb-2" label="Apellido" name="apelli" value={editForm.apelli} onChange={handleEditChange} required ref={apelliRef} onKeyDown={e => handleEnter(e, fenaciRef)} />
             {errorsEdit.apelli && <div className="text-danger small mb-2">{errorsEdit.apelli}</div>}
 
-            <CFormInput className="mb-2" label="Fecha de nacimiento" type="date" name="fenaci" value={editForm.fenaci} onChange={handleEditChange} required max={maxFechaNacimiento} ref={fenaciRef} onKeyDown={e => handleEnter(e, contacRef)} />
+            <CFormInput className="mb-2" label="Fecha de nacimiento" type="date" name="fenaci" value={editForm.fenaci} onChange={handleEditChange} required max={maxFecha} ref={fenaciRef} onKeyDown={e => handleEnter(e, contacRef)} />
             {errorsEdit.fenaci && <div className="text-danger small mb-2">{errorsEdit.fenaci}</div>}
 
             <CFormInput className="mb-2" label="Contacto" name="contac" value={editForm.contac} onChange={handleEditChange} required inputMode="numeric" ref={contacRef} onKeyDown={e => handleEnter(e, esaludRef)} />

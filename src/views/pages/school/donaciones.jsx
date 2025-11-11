@@ -32,14 +32,10 @@ const RegistrarDonacion = () => {
       .then(setTiposDonacion)
   }, [])
 
-
-
-
   const today = new Date();
-  const maxFecha = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-  .toISOString()
-  .split('T')[0];
-  
+  // corregir por desfase de zona horaria y obtener YYYY-MM-DD local
+  const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
+  const maxFecha = localToday.toISOString().split('T')[0];
 
   // Filtrar donantes por nombre
   const donantesFiltrados = donantes.filter(d =>
@@ -54,8 +50,13 @@ const RegistrarDonacion = () => {
   const handleSubmit = async e => {
     e.preventDefault()
     setMsg({ type: '', text: '' })
+    // validaciones básicas + fecha no futura
     if (!form.cantidad || !form.fedona || !form.coafec || !form.codont || !form.tipodo) {
       setMsg({ type: 'danger', text: 'Todos los campos son obligatorios.' })
+      return
+    }
+    if (form.fedona > maxFecha) {
+      setMsg({ type: 'danger', text: 'La fecha no puede ser futura.' })
       return
     }
     try {

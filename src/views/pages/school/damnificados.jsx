@@ -38,6 +38,11 @@ const DamnificadosModulo = () => {
 
   const totalPages = Math.ceil(total / 10);
 
+    const today = new Date();
+    const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
+
+
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar damnificado?')) {
       await fetch(`${API}/damnificados/eliminar/${id}`, { method: 'DELETE' });
@@ -138,8 +143,8 @@ const DamnificadosModulo = () => {
           <CForm onSubmit={handleEditSubmit}>
             <CFormInput className="mb-2" label="Nombre" name="nombre" value={editForm.nombre} onChange={handleEditChange} required />
             <CFormInput className="mb-2" label="Apellido" name="apelli" value={editForm.apelli} onChange={handleEditChange} required />
-            <CFormInput className="mb-2" label="Fecha de nacimiento" type="date" name="fenaci" value={editForm.fenaci} onChange={handleEditChange} required />
-            <CFormInput className="mb-2" label="Contacto" name="contac" value={editForm.contac} onChange={handleEditChange} required />
+            <CFormInput className="mb-2" label="Fecha de nacimiento" type="date" name="fenaci" value={editForm.fenaci} onChange={handleEditChange} required max={maxBirth} />
+            <CFormInput className="mb-2" label="Contacto" name="contac" value={editForm.contac} onChange={handleEditChange} required min={11} max={11} />
             <CFormSelect className="mb-2" label="Tipo de documento" name="tipodo" value={editForm.tipodo} onChange={handleEditChange} required>
               <option value="">Seleccione tipo</option>
               {tiposDoc.map(t => (
@@ -153,7 +158,7 @@ const DamnificadosModulo = () => {
               ))}
             </CFormSelect>
             <CFormInput className="mb-2" label="Estado de salud" name="esalud" value={editForm.esalud} onChange={handleEditChange} required />
-            <CFormInput className="mb-2" label="Cédula" name="cedula" value={editForm.cedula} onChange={handleEditChange} />
+            <CFormInput className="mb-2" label="Cédula" name="cedula" value={editForm.cedula} onChange={handleEditChange} max={9} min={7} />
             <CModalFooter>
               <CButton color="primary" type="submit">Guardar</CButton>
               <CButton color="secondary" onClick={() => setVisible(false)}>Cancelar</CButton>

@@ -237,7 +237,7 @@ const RegistrarAfectacion = () => {
     if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(formVictima.nombre)) errs.nombre = 'Nombre inválido';
     if (!formVictima.apelli) errs.apelli = 'Apellido obligatorio';
     if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(formVictima.apelli)) errs.apelli = 'Apellido inválido';
-    if (formVictima.certif && !/^\d{1,9}$/.test(formVictima.certif)) errs.certif = 'Certificado inválido';
+    if (formVictima.certif && !/^\d{1,9}$/.test(formVictima.certif)) errs.certif = 'Certificado inválido (1-9 dígitos)';
     if (!formVictima.coafec) errs.coafec = 'Seleccione afectación';
     setErrorsVictima(errs);
     return Object.keys(errs).length === 0;
@@ -722,6 +722,8 @@ const RegistrarAfectacion = () => {
                   value={formVictima.certif}
                   onChange={handleVictChange}
                   className="mb-2"
+                  max={9}
+                  min={7}
                   ref={victCertifRef}
                   onKeyDown={e => handleEnter(e, victCoafecRef)}
                   inputMode="numeric"
@@ -862,7 +864,7 @@ const RegistrarAfectacion = () => {
                       {formPerdida.perdidas.find(p => p.cotipo === tipo.TTR_COTIPO) && (
                         <CFormInput
                           type="number"
-                          min="0"
+                          min="1"
                           step="0.01"
                           placeholder="Valor estimado"
                           value={formPerdida.perdidas.find(p => p.cotipo === tipo.TTR_COTIPO)?.vaesti || ''}

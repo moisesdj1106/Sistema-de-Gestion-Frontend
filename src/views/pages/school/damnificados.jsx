@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell,
   CButton, CFormInput, CPagination, CPaginationItem, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CForm, CFormSelect
@@ -21,6 +21,9 @@ const DamnificadosModulo = () => {
   const [afectaciones, setAfectaciones] = useState([]);
   const [editId, setEditId] = useState(null);
 
+  // errores para el modal editar
+  const [errorsEdit, setErrorsEdit] = useState({});
+
   const fetchData = () => {
     fetch(`${API}/damnificados/lista?search=${search}&page=${page}`)
       .then(res => res.json())
@@ -38,15 +41,31 @@ const DamnificadosModulo = () => {
 
   const totalPages = Math.ceil(total / 10);
 
-    const today = new Date();
-    const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-    const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
-
+  const today = new Date();
+  const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+  const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar damnificado?')) {
       await fetch(`${API}/damnificados/eliminar/${id}`, { method: 'DELETE' });
       fetchData();
+    }
+  };
+
+  // REFS para navegación con Enter dentro del modal editar
+  const tipodoRef = useRef(null);
+  const cedulaRef = useRef(null);
+  const nombreRef = useRef(null);
+  const apelliRef = useRef(null);
+  const fenaciRef = useRef(null);
+  const contacRef = useRef(null);
+  const coafecRef = useRef(null);
+  const esaludRef = useRef(null);
+
+  const handleEnter = (e, nextRef) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (nextRef && nextRef.current) nextRef.current.focus();
     }
   };
 
@@ -61,24 +80,113 @@ const DamnificadosModulo = () => {
       cedula: d.TTR_CEDULA || '',
       tipodo: d.TTR_TIPODO || ''
     });
+    setErrorsEdit({});
     setEditId(d.TTR_CODAMN);
     setVisible(true);
+    setTimeout(() => { if (tipodoRef.current) tipodoRef.current.focus(); }, 120);
   };
 
+  // sanitizadores simples
+  const onlyDigits = s => String(s ?? '').replace(/\D/g, '');
+  const onlyLetters = s => String(s ?? '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, '');
+
+  // cambio con limpieza y validación en tiempo real
   const handleEditChange = e => {
     const { name, value } = e.target;
-    setEditForm({ ...editForm, [name]: value });
+    let val = value;
+    if (name === 'cedula' || name === 'contac') val = onlyDigits(value);
+    if (name === 'nombre' || name === 'apelli' || name === 'esalud') val = onlyLetters(value);
+    setEditForm(prev => ({ ...prev, [name]: val }));
+    // validar campo en tiempo real
+    validateEditField(name, val);
   };
 
-  const handleEditSubmit = async e => {
-    e.preventDefault();
-    await fetch(`${API}/damnificados/editar/${editId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editForm)
+  const validateEditField = (name, value) => {
+    const v = String(value ?? '').trim();
+    let msg = '';
+
+    if (name === 'tipodo') {
+      if (!v) msg = 'Seleccione tipo de documento';
+    }
+    if (name === 'cedula') {
+      if (!v) msg = 'Cédula obligatoria';
+      else if (!/^\d{7,9}$/.test(v)) msg = 'Cédula inválida (7-9 dígitos)';
+    }
+    if (name === 'nombre') {
+      if (!v) msg = 'Nombre obligatorio';
+      else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(v)) msg = 'Nombre inválido';
+    }
+    if (name === 'apelli') {
+      if (!v) msg = 'Apellido obligatorio';
+      else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(v)) msg = 'Apellido inválido';
+    }
+    if (name === 'fenaci') {
+      if (!v) msg = 'Fecha de nacimiento obligatoria';
+      else if (v > maxFechaNacimiento) msg = 'La fecha indica menor de 18 o futura';
+    }
+    if (name === 'contac') {
+      if (!v) msg = 'Contacto obligatorio';
+      else if (!/^\d{7,11}$/.test(v)) msg = 'Contacto inválido (7-11 dígitos)';
+    }
+    if (name === 'coafec') {
+      if (!v) msg = 'Seleccione afectación';
+    }
+    if (name === 'esalud') {
+      if (!v) msg = 'Estado de salud obligatorio';
+    }
+
+    setErrorsEdit(prev => ({ ...prev, [name]: msg }));
+    return msg === '';
+  };
+
+  const validateEditAll = () => {
+    const fields = ['tipodo','cedula','nombre','apelli','fenaci','contac','esalud','coafec'];
+    const errs = {};
+    fields.forEach(f => {
+      const ok = validateEditField(f, editForm[f]);
+      if (!ok) errs[f] = (errorsEdit[f] || 'Campo inválido');
     });
-    setVisible(false);
-    fetchData();
+    // ensure state updated with any new msgs (validateEditField already set individual)
+    return Object.values(errorsEdit).every(v => !v) && Object.keys(errs).length === 0;
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    // validar todos los campos y actualizar errorsEdit
+    const fieldOrder = ['tipodo','cedula','nombre','apelli','fenaci','contac','esalud','coafec'];
+    const newErrors = {};
+    fieldOrder.forEach(f => {
+      const ok = validateEditField(f, editForm[f]);
+      if (!ok) newErrors[f] = errorsEdit[f] || 'Campo inválido';
+    });
+    setErrorsEdit(prev => ({ ...prev, ...newErrors }));
+
+    // si existe algún error, enfocar el primero
+    const firstError = fieldOrder.find(f => newErrors[f]);
+    if (firstError) {
+      const map = { tipodo: tipodoRef, cedula: cedulaRef, nombre: nombreRef, apelli: apelliRef, fenaci: fenaciRef, contac: contacRef, esalud: esaludRef, coafec: coafecRef };
+      if (map[firstError] && map[firstError].current) map[firstError].current.focus();
+      return;
+    }
+
+    // enviar petición
+    try {
+      const res = await fetch(`${API}/damnificados/editar/${editId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+      if (res.ok) {
+        setVisible(false);
+        fetchData();
+      } else {
+        const err = await res.json();
+        // mostrar errores generales si los hubiere
+        alert(err.mensaje || 'Error al guardar');
+      }
+    } catch (err) {
+      alert('Error de conexión');
+    }
   };
 
   return (
@@ -135,30 +243,46 @@ const DamnificadosModulo = () => {
       </CCardBody>
 
       {/* Modal editar */}
-      <CModal visible={visible} onClose={() => setVisible(false)}>
+      <CModal visible={visible} onClose={() => { setVisible(false); setErrorsEdit({}); }}>
         <CModalHeader>
           <CModalTitle>Editar Damnificado</CModalTitle>
         </CModalHeader>
         <CModalBody>
           <CForm onSubmit={handleEditSubmit}>
-            <CFormInput className="mb-2" label="Nombre" name="nombre" value={editForm.nombre} onChange={handleEditChange} required />
-            <CFormInput className="mb-2" label="Apellido" name="apelli" value={editForm.apelli} onChange={handleEditChange} required />
-            <CFormInput className="mb-2" label="Fecha de nacimiento" type="date" name="fenaci" value={editForm.fenaci} onChange={handleEditChange} required max={maxFechaNacimiento} />
-            <CFormInput className="mb-2" label="Contacto" name="contac" value={editForm.contac} onChange={handleEditChange} required min={11} max={11} />
-            <CFormSelect className="mb-2" label="Tipo de documento" name="tipodo" value={editForm.tipodo} onChange={handleEditChange} required>
+            <CFormSelect className="mb-2" label="Tipo de documento" name="tipodo" value={editForm.tipodo} onChange={handleEditChange} required ref={tipodoRef} onKeyDown={e => handleEnter(e, cedulaRef)}>
               <option value="">Seleccione tipo</option>
               {tiposDoc.map(t => (
                 <option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>{t.TMA_NOMBRE}</option>
               ))}
             </CFormSelect>
-            <CFormSelect className="mb-2" label="Comunidad afectada" name="coafec" value={editForm.coafec} onChange={handleEditChange} required>
+            {errorsEdit.tipodo && <div className="text-danger small mb-2">{errorsEdit.tipodo}</div>}
+
+            <CFormInput className="mb-2" label="Cédula" name="cedula" value={editForm.cedula} onChange={handleEditChange} required inputMode="numeric" ref={cedulaRef} onKeyDown={e => handleEnter(e, nombreRef)} />
+            {errorsEdit.cedula && <div className="text-danger small mb-2">{errorsEdit.cedula}</div>}
+
+            <CFormInput className="mb-2" label="Nombre" name="nombre" value={editForm.nombre} onChange={handleEditChange} required ref={nombreRef} onKeyDown={e => handleEnter(e, apelliRef)} />
+            {errorsEdit.nombre && <div className="text-danger small mb-2">{errorsEdit.nombre}</div>}
+
+            <CFormInput className="mb-2" label="Apellido" name="apelli" value={editForm.apelli} onChange={handleEditChange} required ref={apelliRef} onKeyDown={e => handleEnter(e, fenaciRef)} />
+            {errorsEdit.apelli && <div className="text-danger small mb-2">{errorsEdit.apelli}</div>}
+
+            <CFormInput className="mb-2" label="Fecha de nacimiento" type="date" name="fenaci" value={editForm.fenaci} onChange={handleEditChange} required max={maxFechaNacimiento} ref={fenaciRef} onKeyDown={e => handleEnter(e, contacRef)} />
+            {errorsEdit.fenaci && <div className="text-danger small mb-2">{errorsEdit.fenaci}</div>}
+
+            <CFormInput className="mb-2" label="Contacto" name="contac" value={editForm.contac} onChange={handleEditChange} required inputMode="numeric" ref={contacRef} onKeyDown={e => handleEnter(e, esaludRef)} />
+            {errorsEdit.contac && <div className="text-danger small mb-2">{errorsEdit.contac}</div>}
+
+            <CFormInput className="mb-2" label="Estado de salud" name="esalud" value={editForm.esalud} onChange={handleEditChange} required ref={esaludRef} onKeyDown={e => handleEnter(e, coafecRef)} />
+            {errorsEdit.esalud && <div className="text-danger small mb-2">{errorsEdit.esalud}</div>}
+
+            <CFormSelect className="mb-2" label="Comunidad afectada" name="coafec" value={editForm.coafec} onChange={handleEditChange} required ref={coafecRef}>
               <option value="">Seleccione afectación</option>
               {afectaciones.map(a => (
                 <option key={a.TTR_COAFEC} value={a.TTR_COAFEC}>{a.comunidad}</option>
               ))}
             </CFormSelect>
-            <CFormInput className="mb-2" label="Estado de salud" name="esalud" value={editForm.esalud} onChange={handleEditChange} required />
-            <CFormInput className="mb-2" label="Cédula" name="cedula" value={editForm.cedula} onChange={handleEditChange} max={9} min={7} />
+            {errorsEdit.coafec && <div className="text-danger small mb-2">{errorsEdit.coafec}</div>}
+
             <CModalFooter>
               <CButton color="primary" type="submit">Guardar</CButton>
               <CButton color="secondary" onClick={() => setVisible(false)}>Cancelar</CButton>

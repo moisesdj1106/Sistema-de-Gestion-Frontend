@@ -217,7 +217,7 @@ const RegistrarAfectacion = () => {
     }
   };
 
-  // ---------- VICTIMA: handlers y validación ----------
+
   const handleVictChange = (e) => {
     const { name, value } = e.target;
     let val = value;
@@ -284,7 +284,7 @@ const RegistrarAfectacion = () => {
     }
   };
 
-  // ---------- PERDIDAS: handlers y validación ----------
+
   const handleChangePerdida = e => {
     const { name, value } = e.target;
     let val = value;
@@ -380,7 +380,7 @@ const RegistrarAfectacion = () => {
   const comunidadUltima = comunidades.find(c => c.TMA_CODCOM === (ultimaAfectacion?.TTR_CODCOM));
   const desastreUltima = desastres.find(d => d.TMA_CODESA === (ultimaAfectacion?.TTR_CODESA));
 
-  // ---------- Resto del componente (form afectación) ----------
+
   const handleChange = (setter, form) => e => {
     const { name, value } = e.target;
     setter({ ...form, [name]: value });

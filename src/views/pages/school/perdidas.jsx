@@ -391,7 +391,7 @@ const ListaPerdidas = () => {
                         label="Valor estimado"
                         name="TTR_VAESTI"
                         type="number"
-                        min="0"
+                        min="1"
                         step="0.01"
                         value={editPerdida.TTR_VAESTI}
                         onChange={handleEditChange}

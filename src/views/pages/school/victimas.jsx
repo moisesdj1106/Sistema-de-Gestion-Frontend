@@ -117,7 +117,7 @@ const VictimasModulo = () => {
       if (!v) msg = 'Seleccione afectación';
     }
     if (name === 'certif') {
-      if (v && !/^\d{1,9}$/.test(v)) msg = 'Certificado inválido (solo números)';
+      if (v && !/^\d{1,9}$/.test(v)) msg = 'Certificado inválido 9 digitos';
     }
 
     setErrorsEdit(prev => ({ ...prev, [name]: msg }));

@@ -188,10 +188,11 @@ const NoticiasBlog = () => {
             <CFormInput
               name="titulo"
               label="Título"
-              placeholder='Ingrese el título de la noticia (100 caracteres máximo)'
+              placeholder='Ingrese el título de la noticia '
               value={form.titulo}
               onChange={handleChange}
               required
+              maxLength={25}
               className="mb-3"
             />
             <CFormTextarea
@@ -206,10 +207,11 @@ const NoticiasBlog = () => {
             <CFormInput
               name="fuente"
               label="Fuente"
-              placeholder='Ingrese el título de la noticia (100 caracteres máximo)'
+              placeholder='Ingrese el título de la noticia '
               value={form.fuente}
               onChange={handleChange}
               required
+              maxLength={10}
               className="mb-3"
             />
             <CFormSelect

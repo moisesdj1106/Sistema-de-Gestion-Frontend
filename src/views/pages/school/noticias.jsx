@@ -200,6 +200,7 @@ const NoticiasBlog = () => {
               value={form.descripcion}
               onChange={handleChange}
               required
+              maxLength={100}
               className="mb-3"
             />
             <CFormInput

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   CContainer, CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow,
   CTableHeaderCell, CTableBody, CTableDataCell, CInputGroup, CInputGroupText, CFormInput,
-  CPagination, CPaginationItem, CButton, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CForm, CFormSelect
+  CPagination, CPaginationItem, CButton, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CForm, CFormSelect, CCardTitle, CCardText
 } from '@coreui/react';
 
 const API = 'https://sistema-de-gestion-backend.onrender.com';
@@ -24,12 +24,30 @@ const ListadoAfectaciones = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', color: 'success' });
 
+  // validación editar
+  const [errorsEdit, setErrorsEdit] = useState({});
+  const [isSmall, setIsSmall] = useState(window.innerWidth < 768);
+
+  // refs y navegación Enter
+  const codcomRef = useRef(null);
+  const codesaRef = useRef(null);
+  const feafecRef = useRef(null);
+  const saveRef = useRef(null);
+
   useEffect(() => {
-    fetch(`${API}/afectaciones`).then(res => res.json()).then(setAfectaciones);
-    fetch(`${API}/comunidades`).then(res => res.json()).then(setComunidades);
-    fetch(`${API}/parroquias`).then(res => res.json()).then(setParroquias);
-    fetch(`${API}/desastres`).then(res => res.json()).then(setDesastres);
+    const onResize = () => setIsSmall(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  const fetchAll = () => {
+    fetch(`${API}/afectaciones`).then(res => res.json()).then(setAfectaciones).catch(console.error);
+    fetch(`${API}/comunidades`).then(res => res.json()).then(setComunidades).catch(console.error);
+    fetch(`${API}/parroquias`).then(res => res.json()).then(setParroquias).catch(console.error);
+    fetch(`${API}/desastres`).then(res => res.json()).then(setDesastres).catch(console.error);
+  };
+
+  useEffect(() => { fetchAll(); }, []);
 
   // Mapas para acceso rápido
   const comunidadesMap = Object.fromEntries(comunidades.map(c => [c.TMA_CODCOM, c]));
@@ -47,7 +65,7 @@ const ListadoAfectaciones = () => {
   });
 
   // Paginación
-  const totalPages = Math.ceil(afectacionesFiltradas.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(afectacionesFiltradas.length / itemsPerPage));
   const afectacionesToShow = afectacionesFiltradas.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -61,30 +79,84 @@ const ListadoAfectaciones = () => {
       feafec: afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : '',
       codesa: afec.TTR_CODESA
     });
+    setErrorsEdit({});
     setShowEdit(true);
+    setTimeout(() => { if (codcomRef.current) codcomRef.current.focus(); }, 120);
   };
+
+  // helpers: fecha máxima local YYYY-MM-DD para bloquear futuras
+  const today = new Date();
+  const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
+  const maxFechaLocal = localToday.toISOString().split('T')[0];
 
   const handleEditChange = e => {
     const { name, value } = e.target;
-    setEditForm({ ...editForm, [name]: value });
+    setEditForm(prev => ({ ...prev, [name]: value }));
+    validateEditField(name, value);
+  };
+
+  const validateEditField = (name, value) => {
+    const v = String(value ?? '').trim();
+    let msg = '';
+    if (name === 'codcom') {
+      if (!v) msg = 'Seleccione comunidad';
+    }
+    if (name === 'codesa') {
+      if (!v) msg = 'Seleccione desastre';
+    }
+    if (name === 'feafec') {
+      if (!v) msg = 'Fecha obligatoria';
+      else if (v > maxFechaLocal) msg = 'La fecha no puede ser futura';
+    }
+    setErrorsEdit(prev => ({ ...prev, [name]: msg }));
+    return msg === '';
+  };
+
+  const validateEditAll = () => {
+    const fields = ['codcom', 'codesa', 'feafec'];
+    const newErr = {};
+    fields.forEach(f => {
+      const ok = validateEditField(f, editForm[f]);
+      if (!ok) newErr[f] = true;
+    });
+    setErrorsEdit(prev => ({ ...prev })); // individual messages already set
+    return Object.keys(newErr).length === 0;
   };
 
   const handleEditSave = async () => {
-    const res = await fetch(`${API}/afectaciones/${editId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        TTR_CODCOM: editForm.codcom,
-        TTR_FEAFEC: editForm.feafec,
-        TTR_CODESA: editForm.codesa
-      })
-    });
-    if (res.ok) {
-      setToast({ show: true, message: 'Afectación actualizada', color: 'info' });
-      setShowEdit(false);
-      fetch(`${API}/afectaciones`).then(res => res.json()).then(setAfectaciones);
-    } else {
-      setToast({ show: true, message: 'Error al actualizar', color: 'danger' });
+    // validar
+    const fieldsOrder = ['codcom','codesa','feafec'];
+    const invalid = fieldsOrder.find(f => !validateEditField(f, editForm[f]));
+    if (invalid) {
+      // enfocar primer error
+      const map = { codcom: codcomRef, codesa: codesaRef, feafec: feafecRef };
+      if (map[invalid] && map[invalid].current) map[invalid].current.focus();
+      setToast({ show: false, message: '', color: 'danger' });
+      return;
+    }
+
+    // enviar
+    try {
+      const res = await fetch(`${API}/afectaciones/${editId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          TTR_CODCOM: editForm.codcom,
+          TTR_FEAFEC: editForm.feafec,
+          TTR_CODESA: editForm.codesa
+        })
+      });
+      if (res.ok) {
+        setToast({ show: true, message: 'Afectación actualizada', color: 'info' });
+        setShowEdit(false);
+        fetchAll();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setToast({ show: true, message: err.mensaje || 'Error al actualizar', color: 'danger' });
+      }
+    } catch (err) {
+      console.error(err);
+      setToast({ show: true, message: 'Error de conexión', color: 'danger' });
     }
   };
 
@@ -94,7 +166,7 @@ const ListadoAfectaciones = () => {
     if (res.ok) {
       setToast({ show: true, message: 'Afectación eliminada', color: 'warning' });
       setShowDelete(false);
-      fetch(`${API}/afectaciones`).then(res => res.json()).then(setAfectaciones);
+      fetchAll();
     } else {
       setToast({ show: true, message: 'Error al eliminar', color: 'danger' });
     }
@@ -126,7 +198,7 @@ const ListadoAfectaciones = () => {
       <CCard>
         <CCardHeader className="d-flex justify-content-between align-items-center">
           <strong>Afectaciones Registradas</strong>
-          <CInputGroup style={{ width: 300 }}>
+          <CInputGroup style={{ width: isSmall ? '100%' : 300 }}>
             <CInputGroupText>Buscar</CInputGroupText>
             <CFormInput
               size="sm"
@@ -140,73 +212,101 @@ const ListadoAfectaciones = () => {
           </CInputGroup>
         </CCardHeader>
         <CCardBody style={{ padding: 0 }}>
-          <CTable
-            align="middle"
-            hover
-            className="mb-0"
-            style={{
-              tableLayout: 'auto',
-              fontSize: '0.93rem',
-              textAlign: 'center',
-              width: '100%',
-            }}
-          >
-            <CTableHead color="light">
-              <CTableRow>
-                <CTableHeaderCell>Comunidad</CTableHeaderCell>
-                <CTableHeaderCell>Parroquia</CTableHeaderCell>
-                <CTableHeaderCell>Desastre</CTableHeaderCell>
-                <CTableHeaderCell>Fecha</CTableHeaderCell>
-                <CTableHeaderCell>Acciones</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
+          {/* Responsive: cards en pantallas pequeñas */}
+          {isSmall ? (
+            <div className="p-3 d-flex flex-column gap-3">
               {afectacionesToShow.map(afec => {
                 const comunidad = comunidadesMap[afec.TTR_CODCOM];
                 const parroquia = parroquiasMap[comunidad?.TMA_COPARR];
                 const desastre = desastresMap[afec.TTR_CODESA];
                 return (
-                  <CTableRow key={afec.TTR_COAFEC}>
-                    <CTableDataCell>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</CTableDataCell>
-                    <CTableDataCell>{parroquia?.TMA_NOMBRE || ''}</CTableDataCell>
-                    <CTableDataCell>{desastre?.TMA_NOMBRE || afec.TTR_CODESA}</CTableDataCell>
-                    <CTableDataCell>{afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : ''}</CTableDataCell>
-                    <CTableDataCell>
-                      <div className="d-flex flex-column align-items-center">
-                        <CButton
-                          style={{
-                            backgroundColor: 'white',
-                            color: '#ff7043',
-                            minWidth: 90,
-                            maxWidth: 90,
-                            borderColor: '#ff7043'
-                          }}
-                          size="sm"
-                          className="mb-1"
-                          onClick={() => handleEditOpen(afec)}
-                        >
-                          Editar
-                        </CButton>
-                        <CButton
-                          size="sm"
-                          style={{
-                            minWidth: 90,
-                            maxWidth: 90,
-                            backgroundColor: 'white',
-                            color: 'red',
-                            borderColor: 'red'
-                          }}
-                          onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}
-                        >
-                          Eliminar
-                        </CButton>
+                  <CCard key={afec.TTR_COAFEC} className="p-2">
+                    <CCardBody className="p-2">
+                      <CCardTitle style={{ fontSize: 16, marginBottom: 4 }}>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</CCardTitle>
+                      <CCardText style={{ marginBottom: 6, fontSize: 13 }}>
+                        <strong>Parroquia:</strong> {parroquia?.TMA_NOMBRE || '-'} <br />
+                        <strong>Desastre:</strong> {desastre?.TMA_NOMBRE || '-'} <br />
+                        <strong>Fecha:</strong> {afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : '-'}
+                      </CCardText>
+                      <div className="d-flex gap-2">
+                        <CButton size="sm" style={{ backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043' }} onClick={() => handleEditOpen(afec)}>Editar</CButton>
+                        <CButton size="sm" style={{ backgroundColor: 'white', color: 'red', borderColor: 'red' }} onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}>Eliminar</CButton>
                       </div>
-                    </CTableDataCell>
-                  </CTableRow>
+                    </CCardBody>
+                  </CCard>
                 );
               })}
-            </CTableBody>
-          </CTable>
+            </div>
+          ) : (
+            <CTable
+              align="middle"
+              hover
+              className="mb-0"
+              style={{
+                tableLayout: 'auto',
+                fontSize: '0.93rem',
+                textAlign: 'center',
+                width: '100%',
+              }}
+            >
+              <CTableHead color="light">
+                <CTableRow>
+                  <CTableHeaderCell>Comunidad</CTableHeaderCell>
+                  <CTableHeaderCell>Parroquia</CTableHeaderCell>
+                  <CTableHeaderCell>Desastre</CTableHeaderCell>
+                  <CTableHeaderCell>Fecha</CTableHeaderCell>
+                  <CTableHeaderCell>Acciones</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody>
+                {afectacionesToShow.map(afec => {
+                  const comunidad = comunidadesMap[afec.TTR_CODCOM];
+                  const parroquia = parroquiasMap[comunidad?.TMA_COPARR];
+                  const desastre = desastresMap[afec.TTR_CODESA];
+                  return (
+                    <CTableRow key={afec.TTR_COAFEC}>
+                      <CTableDataCell>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</CTableDataCell>
+                      <CTableDataCell>{parroquia?.TMA_NOMBRE || ''}</CTableDataCell>
+                      <CTableDataCell>{desastre?.TMA_NOMBRE || afec.TTR_CODESA}</CTableDataCell>
+                      <CTableDataCell>{afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : ''}</CTableDataCell>
+                      <CTableDataCell>
+                        <div className="d-flex flex-column align-items-center">
+                          <CButton
+                            style={{
+                              backgroundColor: 'white',
+                              color: '#ff7043',
+                              minWidth: 90,
+                              maxWidth: 90,
+                              borderColor: '#ff7043'
+                            }}
+                            size="sm"
+                            className="mb-1"
+                            onClick={() => handleEditOpen(afec)}
+                          >
+                            Editar
+                          </CButton>
+                          <CButton
+                            size="sm"
+                            style={{
+                              minWidth: 90,
+                              maxWidth: 90,
+                              backgroundColor: 'white',
+                              color: 'red',
+                              borderColor: 'red'
+                            }}
+                            onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}
+                          >
+                            Eliminar
+                          </CButton>
+                        </div>
+                      </CTableDataCell>
+                    </CTableRow>
+                  );
+                })}
+              </CTableBody>
+            </CTable>
+          )}
+
           {/* Paginación */}
           <div className="d-flex justify-content-center my-3">
             <CPagination align="center" className="mb-0">
@@ -237,7 +337,7 @@ const ListadoAfectaciones = () => {
       </CCard>
 
       {/* Modal Editar */}
-      <CModal visible={showEdit} onClose={() => setShowEdit(false)}>
+      <CModal visible={showEdit} onClose={() => { setShowEdit(false); setErrorsEdit({}); }}>
         <CModalHeader>
           <CModalTitle>Editar Afectación</CModalTitle>
         </CModalHeader>
@@ -250,12 +350,16 @@ const ListadoAfectaciones = () => {
               onChange={handleEditChange}
               required
               className="mb-3"
+              ref={codcomRef}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (codesaRef.current) codesaRef.current.focus(); } }}
             >
               <option value="">Seleccione comunidad</option>
               {comunidades.map(c => (
                 <option key={c.TMA_CODCOM} value={c.TMA_CODCOM}>{c.TMA_NOMBRE}</option>
               ))}
             </CFormSelect>
+            {errorsEdit.codcom && <div className="text-danger small mb-2">{errorsEdit.codcom}</div>}
+
             <CFormSelect
               label="Desastre"
               name="codesa"
@@ -263,12 +367,16 @@ const ListadoAfectaciones = () => {
               onChange={handleEditChange}
               required
               className="mb-3"
+              ref={codesaRef}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (feafecRef.current) feafecRef.current.focus(); } }}
             >
               <option value="">Seleccione desastre</option>
               {desastres.map(d => (
                 <option key={d.TMA_CODESA} value={d.TMA_CODESA}>{d.TMA_NOMBRE}</option>
               ))}
             </CFormSelect>
+            {errorsEdit.codesa && <div className="text-danger small mb-2">{errorsEdit.codesa}</div>}
+
             <CFormInput
               label="Fecha de Afectación"
               name="feafec"
@@ -277,11 +385,15 @@ const ListadoAfectaciones = () => {
               onChange={handleEditChange}
               required
               className="mb-3"
+              max={maxFechaLocal}
+              ref={feafecRef}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (saveRef.current) saveRef.current.focus(); } }}
             />
+            {errorsEdit.feafec && <div className="text-danger small mb-2">{errorsEdit.feafec}</div>}
           </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={handleEditSave}>Guardar</CButton>
+          <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={handleEditSave} ref={saveRef}>Guardar</CButton>
           <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => setShowEdit(false)}>Cancelar</CButton>
         </CModalFooter>
       </CModal>

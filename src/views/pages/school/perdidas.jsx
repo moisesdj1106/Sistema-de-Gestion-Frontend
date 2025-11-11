@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   CCard, CCardBody, CCardHeader, CContainer, CRow, CCol,
   CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell,
@@ -22,37 +22,155 @@ const ListaPerdidas = () => {
   const [tiposDoc, setTiposDoc] = useState([]);
   const [afectaciones, setAfectaciones] = useState([]);
 
+  // Validación / refs para modal editar
+  const [errorsEdit, setErrorsEdit] = useState({});
+  const afectRef = useRef(null);
+  const docRef = useRef(null);
+  const ceduRef = useRef(null);
+  const nombreRef = useRef(null);
+  const apelliRef = useRef(null);
+  const tipoPerRef = useRef(null);
+  const vaestiRef = useRef(null);
+  const saveRef = useRef(null);
+
   // Cargar datos
   const fetchPerdidas = async () => {
-    const res = await fetch(`${API}/perdidas/lista?search=${search}&page=${page}`);
-    const data = await res.json();
-    setPerdidas(data.data);
-    setTotal(data.total);
+    try {
+      const res = await fetch(`${API}/perdidas/lista?search=${search}&page=${page}`);
+      const data = await res.json();
+      setPerdidas(data.data || []);
+      setTotal(data.total || 0);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => { fetchPerdidas(); }, [search, page]);
 
   useEffect(() => {
-    fetch(`${API}/tipos-perdida`).then(res => res.json()).then(setTiposPerdida);
-    fetch(`${API}/tipos-documento`).then(res => res.json()).then(setTiposDoc);
-    fetch(`${API}/afectacion`).then(res => res.json()).then(setAfectaciones);
+    fetch(`${API}/tipos-perdida`).then(res => res.json()).then(setTiposPerdida).catch(console.error);
+    fetch(`${API}/tipos-documento`).then(res => res.json()).then(setTiposDoc).catch(console.error);
+    fetch(`${API}/afectacion`).then(res => res.json()).then(setAfectaciones).catch(console.error);
   }, []);
 
-  // Editar
+  // Helpers de sanitización
+  const onlyDigits = s => String(s ?? '').replace(/\D/g, '');
+  const onlyLetters = s => String(s ?? '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, '');
+  const onlyDecimal = s => String(s ?? '').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+
   const handleEdit = (perdida) => {
-    setEditPerdida({ ...perdida });
-    setModalEdit(true);
+    // normalizar campo names para edición (trabajar sobre copia)
+    setEditPerdida({
+      ...perdida,
+      TTR_VAESTI: String(perdida.TTR_VAESTI ?? ''),
+      TTR_CEDULA: String(perdida.TTR_CEDULA ?? ''),
+      TTR_NOMBRE: perdida.TTR_NOMBRE ?? '',
+      TTR_APELLI: perdida.TTR_APELLI ?? '',
+      TTR_CODDOC: String(perdida.TTR_CODDOC ?? ''),
+      TTR_COTIPO: String(perdida.TTR_COTIPO ?? ''),
+      TTR_COAFEC: String(perdida.TTR_COAFEC ?? '')
+    });
+    setErrorsEdit({});
     setMsg({ type: '', text: '' });
+    setModalEdit(true);
+    setTimeout(() => { if (afectRef.current) afectRef.current.focus(); }, 120);
   };
 
   const handleEditChange = e => {
     const { name, value } = e.target;
-    setEditPerdida(prev => ({ ...prev, [name]: value }));
+    if (!editPerdida) return;
+    let val = value;
+    if (name === 'TTR_CEDULA') val = onlyDigits(value);
+    if (name === 'TTR_VAESTI') val = onlyDecimal(value);
+    if (name === 'TTR_NOMBRE' || name === 'TTR_APELLI') val = onlyLetters(value);
+    // selects: keep as string
+    setEditPerdida(prev => ({ ...prev, [name]: val }));
+    validateEditField(name, val);
+    setMsg({ type: '', text: '' });
+  };
+
+  const handleEnter = (e, nextRef) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (nextRef && nextRef.current) nextRef.current.focus();
+    }
+  };
+
+  const validateEditField = (name, value) => {
+    const v = String(value ?? '').trim();
+    let msgErr = '';
+
+    if (name === 'TTR_COAFEC') {
+      if (!v) msgErr = 'Seleccione afectación';
+    }
+    if (name === 'TTR_CODDOC') {
+      if (!v) msgErr = 'Seleccione tipo de documento';
+    }
+    if (name === 'TTR_CEDULA') {
+      if (!v) msgErr = 'Cédula obligatoria';
+      else if (!/^\d{7,9}$/.test(v)) msgErr = 'Cédula inválida (7-9 dígitos)';
+    }
+    if (name === 'TTR_NOMBRE') {
+      if (!v) msgErr = 'Nombre obligatorio';
+      else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(v)) msgErr = 'Nombre inválido';
+    }
+    if (name === 'TTR_APELLI') {
+      if (!v) msgErr = 'Apellido obligatorio';
+      else if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(v)) msgErr = 'Apellido inválido';
+    }
+    if (name === 'TTR_COTIPO') {
+      if (!v) msgErr = 'Seleccione tipo de pérdida';
+    }
+    if (name === 'TTR_VAESTI') {
+      if (!v) msgErr = 'Valor estimado obligatorio';
+      else if (isNaN(v) || Number(v) <= 0) msgErr = 'Valor estimado inválido (> 0)';
+    }
+
+    setErrorsEdit(prev => ({ ...prev, [name]: msgErr }));
+    return msgErr === '';
+  };
+
+  const validateEditAll = () => {
+    if (!editPerdida) return false;
+    const fields = ['TTR_COAFEC','TTR_CODDOC','TTR_CEDULA','TTR_NOMBRE','TTR_APELLI','TTR_COTIPO','TTR_VAESTI'];
+    const newErr = {};
+    fields.forEach(f => {
+      const ok = validateEditField(f, editPerdida[f]);
+      if (!ok) newErr[f] = true;
+    });
+    return Object.keys(newErr).length === 0;
   };
 
   const handleEditSubmit = async e => {
     e.preventDefault();
     setMsg({ type: '', text: '' });
+    if (!editPerdida) return;
+
+    // validar todos los campos
+    const order = ['TTR_COAFEC','TTR_CODDOC','TTR_CEDULA','TTR_NOMBRE','TTR_APELLI','TTR_COTIPO','TTR_VAESTI'];
+    const newErr = {};
+    for (const f of order) {
+      const ok = validateEditField(f, editPerdida[f]);
+      if (!ok) newErr[f] = true;
+    }
+    setErrorsEdit(prev => ({ ...prev })); // mensajes ya seteados
+
+    const firstError = order.find(f => errorsEdit[f] || newErr[f]);
+    if (firstError) {
+      const map = {
+        TTR_COAFEC: afectRef,
+        TTR_CODDOC: docRef,
+        TTR_CEDULA: ceduRef,
+        TTR_NOMBRE: nombreRef,
+        TTR_APELLI: apelliRef,
+        TTR_COTIPO: tipoPerRef,
+        TTR_VAESTI: vaestiRef
+      };
+      if (map[firstError] && map[firstError].current) map[firstError].current.focus();
+      return;
+    }
+
+    // payload
     const payload = {
       coafec: Number(editPerdida.TTR_COAFEC),
       cotipo: Number(editPerdida.TTR_COTIPO),
@@ -62,31 +180,43 @@ const ListaPerdidas = () => {
       nombre: editPerdida.TTR_NOMBRE,
       apelli: editPerdida.TTR_APELLI
     };
-    const res = await fetch(`${API}/perdidas/editar/${editPerdida.TTR_COPERD}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setMsg({ type: 'success', text: 'Pérdida actualizada correctamente.' });
-      setModalEdit(false);
-      fetchPerdidas();
-    } else {
-      setMsg({ type: 'danger', text: data.message || 'Error al editar.' });
+
+    try {
+      const res = await fetch(`${API}/perdidas/editar/${editPerdida.TTR_COPERD}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setMsg({ type: 'success', text: 'Pérdida actualizada correctamente.' });
+        setModalEdit(false);
+        fetchPerdidas();
+      } else {
+        setMsg({ type: 'danger', text: data.message || 'Error al editar.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMsg({ type: 'danger', text: 'Error de conexión.' });
     }
   };
 
   // Eliminar
   const handleDelete = async () => {
-    const res = await fetch(`${API}/perdidas/eliminar/${editPerdida.TTR_COPERD}`, { method: 'DELETE' });
-    const data = await res.json();
-    if (res.ok) {
-      setMsg({ type: 'success', text: 'Pérdida eliminada correctamente.' });
-      setModalDelete(false);
-      fetchPerdidas();
-    } else {
-      setMsg({ type: 'danger', text: data.message || 'Error al eliminar.' });
+    if (!editPerdida) return;
+    try {
+      const res = await fetch(`${API}/perdidas/eliminar/${editPerdida.TTR_COPERD}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setMsg({ type: 'success', text: 'Pérdida eliminada correctamente.' });
+        setModalDelete(false);
+        fetchPerdidas();
+      } else {
+        setMsg({ type: 'danger', text: data.message || 'Error al eliminar.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setMsg({ type: 'danger', text: 'Error de conexión.' });
     }
   };
 
@@ -111,7 +241,6 @@ const ListaPerdidas = () => {
               <CTable striped hover responsive>
                 <CTableHead>
                   <CTableRow>
-                    
                     <CTableHeaderCell>Tipo Doc.</CTableHeaderCell>
                     <CTableHeaderCell>Cédula</CTableHeaderCell>
                     <CTableHeaderCell>Nombre</CTableHeaderCell>
@@ -123,9 +252,8 @@ const ListaPerdidas = () => {
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {perdidas.map((p, idx) => (
+                  {perdidas.map((p) => (
                     <CTableRow key={p.TTR_COPERD}>
-                      
                       <CTableDataCell>{p.tipo_documento}</CTableDataCell>
                       <CTableDataCell>{p.TTR_CEDULA}</CTableDataCell>
                       <CTableDataCell>{p.TTR_NOMBRE}</CTableDataCell>
@@ -167,6 +295,8 @@ const ListaPerdidas = () => {
                         onChange={handleEditChange}
                         className="mb-2"
                         required
+                        ref={afectRef}
+                        onKeyDown={e => handleEnter(e, docRef)}
                       >
                         <option value="">Seleccione afectación</option>
                         {afectaciones.map(a => (
@@ -178,6 +308,8 @@ const ListaPerdidas = () => {
                           </option>
                         ))}
                       </CFormSelect>
+                      {errorsEdit.TTR_COAFEC && <div className="text-danger small mb-2">{errorsEdit.TTR_COAFEC}</div>}
+
                       <CFormSelect
                         label="Tipo de documento"
                         name="TTR_CODDOC"
@@ -185,12 +317,16 @@ const ListaPerdidas = () => {
                         onChange={handleEditChange}
                         className="mb-2"
                         required
+                        ref={docRef}
+                        onKeyDown={e => handleEnter(e, ceduRef)}
                       >
                         <option value="">Seleccione tipo de documento</option>
                         {tiposDoc.map(t => (
                           <option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>{t.TMA_NOMBRE}</option>
                         ))}
                       </CFormSelect>
+                      {errorsEdit.TTR_CODDOC && <div className="text-danger small mb-2">{errorsEdit.TTR_CODDOC}</div>}
+
                       <CFormInput
                         label="Cédula"
                         name="TTR_CEDULA"
@@ -198,7 +334,14 @@ const ListaPerdidas = () => {
                         onChange={handleEditChange}
                         className="mb-2"
                         required
+                        inputMode="numeric"
+                        pattern="^\d{7,9}$"
+                        title="7 a 9 dígitos"
+                        ref={ceduRef}
+                        onKeyDown={e => handleEnter(e, nombreRef)}
                       />
+                      {errorsEdit.TTR_CEDULA && <div className="text-danger small mb-2">{errorsEdit.TTR_CEDULA}</div>}
+
                       <CFormInput
                         label="Nombre"
                         name="TTR_NOMBRE"
@@ -206,7 +349,13 @@ const ListaPerdidas = () => {
                         onChange={handleEditChange}
                         className="mb-2"
                         required
+                        ref={nombreRef}
+                        onKeyDown={e => handleEnter(e, apelliRef)}
+                        pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]+$"
+                        title="Solo letras y espacios"
                       />
+                      {errorsEdit.TTR_NOMBRE && <div className="text-danger small mb-2">{errorsEdit.TTR_NOMBRE}</div>}
+
                       <CFormInput
                         label="Apellido"
                         name="TTR_APELLI"
@@ -214,7 +363,13 @@ const ListaPerdidas = () => {
                         onChange={handleEditChange}
                         className="mb-2"
                         required
+                        ref={apelliRef}
+                        onKeyDown={e => handleEnter(e, tipoPerRef)}
+                        pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]+$"
+                        title="Solo letras y espacios"
                       />
+                      {errorsEdit.TTR_APELLI && <div className="text-danger small mb-2">{errorsEdit.TTR_APELLI}</div>}
+
                       <CFormSelect
                         label="Tipo de pérdida"
                         name="TTR_COTIPO"
@@ -222,12 +377,16 @@ const ListaPerdidas = () => {
                         onChange={handleEditChange}
                         className="mb-2"
                         required
+                        ref={tipoPerRef}
+                        onKeyDown={e => handleEnter(e, vaestiRef)}
                       >
                         <option value="">Seleccione tipo de pérdida</option>
                         {tiposPerdida.map(t => (
                           <option key={t.TTR_COTIPO} value={t.TTR_COTIPO}>{t.TTR_NOMBRE}</option>
                         ))}
                       </CFormSelect>
+                      {errorsEdit.TTR_COTIPO && <div className="text-danger small mb-2">{errorsEdit.TTR_COTIPO}</div>}
+
                       <CFormInput
                         label="Valor estimado"
                         name="TTR_VAESTI"
@@ -238,9 +397,13 @@ const ListaPerdidas = () => {
                         onChange={handleEditChange}
                         className="mb-2"
                         required
+                        ref={vaestiRef}
+                        onKeyDown={e => handleEnter(e, saveRef)}
                       />
+                      {errorsEdit.TTR_VAESTI && <div className="text-danger small mb-2">{errorsEdit.TTR_VAESTI}</div>}
+
                       <CModalFooter>
-                        <CButton color="primary" type="submit">Guardar</CButton>
+                        <CButton color="primary" type="submit" ref={saveRef}>Guardar</CButton>
                         <CButton color="secondary" onClick={() => setModalEdit(false)}>Cancelar</CButton>
                       </CModalFooter>
                     </form>

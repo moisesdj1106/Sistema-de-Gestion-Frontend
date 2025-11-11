@@ -266,7 +266,7 @@ const NoticiasBlog = () => {
                 {new Date(modalNoticia.TTR_FEPUBL).toLocaleDateString()}<br />
                 Fuente: {modalNoticia.TTR_FUENTE}
               </div>
-              <div style={{ fontSize: '1.1em', textAlign: 'justify' }}>{modalNoticia.TTR_DESCRI}</div>
+              <div style={{ fontSize: '1.1em' }}>{modalNoticia.TTR_DESCRI}</div>
              
             </CModalBody>
             <CModalFooter style={{alignItems: 'center', justifyContent: 'center'}}>
@@ -308,11 +308,11 @@ const NoticiasBlog = () => {
               )}
               <CCardBody>
                 <CCardTitle>{noticia.TTR_TITULO}</CCardTitle>
-                <CCardText className="text-muted" style={{ fontSize: '0.95em', textAlign: 'justify' }}>
+                <CCardText className="text-muted" style={{ fontSize: '0.95em' }}>
                   {new Date(noticia.TTR_FEPUBL).toLocaleDateString()}<br />
                   Fuente: {noticia.TTR_FUENTE}
                 </CCardText>
-                <CCardText style={{ textAlign: 'justify' }}>{noticia.TTR_DESCRI}</CCardText>
+                <CCardText>{noticia.TTR_DESCRI}</CCardText>
               </CCardBody>
             </CCard>
           </CCol>

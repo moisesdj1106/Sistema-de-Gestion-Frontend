@@ -51,6 +51,7 @@ const Formulario = () => {
     // nuevos estados de error por campo (cedula / telefono)
     const [cedulaError, setCedulaError] = useState('');
     const [telefonoError, setTelefonoError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
 
@@ -207,8 +208,8 @@ const Formulario = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (loading) return; // evita doble envío
         setFieldErrors([]);
-        // limpiar errores por campo
         setCedulaError('');
         setTelefonoError('');
 
@@ -219,10 +220,14 @@ const Formulario = () => {
             return;
         }
 
+        setLoading(true);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // timeout 10s
+
         try {
             const response = await fetch(`${API}/users`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({
                     cedula,
                     nombres,
@@ -236,28 +241,39 @@ const Formulario = () => {
                     contraseña,
                     tipodo,
                     codcom
-                })
+                }),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
+
+            // intentar parsear JSON (si hay)
+            let data = {};
+            try { data = await response.json(); } catch(_) { data = {}; }
 
             if (response.ok) {
                 setModal({ show: true, mensaje: 'Usuario registrado correctamente', success: true });
                 setFieldErrors([]);
+            } else if (response.status === 409) {
+                // conflicto (usuario ya existe)
+                const detalles = data.detalles || [data.mensaje || 'Registro duplicado'];
+                setFieldErrors(detalles);
+                setModal({ show: true, mensaje: detalles.join('\n'), success: false });
             } else if (response.status === 400) {
-                const data = await response.json();
                 const mensajes = data.errores || [data.message || 'Error de validación'];
                 setFieldErrors(mensajes);
                 setModal({ show: true, mensaje: mensajes.join('\n'), success: false });
-            } else if (response.status === 409) {
-                const data = await response.json();
-                const detalles = data.detalles || [data.mensaje || 'Conflicto en datos'];
-                setFieldErrors(detalles);
-                setModal({ show: true, mensaje: detalles.join('\n'), success: false });
             } else {
-                const data = await response.json().catch(()=>({}));
                 setModal({ show: true, mensaje: data.message || 'Error al registrar el usuario', success: false });
             }
-        } catch (error) {
-            setModal({ show: true, mensaje: 'Error de conexión al servidor', success: false });
+        } catch (err) {
+            if (err.name === 'AbortError') {
+                setModal({ show: true, mensaje: 'La petición tardó demasiado y fue cancelada. Intente de nuevo.', success: false });
+            } else {
+                setModal({ show: true, mensaje: 'Error de conexión al servidor', success: false });
+            }
+        } finally {
+            clearTimeout(timeoutId);
+            setLoading(false);
         }
     };
 
@@ -603,8 +619,8 @@ const Formulario = () => {
                             </CCol>
                         </CRow>
                         <div className="text-center">
-                            <CButton style={{ backgroundColor: '#FF7043', color: 'white' }} type="submit">
-                                Enviar
+                            <CButton disabled={loading} style={{ backgroundColor: '#FF7043', color: 'white' }} type="submit">
+                                {loading ? 'Enviando...' : 'Enviar'}
                             </CButton>
                             <Link to="/login">
                                 <CButton style={{ backgroundColor: 'white', color: 'black', borderColor: '#FF7043', marginLeft: '10px' }} type="button">

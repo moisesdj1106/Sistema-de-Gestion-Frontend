@@ -537,8 +537,8 @@ const RegistrarAfectacion = () => {
                   onChange={handleDamnChange}
                   className="mb-2"
                   required
-                  max={9}
-                  min={7}
+                  maxLength={9}
+                  minLength={7}
                   ref={damnCeduRef}
                   onKeyDown={e => handleEnter(e, damnNombreRef)}
                   inputMode="numeric"
@@ -593,8 +593,8 @@ const RegistrarAfectacion = () => {
                   onChange={handleDamnChange}
                   className="mb-2"
                   required
-                  max={11}
-                  min={11}
+                  maxLength={11}
+                  minLength={11}
                   ref={damnContacRef}
                   onKeyDown={e => handleEnter(e, damnEsaludRef)}
                   inputMode="numeric"
@@ -681,8 +681,8 @@ const RegistrarAfectacion = () => {
                   onChange={handleVictChange}
                   className="mb-2"
                   required
-                  max={9}
-                  min={7}
+                  maxLength={9}
+                  minLength={7}
                   ref={victCeduRef}
                   onKeyDown={e => handleEnter(e, victNombreRef)}
                   inputMode="numeric"
@@ -722,8 +722,8 @@ const RegistrarAfectacion = () => {
                   value={formVictima.certif}
                   onChange={handleVictChange}
                   className="mb-2"
-                  max={9}
-                  min={7}
+                  maxLength={9}
+                  minLength={7}
                   ref={victCertifRef}
                   onKeyDown={e => handleEnter(e, victCoafecRef)}
                   inputMode="numeric"
@@ -817,8 +817,8 @@ const RegistrarAfectacion = () => {
                   onChange={handleChangePerdida}
                   className="mb-2"
                   required
-                  max={9}
-                  min={7}
+                  maxLength={9}
+                  minLength={7}
                   ref={perCeduRef}
                   onKeyDown={e => handleEnter(e, perNombreRef)}
                   inputMode="numeric"

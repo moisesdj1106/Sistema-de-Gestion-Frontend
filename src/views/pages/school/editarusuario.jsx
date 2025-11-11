@@ -255,6 +255,8 @@ const Usuarios = () => {
                   value={formEdit.telefono}
                   onChange={handleEditChange}
                   className="mb-2"
+                  maxLength={11}
+                  minLength={11}
                 />
                 <CFormInput
                   label="Correo"

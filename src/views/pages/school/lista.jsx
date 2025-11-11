@@ -192,6 +192,8 @@ const ListaDonantesFull = () => {
               onChange={handleEditChange}
               className="mb-2"
               required
+              maxLength={9}
+              minLength={7}
             />
             <CFormSelect
               label="Tipo de Documento"

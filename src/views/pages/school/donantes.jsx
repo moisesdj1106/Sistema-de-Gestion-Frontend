@@ -28,7 +28,7 @@ const RegistrarDonante = () => {
 
   // regex helpers (coinciden con validaciones servidor)
   const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$/
-  const digitsRegex = /^\d+$/
+  const digitsOnly = /^\d+$/
 
   useEffect(() => {
     fetch(`${API}/documento`)
@@ -51,7 +51,8 @@ const RegistrarDonante = () => {
 
   // helpers de sanitización en tiempo real
   const handleCedulaChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '') // solo dígitos
+    let value = e.target.value.replace(/\D/g, '') // solo dígitos
+    if (value.length > 9) value = value.slice(0, 9)
     setForm(prev => ({ ...prev, cedula: value }))
     setFieldErrors(prev => ({ ...prev, cedula: '' }))
     setMsg({ type: '', text: '' })
@@ -66,7 +67,8 @@ const RegistrarDonante = () => {
   }
 
   const handleContactoChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '') // solo dígitos
+    let value = e.target.value.replace(/\D/g, '') // solo dígitos
+    if (value.length > 11) value = value.slice(0, 11)
     setForm(prev => ({ ...prev, contac: value }))
     setFieldErrors(prev => ({ ...prev, contac: '' }))
     setMsg({ type: '', text: '' })
@@ -91,9 +93,12 @@ const RegistrarDonante = () => {
     if (!form.cedula) {
       errors.push('Documento es obligatorio')
       fieldErr.cedula = 'Requerido'
-    } else if (!digitsRegex.test(form.cedula)) {
+    } else if (!digitsOnly.test(form.cedula)) {
       errors.push('Documento: solo dígitos')
       fieldErr.cedula = 'Solo dígitos'
+    } else if (form.cedula.length < 7 || form.cedula.length > 9) {
+      errors.push('Documento debe tener entre 7 y 9 dígitos')
+      fieldErr.cedula = '7-9 dígitos'
     }
 
     if (!form.tipodn) {
@@ -112,9 +117,12 @@ const RegistrarDonante = () => {
     if (!form.contac) {
       errors.push('Contacto es obligatorio')
       fieldErr.contac = 'Requerido'
-    } else if (!digitsRegex.test(form.contac)) {
+    } else if (!digitsOnly.test(form.contac)) {
       errors.push('Contacto: solo dígitos')
       fieldErr.contac = 'Solo dígitos'
+    } else if (form.contac.length !== 11) {
+      errors.push('Contacto debe tener 11 dígitos (ej: 04141234567)')
+      fieldErr.contac = '11 dígitos'
     }
 
     return { errors, fieldErr }
@@ -161,7 +169,6 @@ const RegistrarDonante = () => {
       } else if (res.status === 409) {
         // conflicto (ej. cédula duplicada)
         const detalles = data.detalles || [data.mensaje || 'Conflicto en datos']
-        // mapear a campo si es posible
         const mapped = {}
         detalles.forEach(d => {
           if (/Cédula|cedula/i.test(d)) mapped.cedula = d
@@ -226,7 +233,8 @@ const RegistrarDonante = () => {
                     ref={cedulaRef}
                     onKeyDown={e => handleEnter(e, tipodnRef)}
                     aria-invalid={!!fieldErrors.cedula}
-                    title="Solo números"
+                    title="Solo números (7-9 dígitos)"
+                    maxLength={9}
                   />
                   {fieldErrors.cedula && <div className="text-danger small mt-1">{fieldErrors.cedula}</div>}
                 </CCol>
@@ -267,7 +275,7 @@ const RegistrarDonante = () => {
                   <CFormInput
                     label="Contacto"
                     name="contac"
-                    placeholder='Ejm 04147589857'
+                    placeholder='Ejm 04141234567'
                     value={form.contac}
                     onChange={handleContactoChange}
                     inputMode="numeric"
@@ -275,6 +283,8 @@ const RegistrarDonante = () => {
                     ref={contacRef}
                     onKeyDown={e => handleEnter(e, submitRef)}
                     aria-invalid={!!fieldErrors.contac}
+                    title="Solo números (11 dígitos)"
+                    maxLength={11}
                   />
                   {fieldErrors.contac && <div className="text-danger small mt-1">{fieldErrors.contac}</div>}
                 </CCol>

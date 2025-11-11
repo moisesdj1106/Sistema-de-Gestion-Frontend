@@ -39,7 +39,7 @@ const BotonEliminarNoticia = ({ noticiaId, onEliminada }) => {
       <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} size="sm" onClick={() => setShowConfirm(true)}>
         Eliminar
       </CButton>
-      <CModal visible={showConfirm} onClose={() => setShowConfirm(false)}>
+      <CModal visible={showConfirm} onClose={() => setShow
         <CModalHeader>
           <CModalTitle>Confirmar Eliminación</CModalTitle>
         </CModalHeader>
@@ -266,7 +266,7 @@ const NoticiasBlog = () => {
                 {new Date(modalNoticia.TTR_FEPUBL).toLocaleDateString()}<br />
                 Fuente: {modalNoticia.TTR_FUENTE}
               </div>
-              <div style={{ fontSize: '1.1em' }}>{modalNoticia.TTR_DESCRI}</div>
+              <div style={{ fontSize: '1.1em', textAlign: 'justify' }}>{modalNoticia.TTR_DESCRI}</div>
              
             </CModalBody>
             <CModalFooter style={{alignItems: 'center', justifyContent: 'center'}}>
@@ -308,11 +308,11 @@ const NoticiasBlog = () => {
               )}
               <CCardBody>
                 <CCardTitle>{noticia.TTR_TITULO}</CCardTitle>
-                <CCardText className="text-muted" style={{ fontSize: '0.95em' }}>
+                <CCardText className="text-muted" style={{ fontSize: '0.95em', textAlign: 'justify' }}>
                   {new Date(noticia.TTR_FEPUBL).toLocaleDateString()}<br />
                   Fuente: {noticia.TTR_FUENTE}
                 </CCardText>
-                <CCardText>{noticia.TTR_DESCRI}</CCardText>
+                <CCardText style={{ textAlign: 'justify' }}>{noticia.TTR_DESCRI}</CCardText>
               </CCardBody>
             </CCard>
           </CCol>

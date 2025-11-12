@@ -14,9 +14,7 @@ import {
     CModalHeader,
     CModalTitle,
     CModalBody,
-    CModalFooter,
-    CProgress,
-    CBadge
+    CModalFooter
 } from '@coreui/react';
 
 import bg  from 'src/assets/images/carro.jpg';
@@ -55,9 +53,6 @@ const Formulario = () => {
     const [telefonoError, setTelefonoError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // pasos (1 personal, 2 ubicación/cuenta, 3 confirmación)
-    const [paso, setPaso] = useState(1);
-
     const navigate = useNavigate();
 
     // Regex y helpers (coinciden con validaciones del servidor)
@@ -67,11 +62,6 @@ const Formulario = () => {
 
     // prefijos válidos para teléfono
     const validPhonePrefixes = ['0424','0426','0414','0416','0412'];
-
-    // existencia en tiempo real
-    const [existsState, setExistsState] = useState({ checking: false, exists: false, message: '' });
-    const existTimer = useRef(null);
-    const existController = useRef(null);
 
     // Tipos de documento
     useEffect(() => {
@@ -158,211 +148,81 @@ const Formulario = () => {
     const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
     const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
 
-    // reglas por tipo de documento:
-    // - si tipodo === 'E' (extranjero) permitir alfanumérico hasta 12
-    // - si tipodo === 'P' (pasaporte) permitir alfanumérico, mayúsculas, números, hasta 12
-    // - por defecto (V, J, G, etc) solo dígitos entre 7-9
-    const docRules = (tipo) => {
-        if (!tipo) return { pattern: /^\d+$/, max: 9, min: 7, allowLetters: false };
-        if (String(tipo).toUpperCase() === 'E') return { pattern: /^[A-Za-z0-9]+$/, max: 12, min: 4, allowLetters: true };
-        if (String(tipo).toUpperCase() === 'P') return { pattern: /^[A-Za-z0-9]+$/, max: 12, min: 4, allowLetters: true };
-        // caso por defecto: números 7-9
-        return { pattern: /^\d+$/, max: 9, min: 7, allowLetters: false };
-    };
-
-    // validación por campo
-    const validateClient = (stepCheck) => {
+    const validateClient = () => {
         const errors = [];
 
-        if (stepCheck === 1 || !stepCheck) {
-            if (!tipodo) errors.push('Seleccione tipo de documento');
-            const rules = docRules(tipodo);
-            if (!cedula) errors.push('Documento es obligatorio');
+        if (!tipodo) errors.push('Seleccione tipo de documento');
+        if (!cedula) errors.push('Documento es obligatorio');
+        else if (!digitsRegex.test(cedula)) errors.push('Documento: solo dígitos');
+        else if (cedula.length < 7 || cedula.length > 9) errors.push('Documento debe tener entre 7 y 9 dígitos');
+
+        if (!nombres) errors.push('Nombres son obligatorios');
+        else if (!nameRegex.test(nombres)) errors.push('Nombres inválidos');
+
+        if (!apellidos) errors.push('Apellidos son obligatorios');
+        else if (!nameRegex.test(apellidos)) errors.push('Apellidos inválidos');
+
+        if (!sexo) errors.push('Seleccione sexo');
+
+        if (!fecha_nac) errors.push('Fecha de nacimiento es obligatoria');
+        else {
+            const f = new Date(fecha_nac);
+            if (isNaN(f.getTime())) errors.push('Fecha de nacimiento inválida');
             else {
-                if (!rules.pattern.test(cedula)) {
-                    errors.push(rules.allowLetters ? 'Documento inválido (solo letras y números)' : 'Documento: solo dígitos');
-                }
-                if (cedula.length < rules.min || cedula.length > rules.max) {
-                    errors.push(`Documento debe tener entre ${rules.min} y ${rules.max} caracteres`);
-                }
+                const fechaMax = new Date(maxBirth);
+                fechaMax.setHours(0,0,0,0);
+                f.setHours(0,0,0,0);
+                if (f > fechaMax) errors.push('Debes ser mayor de 18 años');
             }
-
-            if (!nombres) errors.push('Nombres son obligatorios');
-            else if (!nameRegex.test(nombres)) errors.push('Nombres inválidos');
-
-            if (!apellidos) errors.push('Apellidos son obligatorios');
-            else if (!nameRegex.test(apellidos)) errors.push('Apellidos inválidos');
         }
 
-        if (stepCheck === 2 || !stepCheck) {
-            if (!sexo) errors.push('Seleccione sexo');
-            if (!fecha_nac) errors.push('Fecha de nacimiento es obligatoria');
-            else {
-                const f = new Date(fecha_nac);
-                if (isNaN(f.getTime())) errors.push('Fecha de nacimiento inválida');
-                else {
-                    const fechaMax = new Date(maxBirth);
-                    fechaMax.setHours(0,0,0,0);
-                    f.setHours(0,0,0,0);
-                    if (f > fechaMax) errors.push('Debes ser mayor de 18 años');
-                }
-            }
+        if (!usuario) errors.push('Usuario es obligatorio');
 
-            if (!usuario) errors.push('Usuario es obligatorio');
+        if (!contraseña) errors.push('Contraseña es obligatoria');
+        else if (contraseña.length < 6) errors.push('Contraseña mínimo 6 caracteres');
 
-            if (!contraseña) errors.push('Contraseña es obligatoria');
-            else if (contraseña.length < 6) errors.push('Contraseña mínimo 6 caracteres');
+        if (contraseña !== repeatPassword) errors.push('Las contraseñas no coinciden');
 
-            if (contraseña !== repeatPassword) errors.push('Las contraseñas no coinciden');
+        if (!codpais) errors.push('Seleccione país');
+        if (!coesta) errors.push('Seleccione estado');
+        if (!comuni) errors.push('Seleccione municipio');
+        if (!coparr) errors.push('Seleccione parroquia');
+        if (!codcom) errors.push('Seleccione comunidad');
 
-            if (!codpais) errors.push('Seleccione país');
-            if (!coesta) errors.push('Seleccione estado');
-            if (!comuni) errors.push('Seleccione municipio');
-            if (!coparr) errors.push('Seleccione parroquia');
-            if (!codcom) errors.push('Seleccione comunidad');
+        if (!direccion) errors.push('Dirección es obligatoria');
 
-            if (!direccion) errors.push('Dirección es obligatoria');
-
-            // teléfono opcional pero validado si se completa
-            if (telefono) {
-                if (!digitsRegex.test(telefono)) errors.push('Teléfono: solo dígitos');
-                else if (telefono.length !== 11) errors.push('Teléfono debe tener exactamente 11 dígitos');
-                else {
-                    const pref = telefono.slice(0,4);
-                    if (!validPhonePrefixes.includes(pref)) errors.push('Teléfono debe comenzar con 0424, 0426, 0414, 0416 o 0412');
-                }
-            }
-
-            if (!email) errors.push('Correo es obligatorio');
-            else if (!emailRegex.test(email)) errors.push('Correo inválido');
+        if (telefono) {
+          if (!digitsRegex.test(telefono)) errors.push('Teléfono: solo dígitos');
+          else if (telefono.length !== 11) errors.push('Teléfono debe tener exactamente 11 dígitos');
+          else {
+            const pref = telefono.slice(0,4);
+            if (!validPhonePrefixes.includes(pref)) errors.push('Teléfono debe comenzar con 0424, 0426, 0414, 0416 o 0412');
+          }
         }
+
+        if (!email) errors.push('Correo es obligatorio');
+        else if (!emailRegex.test(email)) errors.push('Correo inválido');
 
         return errors;
     };
 
-    // debounced existence check: se dispara cuando cedula o tipodo cambian y cumplen reglas mínimas
-    useEffect(() => {
-        // limpiar checks previos
-        setExistsState({ checking: false, exists: false, message: '' });
-        if (existTimer.current) clearTimeout(existTimer.current);
-        if (existController.current) {
-            try { existController.current.abort(); } catch {}
-            existController.current = null;
-        }
-
-        const rules = docRules(tipodo);
-        if (!cedula || cedula.length < Math.max(4, rules.min)) return; // esperar mínimo razonable
-
-        existTimer.current = setTimeout(async () => {
-            setExistsState({ checking: true, exists: false, message: '' });
-            existController.current = new AbortController();
-            try {
-                // endpoint esperado: /users/existe?tipo=TIPO&documento=VALOR
-                // adapta si tu backend usa otra ruta
-                const qTipo = encodeURIComponent(tipodo || '');
-                const qDoc = encodeURIComponent(cedula);
-                const res = await fetch(`${API}/users/existe?tipo=${qTipo}&documento=${qDoc}`, { signal: existController.current.signal, headers: { Accept: 'application/json' } });
-                // esperar respuesta JSON { exists: true, mensaje: '...' } o similar
-                let data = {};
-                try { data = await res.json(); } catch {}
-                if (res.ok) {
-                    const exists = !!(data.exists || data.existe || data.exists === true);
-                    setExistsState({ checking: false, exists, message: exists ? (data.mensaje || 'Usuario ya registrado') : (data.mensaje || 'No existe') });
-                } else {
-                    // si no hay ruta exacta, intentar buscar por cedula simple
-                    // fallback: 404 o 500 -> marcar no verificado
-                    setExistsState({ checking: false, exists: false, message: data.mensaje || 'No se pudo verificar existencia' });
-                }
-            } catch (err) {
-                if (err.name === 'AbortError') return;
-                setExistsState({ checking: false, exists: false, message: 'Error al verificar existencia' });
-            } finally {
-                existController.current = null;
-            }
-        }, 700);
-
-        return () => {
-            if (existTimer.current) clearTimeout(existTimer.current);
-            if (existController.current) {
-                try { existController.current.abort(); } catch {}
-                existController.current = null;
-            }
-        };
-    }, [cedula, tipodo]);
-
-    // inputs controlados con reglas por tipo de documento
-    const handleCedulaChange = e => {
-        const rules = docRules(tipodo);
-        let val = e.target.value;
-        // normalizar: si permite solo dígitos, eliminar no dígitos; si permite alfanumérico, eliminar espacios y caracteres no alfanuméricos
-        if (!rules.allowLetters) {
-            val = val.replace(/\D/g, '').slice(0, rules.max);
-        } else {
-            val = val.replace(/[^A-Za-z0-9]/g, '').slice(0, rules.max).toUpperCase();
-        }
-        setCedula(val);
-
-        // validación inmediata
-        if (val.length > 0 && (val.length < rules.min || val.length > rules.max)) {
-            setCedulaError(`Documento debe tener entre ${rules.min} y ${rules.max} caracteres`);
-        } else {
-            setCedulaError('');
-        }
-    };
-
-    const handleTelefonoChange = e => {
-        // solo dígitos y máximo 11 caracteres
-        const cleaned = e.target.value.replace(/\D/g, '').slice(0, 11);
-        setTelefono(cleaned);
-
-        // validación inmediata de prefijo y longitud
-        if (cleaned.length > 0 && cleaned.length !== 11) {
-            setTelefonoError('Teléfono debe tener 11 dígitos');
-        } else if (cleaned.length === 11) {
-            const pref = cleaned.slice(0,4);
-            if (!validPhonePrefixes.includes(pref)) {
-                setTelefonoError('Teléfono debe comenzar con 0424, 0426, 0414, 0416 o 0412');
-            } else {
-                setTelefonoError('');
-            }
-        } else {
-            setTelefonoError('');
-        }
-    };
-
-    // navegación entre pasos
-    const siguientePaso = () => {
-        const errors = validateClient(paso);
-        if (errors.length) {
-            setFieldErrors(errors);
-            setModal({ show: true, mensaje: errors.join('\n'), success: false });
-            return;
-        }
-        setFieldErrors([]);
-        setPaso(p => Math.min(3, p + 1));
-    };
-    const anteriorPaso = () => setPaso(p => Math.max(1, p - 1));
-
-    // envío final (igual que antes, con loading y timeout)
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (loading) return;
-        const errors = validateClient();
-        if (errors.length) {
-            setFieldErrors(errors);
-            setModal({ show: true, mensaje: errors.join('\n'), success: false });
-            return;
-        }
+        if (loading) return; // evita doble envío
+        setFieldErrors([]);
+        setCedulaError('');
+        setTelefonoError('');
 
-        // si existencia detectada, prevenir envío
-        if (existsState.exists) {
-            setModal({ show: true, mensaje: 'El documento ya está registrado. Verifique.', success: false });
+        const clientErrors = validateClient();
+        if (clientErrors.length) {
+            setFieldErrors(clientErrors);
+            setModal({ show: true, mensaje: clientErrors.join('\n'), success: false });
             return;
         }
 
         setLoading(true);
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // timeout 10s
 
         try {
             const response = await fetch(`${API}/users`, {
@@ -386,13 +246,15 @@ const Formulario = () => {
             });
             clearTimeout(timeoutId);
 
+           
             let data = {};
-            try { data = await response.json(); } catch {}
+            try { data = await response.json(); } catch(_) { data = {}; }
 
             if (response.ok) {
                 setModal({ show: true, mensaje: 'Usuario registrado correctamente', success: true });
                 setFieldErrors([]);
             } else if (response.status === 409) {
+                // conflicto (usuario ya existe)
                 const detalles = data.detalles || [data.mensaje || 'Registro duplicado'];
                 setFieldErrors(detalles);
                 setModal({ show: true, mensaje: detalles.join('\n'), success: false });
@@ -421,7 +283,7 @@ const Formulario = () => {
         if (wasSuccess) navigate('/login');
     };
 
-    // Refs y handlers de entrada (mantener existentes)
+    // Refs para navegación con Enter
     const cedulaRef = useRef(null);
     const nombresRef = useRef(null);
     const apellidosRef = useRef(null);
@@ -439,6 +301,7 @@ const Formulario = () => {
     const telefonoRef = useRef(null);
     const emailRef = useRef(null);
 
+    // función helper para avanzar al siguiente campo cuando presionan Enter
     const handleEnter = (e, nextRef) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -446,16 +309,47 @@ const Formulario = () => {
         }
     };
 
+   
+    const handleCedulaChange = e => {
+        // solo dígitos y máximo 9 caracteres
+        const cleaned = e.target.value.replace(/\D/g, '').slice(0, 9);
+        setCedula(cleaned);
+        // validación inmediata mínima/longitud
+        if (cleaned.length > 0 && (cleaned.length < 7 || cleaned.length > 9)) {
+            setCedulaError('Documento debe tener entre 7 y 9 dígitos');
+        } else {
+            setCedulaError('');
+        }
+    };
+
     const handleNombresChange = e => {
+        // solo letras, espacios, acentos, guion y apóstrofe
         setNombre(e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, ''));
     };
 
     const handleApellidosChange = e => {
-        setApellidos(e.target.value.replace(/[^A-ZaZÁÉÍÓÚáéíóúÑñ\s'-]/g, ''));
+        setApellidos(e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, ''));
     };
 
-    // UI: stepper simple y diseño moderno con colores existentes
-    const progress = paso === 1 ? 33 : paso === 2 ? 66 : 100;
+    const handleTelefonoChange = e => {
+        // solo dígitos y máximo 11 caracteres
+        const cleaned = e.target.value.replace(/\D/g, '').slice(0, 11);
+        setTelefono(cleaned);
+
+        // validación inmediata de prefijo y longitud
+        if (cleaned.length > 0 && cleaned.length !== 11) {
+            setTelefonoError('Teléfono debe tener 11 dígitos');
+        } else if (cleaned.length === 11) {
+            const pref = cleaned.slice(0,4);
+            if (!validPhonePrefixes.includes(pref)) {
+                setTelefonoError('Teléfono debe comenzar con 0424, 0426, 0414, 0416 o 0412');
+            } else {
+                setTelefonoError('');
+            }
+        } else {
+            setTelefonoError('');
+        }
+    };
 
     return (
         <div
@@ -467,298 +361,276 @@ const Formulario = () => {
                 backgroundImage: `url(${bg})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
-                padding: 20
             }}
         >
-            <CCard className="shadow" style={{ maxWidth: '900px', width: '100%', borderRadius: 16 }}>
-                <CCardHeader className=" text-white" style={{ backgroundColor: '#FF7043', borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h4 style={{ margin: 0 }}>Registro de Usuario</h4>
-                        <div style={{ width: 240 }}>
-                            <CProgress value={progress} height="8px" style={{ background: '#ffd8cc' }} color="warning" />
-                        </div>
-                    </div>
+            <CCard className="shadow" style={{ maxWidth: '800px', width: '100%' }}>
+                <CCardHeader className=" text-white text-center" style={{ backgroundColor: '#FF7043' }}>
+                    <h4>Registro de Usuario</h4>
                 </CCardHeader>
                 <CCardBody>
-                    <form onSubmit={handleSubmit}>
-                        {paso === 1 && (
-                            <div>
-                                <h5 style={{ color: '#555' }}>1. Datos personales</h5>
-                                <CRow className="g-3">
-                                    <CCol md={6}>
-                                        <CFormSelect
-                                            label="Tipo de Documento"
-                                            value={tipodo}
-                                            onChange={e => setTipodo(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                        >
-                                            <option value="">Seleccione tipo de documento</option>
-                                            {tipoDocumentos.map(tipo => (
-                                                <option key={tipo.TMA_CODDOC} value={tipo.TMA_CODDOC}>
-                                                    {tipo.TMA_NOMBRE}
-                                                </option>
-                                            ))}
-                                        </CFormSelect>
+                    <CForm onSubmit={handleSubmit}>
+                        <CRow>
+                            <CCol md={6}>
+                                <CFormSelect
+                                    label="Tipo de Documento"
+                                    value={tipodo}
+                                    onChange={e => setTipodo(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    ref={paisRef} /* pequeño ajuste: no afecta el select navigation si no se usa */
+                                >
+                                    <option value="">Seleccione tipo de documento</option>
+                                    {tipoDocumentos.map(tipo => (
+                                        <option key={tipo.TMA_CODDOC} value={tipo.TMA_CODDOC}>
+                                            {tipo.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
 
-                                        <CFormInput
-                                            type="text"
-                                            label="Documento de identidad"
-                                            placeholder={docRules(tipodo).allowLetters ? 'Ej: A1234567' : 'Ej: 12345678'}
-                                            value={cedula}
-                                            onChange={handleCedulaChange}
-                                            required
-                                            className="mb-3"
-                                            ref={cedulaRef}
-                                            onKeyDown={e => handleEnter(e, nombresRef)}
-                                            maxLength={docRules(tipodo).max}
-                                        />
-                                        {cedulaError && <div className="text-danger small mb-2">{cedulaError}</div>}
-                                        <div className="mb-2">
-                                            {existsState.checking
-                                                ? <CBadge color="secondary">Verificando...</CBadge>
-                                                : existsState.exists
-                                                    ? <CBadge color="danger">Ya registrado</CBadge>
-                                                    : (existsState.message ? <CBadge color="success">{existsState.message}</CBadge> : null)
-                                            }
-                                        </div>
+                                <CFormInput
+                                    type="text"
+                                    label="Documento de identidad"
+                                    placeholder="Ingrese el N° documento"
+                                    value={cedula}
+                                    onChange={handleCedulaChange}
+                                    required
+                                    className="mb-3"
+                                    ref={cedulaRef}
+                                    onKeyDown={e => handleEnter(e, nombresRef)}
+                                    maxLength={9}
+                                    inputMode="numeric"
+                                />
+                                {cedulaError && <div className="text-danger small mb-2">{cedulaError}</div>}
 
-                                        <CFormInput
-                                            type="text"
-                                            label="Nombres"
-                                            placeholder="Ingrese sus nombres"
-                                            value={nombres}
-                                            onChange={handleNombresChange}
-                                            required
-                                            className="mb-3"
-                                            ref={nombresRef}
-                                            onKeyDown={e => handleEnter(e, apellidosRef)}
-                                        />
+                                <CFormInput
+                                    type="text"
+                                    label="Nombres"
+                                    placeholder="Ingrese sus nombres"
+                                    value={nombres}
+                                    onChange={handleNombresChange}
+                                    required
+                                    className="mb-3"
+                                    ref={nombresRef}
+                                    onKeyDown={e => handleEnter(e, apellidosRef)}
+                                />
 
-                                        <CFormInput
-                                            type="text"
-                                            label="Apellidos"
-                                            placeholder="Ingrese sus apellidos"
-                                            value={apellidos}
-                                            onChange={handleApellidosChange}
-                                            required
-                                            className="mb-3"
-                                            ref={apellidosRef}
-                                            onKeyDown={e => handleEnter(e, sexoRef)}
-                                        />
+                                <CFormInput
+                                    type="text"
+                                    label="Apellidos"
+                                    placeholder="Ingrese sus apellidos"
+                                    value={apellidos}
+                                    onChange={handleApellidosChange}
+                                    required
+                                    className="mb-3"
+                                    ref={apellidosRef}
+                                    onKeyDown={e => handleEnter(e, sexoRef)}
+                                />
 
-                                        <CFormSelect
-                                            label="Sexo"
-                                            value={sexo}
-                                            onChange={e => setSexo(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                            ref={sexoRef}
-                                            onKeyDown={e => handleEnter(e, fechaRef)}
-                                        >
-                                            <option value="">Seleccione sexo</option>
-                                            <option value="M">Masculino</option>
-                                            <option value="F">Femenino</option>
-                                            <option value="O">Otro</option>
-                                        </CFormSelect>
+                                <CFormSelect
+                                    label="Sexo"
+                                    value={sexo}
+                                    onChange={e => setSexo(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    ref={sexoRef}
+                                    onKeyDown={e => handleEnter(e, fechaRef)}
+                                >
+                                    <option value="">Seleccione sexo</option>
+                                    <option value="M">Masculino</option>
+                                    <option value="F">Femenino</option>
+                                </CFormSelect>
 
-                                        <CFormInput
-                                            type="date"
-                                            label="Fecha de nacimiento"
-                                            value={fecha_nac}
-                                            onChange={e => setFechaNacimiento(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                            max={maxFechaNacimiento}
-                                            ref={fechaRef}
-                                        />
-                                    </CCol>
-                                </CRow>
-                                <div className="d-flex justify-content-end mt-3">
-                                    <CButton style={{ backgroundColor: '#FF7043', color: 'white' }} onClick={siguientePaso}>Siguiente</CButton>
-                                </div>
-                            </div>
-                        )}
+                                <CFormInput
+                                    type="date"
+                                    label="Fecha de Nacimiento"
+                                    value={fecha_nac}
+                                    onChange={e => setFechaNacimiento(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    max={maxFechaNacimiento}
+                                    ref={fechaRef}
+                                    onKeyDown={e => handleEnter(e, usuarioRef)}
+                                />
 
-                        {paso === 2 && (
-                            <div>
-                                <h5 style={{ color: '#555' }}>2. Ubicación y cuenta</h5>
-                                <CRow className="g-3">
-                                    <CCol md={6}>
-                                        <CFormSelect
-                                            label="País"
-                                            value={codpais}
-                                            onChange={e => setCodpais(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                        >
-                                            <option value="">Seleccione país</option>
-                                            {paises.map(pais => (
-                                                <option key={pais.TMA_COPAIS} value={pais.TMA_COPAIS}>
-                                                    {pais.TMA_NOMBRE}
-                                                </option>
-                                            ))}
-                                        </CFormSelect>
+                                <CFormInput
+                                    type="text"
+                                    label="Usuario"
+                                    placeholder="Ingrese su usuario"
+                                    value={usuario}
+                                    onChange={e => setUsuario(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    ref={usuarioRef}
+                                    onKeyDown={e => handleEnter(e, passwordRef)}
+                                />
 
-                                        <CFormSelect
-                                            label="Estado"
-                                            value={coesta}
-                                            onChange={e => setCoesta(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                            disabled={!codpais}
-                                        >
-                                            <option value="">Seleccione estado</option>
-                                            {estados.map(edo => (
-                                                <option key={edo.TMA_COESTA} value={edo.TMA_COESTA}>
-                                                    {edo.TMA_NOMBRE}
-                                                </option>
-                                            ))}
-                                        </CFormSelect>
+                                <CFormInput
+                                    type="password"
+                                    label="Contraseña"
+                                    placeholder="Ingrese su contraseña"
+                                    value={contraseña}
+                                    onChange={e => setPassword(e.target.value)}
+                                    required
+                                    min={6}
+                                    className="mb-3"
+                                    ref={passwordRef}
+                                    onKeyDown={e => handleEnter(e, repeatRef)}
+                                />
 
-                                        <CFormSelect
-                                            label="Municipio"
-                                            value={comuni}
-                                            onChange={e => setComuni(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                            disabled={!coesta}
-                                        >
-                                            <option value="">Seleccione municipio</option>
-                                            {municipios.map(muni => (
-                                                <option key={muni.TMA_COMUNI} value={muni.TMA_COMUNI}>
-                                                    {muni.TMA_NOMBRE}
-                                                </option>
-                                            ))}
-                                        </CFormSelect>
+                                <CFormInput
+                                    type="password"
+                                    label="Repetir contraseña"
+                                    placeholder="Repita su contraseña"
+                                    value={repeatPassword}
+                                    onChange={e => setRepeatPassword(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    ref={repeatRef}
+                                    onKeyDown={e => handleEnter(e, paisRef)}
+                                />
+                            </CCol>
 
-                                        <CFormSelect
-                                            label="Parroquia"
-                                            value={coparr}
-                                            onChange={e => setCoparr(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                            disabled={!comuni}
-                                        >
-                                            <option value="">Seleccione parroquia</option>
-                                            {parroquias.map(parr => (
-                                                <option key={parr.TMA_COPARR} value={parr.TMA_COPARR}>
-                                                    {parr.TMA_NOMBRE}
-                                                </option>
-                                            ))}
-                                        </CFormSelect>
+                            <CCol md={6}>
+                                <CFormSelect
+                                    label="País"
+                                    value={codpais}
+                                    onChange={e => setCodpais(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    ref={paisRef}
+                                    onKeyDown={e => handleEnter(e, estadoRef)}
+                                >
+                                    <option value="">Seleccione país</option>
+                                    {paises.map(pais => (
+                                        <option key={pais.TMA_COPAIS} value={pais.TMA_COPAIS}>
+                                            {pais.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
 
-                                        <CFormSelect
-                                            label="Comunidad"
-                                            value={codcom}
-                                            onChange={e => setCodcom(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                            disabled={!coparr}
-                                        >
-                                            <option value="">Seleccione comunidad</option>
-                                            {comunidades.map(comu => (
-                                                <option key={comu.TMA_CODCOM} value={comu.TMA_CODCOM}>
-                                                    {comu.TMA_NOMBRE}
-                                                </option>
-                                            ))}
-                                        </CFormSelect>
+                                <CFormSelect
+                                    label="Estado"
+                                    value={coesta}
+                                    onChange={e => setCoesta(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    disabled={!codpais}
+                                    ref={estadoRef}
+                                    onKeyDown={e => handleEnter(e, muniRef)}
+                                >
+                                    <option value="">Seleccione estado</option>
+                                    {estados.map(edo => (
+                                        <option key={edo.TMA_COESTA} value={edo.TMA_COESTA}>
+                                            {edo.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
 
-                                        <CFormInput
-                                            type="text"
-                                            label="Dirección"
-                                            placeholder="Ingrese su dirección"
-                                            value={direccion}
-                                            onChange={e => setDireccion(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                        />
-                                    </CCol>
+                                <CFormSelect
+                                    label="Municipio"
+                                    value={comuni}
+                                    onChange={e => setComuni(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    disabled={!coesta}
+                                    ref={muniRef}
+                                    onKeyDown={e => handleEnter(e, parrRef)}
+                                >
+                                    <option value="">Seleccione municipio</option>
+                                    {municipios.map(muni => (
+                                        <option key={muni.TMA_COMUNI} value={muni.TMA_COMUNI}>
+                                            {muni.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
 
-                                    <CCol md={6}>
-                                        <CFormInput
-                                            type="text"
-                                            label="Teléfono"
-                                            placeholder="Ejm 04141234567"
-                                            value={telefono}
-                                            onChange={handleTelefonoChange}
-                                            className="mb-3"
-                                            maxLength={11}
-                                            inputMode="numeric"
-                                        />
-                                        {telefonoError && <div className="text-danger small mb-2">{telefonoError}</div>}
+                                <CFormSelect
+                                    label="Parroquia"
+                                    value={coparr}
+                                    onChange={e => setCoparr(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    disabled={!comuni}
+                                    ref={parrRef}
+                                    onKeyDown={e => handleEnter(e, comRef)}
+                                >
+                                    <option value="">Seleccione parroquia</option>
+                                    {parroquias.map(parr => (
+                                        <option key={parr.TMA_COPARR} value={parr.TMA_COPARR}>
+                                            {parr.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
 
-                                        <CFormInput
-                                            type="email"
-                                            label="Correo"
-                                            placeholder="Ejm correo@gmail.com"
-                                            value={email}
-                                            onChange={e => setEmail(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                        />
+                                <CFormSelect
+                                    label="Comunidad"
+                                    value={codcom}
+                                    onChange={e => setCodcom(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    disabled={!coparr}
+                                    ref={comRef}
+                                    onKeyDown={e => handleEnter(e, direccionRef)}
+                                >
+                                    <option value="">Seleccione comunidad</option>
+                                    {comunidades.map(comu => (
+                                        <option key={comu.TMA_CODCOM} value={comu.TMA_CODCOM}>
+                                            {comu.TMA_NOMBRE}
+                                        </option>
+                                    ))}
+                                </CFormSelect>
 
-                                        <CFormInput
-                                            type="text"
-                                            label="Usuario"
-                                            placeholder="Ingrese su usuario"
-                                            value={usuario}
-                                            onChange={e => setUsuario(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                        />
+                                <CFormInput
+                                    type="text"
+                                    label="Dirección"
+                                    placeholder="Ingrese su dirección"
+                                    value={direccion}
+                                    onChange={e => setDireccion(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    ref={direccionRef}
+                                    onKeyDown={e => handleEnter(e, telefonoRef)}
+                                />
 
-                                        <CFormInput
-                                            type="password"
-                                            label="Contraseña"
-                                            placeholder="Ingrese su contraseña"
-                                            value={contraseña}
-                                            onChange={e => setPassword(e.target.value)}
-                                            required
-                                            min={6}
-                                            className="mb-3"
-                                        />
+                                <CFormInput
+                                    type="text"
+                                    label="Teléfono"
+                                    placeholder="Ejm 04141234567"
+                                    value={telefono}
+                                    onChange={handleTelefonoChange}
+                                    className="mb-3"
+                                    ref={telefonoRef}
+                                    onKeyDown={e => handleEnter(e, emailRef)}
+                                    maxLength={11}
+                                    inputMode="numeric"
+                                />
+                                {telefonoError && <div className="text-danger small mb-2">{telefonoError}</div>}
 
-                                        <CFormInput
-                                            type="password"
-                                            label="Repetir contraseña"
-                                            placeholder="Repita su contraseña"
-                                            value={repeatPassword}
-                                            onChange={e => setRepeatPassword(e.target.value)}
-                                            required
-                                            className="mb-3"
-                                        />
-                                    </CCol>
-                                </CRow>
-                                <div className="d-flex justify-content-between mt-3">
-                                    <CButton color="secondary" onClick={anteriorPaso}>Atrás</CButton>
-                                    <CButton style={{ backgroundColor: '#FF7043', color: 'white' }} onClick={siguientePaso}>Siguiente</CButton>
-                                </div>
-                            </div>
-                        )}
-
-                        {paso === 3 && (
-                            <div>
-                                <h5 style={{ color: '#555' }}>3. Confirmación</h5>
-                                <div style={{ background: '#faf5f0', padding: 16, borderRadius: 8, marginTop: 12 }}>
-                                    <p><strong>Documento:</strong> {tipodo} - {cedula}</p>
-                                    <p><strong>Nombre:</strong> {nombres} {apellidos}</p>
-                                    <p><strong>Teléfono:</strong> {telefono || 'No proporcionado'}</p>
-                                    <p><strong>Correo:</strong> {email}</p>
-                                    <p><strong>Dirección:</strong> {direccion}</p>
-                                </div>
-                                <div className="d-flex justify-content-between mt-3">
-                                    <CButton color="secondary" onClick={anteriorPaso}>Atrás</CButton>
-                                    <CButton disabled={loading || existsState.exists} style={{ backgroundColor: '#FF7043', color: 'white' }} type="submit">
-                                        {loading ? 'Registrando...' : existsState.exists ? 'Documento ya registrado' : 'Registrar'}
-                                    </CButton>
-                                </div>
-                            </div>
-                        )}
-                    </form>
+                                <CFormInput
+                                    type="email"
+                                    label="Correo"
+                                    placeholder="Ejm correo@gmail.com"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    required
+                                    className="mb-3"
+                                    ref={emailRef}
+                                />
+                            </CCol>
+                        </CRow>
+                        <div className="text-center">
+                            <CButton disabled={loading} style={{ backgroundColor: '#FF7043', color: 'white' }} type="submit">
+                                {loading ? 'Enviando...' : 'Enviar'}
+                            </CButton>
+                            <Link to="/login">
+                                <CButton style={{ backgroundColor: 'white', color: 'black', borderColor: '#FF7043', marginLeft: '10px' }} type="button">
+                                    Login
+                                </CButton>
+                            </Link>
+                        </div>
+                    </CForm>
                 </CCardBody>
             </CCard>
-
             {/* Modal para mensajes */}
             <CModal alignment="center" visible={modal.show} onClose={handleCloseModal}>
                 <CModalHeader>

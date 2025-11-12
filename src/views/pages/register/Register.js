@@ -451,7 +451,7 @@ const Formulario = () => {
     };
 
     const handleApellidosChange = e => {
-        setApellidos(e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, ''));
+        setApellidos(e.target.value.replace(/[^A-ZaZÁÉÍÓÚáéíóúÑñ\s'-]/g, ''));
     };
 
     // UI: stepper simple y diseño moderno con colores existentes
@@ -499,7 +499,6 @@ const Formulario = () => {
                                                     {tipo.TMA_NOMBRE}
                                                 </option>
                                             ))}
-                                            {/* Si desea añadir opciones fijas: <option value="E">Extranjero</option> <option value="P">Pasaporte</option> */}
                                         </CFormSelect>
 
                                         <CFormInput
@@ -516,9 +515,12 @@ const Formulario = () => {
                                         />
                                         {cedulaError && <div className="text-danger small mb-2">{cedulaError}</div>}
                                         <div className="mb-2">
-                                            {existsState.checking ? <CBadge color="secondary">Verificando...</CBadge> :
-                                                existsState.exists ? <CBadge color="danger">Ya registrado</CBadge> :
-                                                (existsState.message ? <CBadge color="success">{existsState.message}</CBadge> : null)}
+                                            {existsState.checking
+                                                ? <CBadge color="secondary">Verificando...</CBadge>
+                                                : existsState.exists
+                                                    ? <CBadge color="danger">Ya registrado</CBadge>
+                                                    : (existsState.message ? <CBadge color="success">{existsState.message}</CBadge> : null)
+                                            }
                                         </div>
 
                                         <CFormInput
@@ -543,6 +545,32 @@ const Formulario = () => {
                                             className="mb-3"
                                             ref={apellidosRef}
                                             onKeyDown={e => handleEnter(e, sexoRef)}
+                                        />
+
+                                        <CFormSelect
+                                            label="Sexo"
+                                            value={sexo}
+                                            onChange={e => setSexo(e.target.value)}
+                                            required
+                                            className="mb-3"
+                                            ref={sexoRef}
+                                            onKeyDown={e => handleEnter(e, fechaRef)}
+                                        >
+                                            <option value="">Seleccione sexo</option>
+                                            <option value="M">Masculino</option>
+                                            <option value="F">Femenino</option>
+                                            <option value="O">Otro</option>
+                                        </CFormSelect>
+
+                                        <CFormInput
+                                            type="date"
+                                            label="Fecha de nacimiento"
+                                            value={fecha_nac}
+                                            onChange={e => setFechaNacimiento(e.target.value)}
+                                            required
+                                            className="mb-3"
+                                            max={maxFechaNacimiento}
+                                            ref={fechaRef}
                                         />
                                     </CCol>
                                 </CRow>

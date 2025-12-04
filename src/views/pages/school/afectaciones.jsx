@@ -3,8 +3,8 @@ import {
   CCard, CCardBody, CCardHeader, CForm, CFormSelect, CFormInput, CButton, CContainer, CRow, CCol, CModal, CModalHeader, CModalBody, CAlert, CModalFooter, CFormCheck
 } from '@coreui/react';
 
+/*const API = 'http://localhost:4000';*/
 const API = 'https://sistema-de-gestion-backend.onrender.com';
-
 const RegistrarAfectacion = () => {
   // Afectación
   const [comunidades, setComunidades] = useState([]);
@@ -49,6 +49,7 @@ const RegistrarAfectacion = () => {
     cedula: '',
     nombre: '',
     apelli: '',
+    // cada item: { cotipo, vaesti, descri }
     perdidas: []
   });
   const [errorsPerdida, setErrorsPerdida] = useState({});
@@ -82,6 +83,33 @@ const RegistrarAfectacion = () => {
     }
   }, [modalPerdida]);
 
+  // limpiar mensajes autom. después de mostrar éxito/error (4s)
+  useEffect(() => {
+    const timers = [];
+    if (msgAfectacion.text) timers.push(setTimeout(() => setMsgAfectacion({ type: '', text: '' }), 4000));
+    if (msgDamnificado.text) timers.push(setTimeout(() => setMsgDamnificado({ type: '', text: '' }), 4000));
+    if (msgVictima.text) timers.push(setTimeout(() => setMsgVictima({ type: '', text: '' }), 4000));
+    if (msgPerdida.text) timers.push(setTimeout(() => setMsgPerdida({ type: '', text: '' }), 4000));
+    return () => timers.forEach(t => clearTimeout(t));
+  }, [msgAfectacion.text, msgDamnificado.text, msgVictima.text, msgPerdida.text]);
+
+  // Evitar que botón atrás del navegador cierre modal y evitar clic fuera cierre
+  useEffect(() => {
+    const handlePop = () => {
+      if (modalDamnificado || modalVictima || modalPerdida) {
+        window.history.pushState(null, '', window.location.href);
+      }
+    };
+    if (modalDamnificado || modalVictima || modalPerdida) {
+      // agrega entrada para bloquear retroceso y escucha
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', handlePop);
+    }
+    return () => {
+      window.removeEventListener('popstate', handlePop);
+    };
+  }, [modalDamnificado, modalVictima, modalPerdida]);
+
   // Filtrar comunidades según búsqueda
   const comunidadesFiltradas = comunidades.filter(c =>
     c.TMA_NOMBRE.toLowerCase().includes(comunidadSearch.toLowerCase())
@@ -104,6 +132,43 @@ const RegistrarAfectacion = () => {
     // si no se permiten negativos, eliminar minus
     if (!allowNegative) v = v.replace(/-/g, '');
     return v;
+  };
+
+  // Determina si el tipo de documento debe tratarse como "pasaporte"
+  const isPassportId = (id) => {
+    if (id === null || id === undefined) return false;
+    // acepta por nombre (función existente), por id numérico '3' o por valores 'p'/'P'
+    return isPassportType(id) || String(id) === '3' || String(id).toLowerCase() === 'p';
+  };
+  
+  // Helpers para tipos de documento (validaciones similares a login)
+  const getDocNameById = (id) => tiposDoc && tiposDoc.length ? (tiposDoc.find(t => String(t.TMA_CODDOC) === String(id))?.TMA_NOMBRE || '') : '';
+  const isPassportType = (id) => /pasap|pasaporte/i.test(getDocNameById(id));
+  const validateIdByDocType = (value, typeId) => {
+    if (!value) return 'Documento obligatorio';
+    const v = String(value).trim();
+    if (isPassportId(typeId)) {
+      
+      if (!/^[A-Za-z0-9 .\-\/]{3,10}$/.test(v)) {
+        return 'Documento inválido para pasaporte (7-10: caracteres permitidos: letras, números, espacio, -  .)';
+      }
+      if (!/[A-Za-z]/.test(v)) return 'Pasaporte debe contener al menos una letra';
+      if (!/\d/.test(v)) return 'Pasaporte debe contener al menos un número';
+    } else {
+      // documento nacional: solo dígitos, 7-9
+      if (!/^\d{7,9}$/.test(v)) return 'Cédula inválida (7-9 dígitos)';
+    }
+    return '';
+  };
+  const validatePhone = (value) => {
+    if (!value) return 'Contacto obligatorio';
+    if (!/^(0414|0424|0422|0412|0416|0426)\d{7}$/.test(String(value).trim())) return 'Número inválido. Prefijo válido: 0414,0424,0422,0412,0416,0426 y 11 dígitos';
+    return '';
+  };
+  const validateCertif = (v) => {
+    if (!v) return '';
+    if (!/^[A-Za-z0-9\-]{1,9}$/.test(String(v).trim())) return 'Certificado inválido (1-9 caracteres alfanuméricos y "-")';
+    return '';
   };
 
   // Refs para atajos Enter -> next
@@ -140,26 +205,57 @@ const RegistrarAfectacion = () => {
   const handleDamnChange = (e) => {
     const { name, value } = e.target;
     let val = value;
-    if (name === 'cedula' || name === 'contac') val = onlyDigits(value);
+    if (name === 'contac') val = onlyDigits(value);
     if (name === 'nombre' || name === 'apelli' || name === 'esalud') val = onlyLetters(value);
-    setFormDamnificado(prev => ({ ...prev, [name]: val }));
-    setErrorsDamnificado(prev => ({ ...prev, [name]: '' }));
+    // actualizar estado
+    if (name === 'cedula') {
+      setFormDamnificado(prev => {
+        const passport = isPassportId(prev.tipodo);
+        return { ...prev, cedula: passport ? String(val).replace(/[^A-Za-z0-9-]/g, '').toUpperCase() : onlyDigits(val) };
+      });
+    } else if (name === 'tipodo') {
+      // al cambiar tipo, ajustar el contenido del documento según nueva regla
+      setFormDamnificado(prev => {
+        const newTip = val;
+        const passport = isPassportId(newTip);
+        return { ...prev, tipodo: newTip, cedula: passport ? (prev.cedula ? String(prev.cedula).toUpperCase() : prev.cedula) : onlyDigits(prev.cedula) };
+      });
+    } else {
+      setFormDamnificado(prev => ({ ...prev, [name]: val }));
+    }
+ 
+    // validaciones inmediatas dependientes de tipo de documento / teléfono / nombre/apelli
+    if (name === 'contac') {
+      setErrorsDamnificado(prev => ({ ...prev, contac: validatePhone(val) }));
+    } else if (name === 'cedula' || name === 'tipodo') {
+      const typeId = name === 'tipodo' ? val : formDamnificado.tipodo;
+      const cedulaValue = name === 'cedula' ? (isPassportId(typeId) ? String(val).replace(/[^A-Za-z0-9-]/g, '').toUpperCase() : onlyDigits(val)) : formDamnificado.cedula;
+      setErrorsDamnificado(prev => ({ ...prev, cedula: validateIdByDocType(cedulaValue, typeId) }));
+    } else if (name === 'nombre') {
+      const err = !val ? 'Nombre obligatorio' : (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s\'-]{3,}$/.test(val) ? 'Nombre inválido' : '');
+      setErrorsDamnificado(prev => ({ ...prev, nombre: err }));
+    } else if (name === 'apelli') {
+      const err = !val ? 'Apellido obligatorio' : (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s\'-]{3,}$/.test(val) ? 'Apellido inválido' : '');
+      setErrorsDamnificado(prev => ({ ...prev, apelli: err }));
+    } else {
+      setErrorsDamnificado(prev => ({ ...prev, [name]: '' }));
+    }
     setMsgDamnificado({ type: '', text: '' });
   };
 
   const validateDamnificado = () => {
     const errs = {};
     if (!formDamnificado.tipodo) errs.tipodo = 'Seleccione tipo de documento';
-    if (!formDamnificado.cedula) errs.cedula = 'Cédula obligatoria';
-    if (!/^\d{7,9}$/.test(formDamnificado.cedula)) errs.cedula = 'Cédula inválida (7-9 dígitos)';
+    const cedErr = validateIdByDocType(formDamnificado.cedula, formDamnificado.tipodo);
+    if (cedErr) errs.cedula = cedErr;
     if (!formDamnificado.nombre) errs.nombre = 'Nombre obligatorio';
-    if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(formDamnificado.nombre)) errs.nombre = 'Nombre inválido';
+    if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{3,}$/.test(formDamnificado.nombre)) errs.nombre = 'Nombre inválido';
     if (!formDamnificado.apelli) errs.apelli = 'Apellido obligatorio';
-    if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(formDamnificado.apelli)) errs.apelli = 'Apellido inválido';
+    if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{3,}$/.test(formDamnificado.apelli)) errs.apelli = 'Apellido inválido';
     if (!formDamnificado.fenaci) errs.fenaci = 'Fecha de nacimiento obligatoria';
     if (formDamnificado.fenaci && formDamnificado.fenaci > maxFecha) errs.fenaci = 'Fecha no puede ser futura';
-    if (!formDamnificado.contac) errs.contac = 'Contacto obligatorio';
-    if (!/^\d{7,11}$/.test(formDamnificado.contac)) errs.contac = 'Número de contacto inválido';
+    const phErr = validatePhone(formDamnificado.contac);
+    if (phErr) errs.contac = phErr;
     if (!formDamnificado.esalud) errs.esalud = 'Estado de salud obligatorio';
     if (!formDamnificado.coafec) errs.coafec = 'Seleccione afectación';
     setErrorsDamnificado(errs);
@@ -173,8 +269,7 @@ const RegistrarAfectacion = () => {
       // enfocar primer error
       const order = ['tipodo','cedula','nombre','apelli','fenaci','contac','esalud','coafec'];
       for (const k of order) {
-        if (errorsDamnificado[k] || !validateDamnificado() && k in errorsDamnificado) {
-          // try refs mapping
+        if (errorsDamnificado[k]) {
           const map = {
             tipodo: damnTipoRef, cedula: damnCeduRef, nombre: damnNombreRef, apelli: damnApelliRef,
             fenaci: damnFenaciRef, contac: damnContacRef, esalud: damnEsaludRef, coafec: damnCoafecRef
@@ -188,7 +283,7 @@ const RegistrarAfectacion = () => {
 
     const payload = {
       cedula: formDamnificado.cedula,
-      tipodo: formDamnificado.tipodo,
+      tipodo: Number(formDamnificado.tipodo),
       nombre: formDamnificado.nombre,
       apelli: formDamnificado.apelli,
       fenaci: formDamnificado.fenaci,
@@ -211,6 +306,7 @@ const RegistrarAfectacion = () => {
         setModalDamnificado(false);
       } else {
         setMsgDamnificado({ type: 'danger', text: data.mensaje || 'Error al registrar damnificado.' });
+        if (data.errors && typeof data.errors === 'object') setErrorsDamnificado(prev => ({ ...prev, ...data.errors }));
       }
     } catch {
       setMsgDamnificado({ type: 'danger', text: 'Error de conexión al registrar damnificado.' });
@@ -221,23 +317,61 @@ const RegistrarAfectacion = () => {
   const handleVictChange = (e) => {
     const { name, value } = e.target;
     let val = value;
-    if (name === 'cedula' || name === 'certif') val = onlyDigits(value);
+    if (name === 'certif') {
+      // convertir a mayúsculas y permitir solo A-Z, 0-9 y guion en tiempo real
+      const v = String(value).toUpperCase().replace(/[^A-Z0-9-]/g, '');
+      setFormVictima(prev => ({ ...prev, certif: v }));
+      setErrorsVictima(prev => ({ ...prev, certif: validateCertif(v) }));
+      setMsgVictima({ type: '', text: '' });
+      return; // ya procesado
+    }
     if (name === 'nombre' || name === 'apelli') val = onlyLetters(value);
-    setFormVictima(prev => ({ ...prev, [name]: val }));
-    setErrorsVictima(prev => ({ ...prev, [name]: '' }));
+    if (name === 'cedula') {
+      setFormVictima(prev => {
+        const passport = isPassportId(prev.tipodo);
+        return { ...prev, cedula: passport ? String(val).replace(/[^A-Za-z0-9-]/g, '').toUpperCase() : onlyDigits(val) };
+      });
+    } else if (name === 'tipodo') {
+      setFormVictima(prev => {
+        const newTip = val;
+        const passport = isPassportId(newTip);
+        return { ...prev, tipodo: newTip, cedula: passport ? (prev.cedula ? String(prev.cedula).toUpperCase() : prev.cedula) : onlyDigits(prev.cedula) };
+      });
+    } else {
+      setFormVictima(prev => ({ ...prev, [name]: val }));
+    }
+ 
+    // validaciones inmediatas
+    if (name === 'certif') {
+      setErrorsVictima(prev => ({ ...prev, certif: validateCertif(val) }));
+    } else if (name === 'cedula' || name === 'tipodo') {
+      const typeId = name === 'tipodo' ? val : formVictima.tipodo;
+      const cedulaValue = name === 'cedula' ? (isPassportId(typeId) ? String(val).replace(/[^A-Za-z0-9-]/g, '').toUpperCase() : onlyDigits(val)) : formVictima.cedula;
+      setErrorsVictima(prev => ({ ...prev, cedula: validateIdByDocType(cedulaValue, typeId) }));
+    } else if (name === 'nombre') {
+      const err = !val ? 'Nombre obligatorio' : (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s\'-]{2,}$/.test(val) ? 'Nombre inválido' : '');
+      setErrorsVictima(prev => ({ ...prev, nombre: err }));
+    } else if (name === 'apelli') {
+      const err = !val ? 'Apellido obligatorio' : (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s\'-]{2,}$/.test(val) ? 'Apellido inválido' : '');
+      setErrorsVictima(prev => ({ ...prev, apelli: err }));
+    } else {
+      setErrorsVictima(prev => ({ ...prev, [name]: '' }));
+    }
+ 
     setMsgVictima({ type: '', text: '' });
   };
 
   const validateVictima = () => {
     const errs = {};
     if (!formVictima.tipodo) errs.tipodo = 'Seleccione tipo de documento';
-    if (!formVictima.cedula) errs.cedula = 'Cédula obligatoria';
-    if (!/^\d{7,9}$/.test(formVictima.cedula)) errs.cedula = 'Cédula inválida (7-9 dígitos)';
+    const cedErr = validateIdByDocType(formVictima.cedula, formVictima.tipodo);
+    if (cedErr) errs.cedula = cedErr;
     if (!formVictima.nombre) errs.nombre = 'Nombre obligatorio';
     if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(formVictima.nombre)) errs.nombre = 'Nombre inválido';
     if (!formVictima.apelli) errs.apelli = 'Apellido obligatorio';
     if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(formVictima.apelli)) errs.apelli = 'Apellido inválido';
-    if (formVictima.certif && !/^\d{1,9}$/.test(formVictima.certif)) errs.certif = 'Certificado inválido (1-9 dígitos)';
+    const certErr = validateCertif(formVictima.certif);
+    if (certErr) errs.certif = certErr;
     if (!formVictima.coafec) errs.coafec = 'Seleccione afectación';
     setErrorsVictima(errs);
     return Object.keys(errs).length === 0;
@@ -258,7 +392,7 @@ const RegistrarAfectacion = () => {
 
     const payload = {
       cedula: formVictima.cedula,
-      tipodo: formVictima.tipodo,
+      tipodo: Number(formVictima.tipodo),
       nombre: formVictima.nombre,
       apelli: formVictima.apelli,
       certif: formVictima.certif,
@@ -278,6 +412,7 @@ const RegistrarAfectacion = () => {
         setModalVictima(false);
       } else {
         setMsgVictima({ type: 'danger', text: data.mensaje || 'Error al registrar víctima.' });
+        if (data.errors && typeof data.errors === 'object') setErrorsVictima(prev => ({ ...prev, ...data.errors }));
       }
     } catch {
       setMsgVictima({ type: 'danger', text: 'Error de conexión al registrar víctima.' });
@@ -285,14 +420,72 @@ const RegistrarAfectacion = () => {
   };
 
 
+  // VALIDACIÓN EN TIEMPO REAL PARA PÉRDIDAS
+  const validatePerdidaField = (name, value, extra) => {
+    // name puede ser: coafec, coddoc, cedula, nombre, apelli
+    // extra para los campos de perdidas: { tipo: cotipo, field: 'vaesti'|'descri' }
+    if (extra && extra.field === 'vaesti') {
+      if (value === '' || value === null || isNaN(Number(value)) || Number(value) <= 0) return 'Valor estimado inválido';
+      return '';
+    }
+    if (extra && extra.field === 'descri') {
+      if (!value || String(value).trim().length < 3) return 'Descripción corta, mínimo 3 caracteres';
+      return '';
+    }
+    if (name === 'coafec') {
+      if (!value) return 'Seleccione afectación';
+    }
+    if (name === 'coddoc') {
+      if (!value) return 'Seleccione tipo de documento';
+    }
+    if (name === 'cedula') {
+      if (!value) return 'Documento obligatorio';
+      const cedErr = validateIdByDocType(value, formPerdida.coddoc);
+      if (cedErr) return cedErr;
+    }
+    if (name === 'nombre') {
+      if (!value) return 'Nombre obligatorio';
+      if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(value)) return 'Nombre inválido';
+    }
+    if (name === 'apelli') {
+      if (!value) return 'Apellido obligatorio';
+      if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(value)) return 'Apellido inválido';
+    }
+    return '';
+  };
+
   const handleChangePerdida = e => {
     const { name, value } = e.target;
     let val = value;
-    if (name === 'cedula') val = onlyDigits(value);
+    if (name === 'nombre' || name === 'apelli') val = onlyLetters(value);
+    if (name === 'cedula') {
+      setFormPerdida(prev => {
+        const passport = isPassportId(prev.coddoc);
+        return { ...prev, cedula: passport ? String(val).replace(/[^A-Za-z0-9-]/g, '').toUpperCase() : onlyDigits(val) };
+      });
+      // validación inmediata y retorno temprano para no sobres escribir
+      const err = validatePerdidaField('cedula', isPassportId(formPerdida.coddoc) ? String(val).replace(/[^A-Za-z0-9-]/g, '').toUpperCase() : onlyDigits(val));
+      setErrorsPerdida(prev => ({ ...prev, cedula: err }));
+      setMsgPerdida({ type: '', text: '' });
+      return;
+    }
     if (name === 'nombre' || name === 'apelli') val = onlyLetters(value);
     if (name === 'coddoc' || name === 'coafec') val = value;
+    if (name === 'coddoc') {
+      // al cambiar tipo de doc, ajustar documento existente
+      setFormPerdida(prev => {
+        const passport = isPassportId(val);
+        return { ...prev, coddoc: val, cedula: passport ? (prev.cedula ? String(prev.cedula).toUpperCase() : prev.cedula) : onlyDigits(prev.cedula) };
+      });
+      const err = validatePerdidaField('coddoc', val);
+      setErrorsPerdida(prev => ({ ...prev, coddoc: err }));
+      setMsgPerdida({ type: '', text: '' });
+      return;
+    }
     setFormPerdida(prev => ({ ...prev, [name]: val }));
-    setErrorsPerdida(prev => ({ ...prev, [name]: '' }));
+    // validación inmediata
+    const error = validatePerdidaField(name, val);
+    setErrorsPerdida(prev => ({ ...prev, [name]: error }));
     setMsgPerdida({ type: '', text: '' });
   };
 
@@ -300,9 +493,16 @@ const RegistrarAfectacion = () => {
     setFormPerdida(prev => {
       const exists = prev.perdidas.find(p => p.cotipo === cotipo);
       if (exists) {
+        // eliminar errores asociados
+        setErrorsPerdida(prevErr => {
+          const copy = { ...prevErr };
+          delete copy[`perdida_vaesti_${cotipo}`];
+          delete copy[`perdida_descr_${cotipo}`];
+          return copy;
+        });
         return { ...prev, perdidas: prev.perdidas.filter(p => p.cotipo !== cotipo) };
       } else {
-        return { ...prev, perdidas: [...prev.perdidas, { cotipo, vaesti: '' }] };
+        return { ...prev, perdidas: [...prev.perdidas, { cotipo, vaesti: '', descri: '' }] };
       }
     });
   };
@@ -316,21 +516,42 @@ const RegistrarAfectacion = () => {
         p.cotipo === cotipo ? { ...p, vaesti: v } : p
       )
     }));
+    // validación inmediata
+    const err = validatePerdidaField(null, v, { tipo: cotipo, field: 'vaesti' });
+    setErrorsPerdida(prev => ({ ...prev, [`perdida_vaesti_${cotipo}`]: err }));
+    setMsgPerdida({ type: '', text: '' });
+  };
+
+  const handleDescrPerdida = (cotipo, value) => {
+    // permitir texto libre, pero sanitizar excesos
+    const v = String(value);
+    setFormPerdida(prev => ({
+      ...prev,
+      perdidas: prev.perdidas.map(p =>
+        p.cotipo === cotipo ? { ...p, descri: v } : p
+      )
+    }));
+    const err = validatePerdidaField(null, v, { tipo: cotipo, field: 'descri' });
+    setErrorsPerdida(prev => ({ ...prev, [`perdida_descr_${cotipo}`]: err }));
+    setMsgPerdida({ type: '', text: '' });
   };
 
   const validatePerdida = () => {
     const errs = {};
     if (!formPerdida.coafec) errs.coafec = 'Seleccione afectación';
     if (!formPerdida.coddoc) errs.coddoc = 'Seleccione tipo de documento';
-    if (!formPerdida.cedula) errs.cedula = 'Cédula obligatoria';
-    if (!/^\d{7,9}$/.test(formPerdida.cedula)) errs.cedula = 'Cédula inválida (7-9 dígitos)';
+    const cedErr = validateIdByDocType(formPerdida.cedula, formPerdida.coddoc);
+    if (cedErr) errs.cedula = cedErr;
     if (!formPerdida.nombre) errs.nombre = 'Nombre obligatorio';
     if (!formPerdida.apelli) errs.apelli = 'Apellido obligatorio';
     if (!formPerdida.perdidas || formPerdida.perdidas.length === 0) errs.perdidas = 'Seleccione al menos una pérdida';
     else {
-      formPerdida.perdidas.forEach((p, idx) => {
+      formPerdida.perdidas.forEach((p) => {
         if (!p.vaesti || isNaN(p.vaesti) || Number(p.vaesti) <= 0) {
-          errs[`perdida_${p.cotipo}`] = 'Valor estimado inválido';
+          errs[`perdida_vaesti_${p.cotipo}`] = 'Valor estimado inválido';
+        }
+        if (!p.descri || String(p.descri).trim().length < 3) {
+          errs[`perdida_descr_${p.cotipo}`] = 'Descripción corta, mínimo 3 caracteres';
         }
       });
     }
@@ -359,7 +580,8 @@ const RegistrarAfectacion = () => {
           cedula: formPerdida.cedula,
           nombre: formPerdida.nombre,
           apelli: formPerdida.apelli,
-          perdidas: formPerdida.perdidas.map(p => ({ cotipo: Number(p.cotipo), vaesti: Number(p.vaesti) }))
+          // enviar descri por cada pérdida
+          perdidas: formPerdida.perdidas.map(p => ({ cotipo: Number(p.cotipo), vaesti: Number(p.vaesti), descri: p.descri || '' }))
         })
       });
       const data = await res.json();
@@ -369,6 +591,10 @@ const RegistrarAfectacion = () => {
         setErrorsPerdida({});
         setModalPerdida(false);
       } else {
+        // mostrar errores devueltos por el backend si existen
+        if (data.errors && typeof data.errors === 'object') {
+          setErrorsPerdida(prev => ({ ...prev, ...data.errors }));
+        }
         setMsgPerdida({ type: 'danger', text: data.mensaje || 'Error al registrar pérdidas.' });
       }
     } catch {
@@ -420,6 +646,17 @@ const RegistrarAfectacion = () => {
             <CCardHeader className="text-center py-2" style={{ background: '#f5f5f5' }}>
               <strong>Registrar Afectación</strong>
             </CCardHeader>
+
+            {/* Mensajes globales de éxito/error para cada sección (se autoclican tras 4s) */}
+            {(msgAfectacion.text || msgDamnificado.text || msgVictima.text || msgPerdida.text) && (
+              <div className="p-3">
+                {msgAfectacion.text && <CAlert color={msgAfectacion.type || 'success'} className="mb-2 text-center">{msgAfectacion.text}</CAlert>}
+                {msgDamnificado.text && <CAlert color={msgDamnificado.type || 'success'} className="mb-2 text-center">{msgDamnificado.text}</CAlert>}
+                {msgVictima.text && <CAlert color={msgVictima.type || 'success'} className="mb-2 text-center">{msgVictima.text}</CAlert>}
+                {msgPerdida.text && <CAlert color={msgPerdida.type || 'success'} className="mb-2 text-center">{msgPerdida.text}</CAlert>}
+              </div>
+            )}
+
             <CCardBody>
               <CForm onSubmit={handleSubmitAfectacion}>
                 <CFormInput
@@ -435,7 +672,7 @@ const RegistrarAfectacion = () => {
                   onChange={handleChange(setFormAfectacion, formAfectacion)}
                   required
                   className="mb-2"
-                  inputRef={comunidadInputRef}
+                  ref={comunidadInputRef}
                 >
                   <option value="">Seleccione comunidad</option>
                   {comunidadesFiltradas.map(c => (
@@ -465,11 +702,7 @@ const RegistrarAfectacion = () => {
                     <option key={d.TMA_CODESA} value={d.TMA_CODESA}>{d.TMA_NOMBRE}</option>
                   ))}
                 </CFormSelect>
-                {msgAfectacion.text && (
-                  <CAlert color={msgAfectacion.type} className="mt-2 mb-1 py-2 text-center">
-                    {msgAfectacion.text}
-                  </CAlert>
-                )}
+               
                 <CButton style={{backgroundColor:'#ff7043', color:'white'}} type="submit" className="w-100 mt-2">
                   Registrar afectación
                 </CButton>
@@ -498,7 +731,12 @@ const RegistrarAfectacion = () => {
       </CRow>
 
       {/* Modal Damnificado */}
-      <CModal visible={modalDamnificado} onClose={() => { setModalDamnificado(false); setMsgDamnificado({ type: '', text: '' }); setErrorsDamnificado({}); }} size="lg">
+      <CModal visible={modalDamnificado} onClose={() => {
+        setModalDamnificado(false);
+        setErrorsDamnificado({});
+        // no borrar msgDamnificado aquí para que el mensaje de éxito sea visible en la parte superior
+        setFormDamnificado({ cedula: '', tipodo: '', nombre: '', apelli: '', fenaci: '', contac: '', esalud: '', coafec: '' });
+      }} size="lg" backdrop="static" keyboard={false}>
         <CModalHeader closeButton><strong>Registrar Damnificado</strong></CModalHeader>
         <CModalBody>
           <CRow>
@@ -530,9 +768,9 @@ const RegistrarAfectacion = () => {
                 {errorsDamnificado.tipodo && <div className="text-danger small mb-2">{errorsDamnificado.tipodo}</div>}
 
                 <CFormInput
-                  label="Cédula"
+                  label="Documento"
                   name="cedula"
-                  placeholder='Ejm 1234567'
+                  placeholder='Ejm 1234567 o A123456'
                   value={formDamnificado.cedula}
                   onChange={handleDamnChange}
                   className="mb-2"
@@ -541,31 +779,34 @@ const RegistrarAfectacion = () => {
                   minLength={7}
                   ref={damnCeduRef}
                   onKeyDown={e => handleEnter(e, damnNombreRef)}
-                  inputMode="numeric"
+                  inputMode="text"
                 />
                 {errorsDamnificado.cedula && <div className="text-danger small mb-2">{errorsDamnificado.cedula}</div>}
 
                 <CFormInput
-                  label="Nombre"
+                  label="Nombres"
                   name="nombre"
-                  placeholder='Ejm Daniel'
+                  placeholder=''
                   value={formDamnificado.nombre}
                   onChange={handleDamnChange}
                   className="mb-2"
                   required
+                  maxLength={25}
+                  
                   ref={damnNombreRef}
                   onKeyDown={e => handleEnter(e, damnApelliRef)}
                 />
                 {errorsDamnificado.nombre && <div className="text-danger small mb-2">{errorsDamnificado.nombre}</div>}
 
                 <CFormInput
-                  label="Apellido"
+                  label="Apellidos"
                   name="apelli"
-                  placeholder='Ejm Rangel'
+                  placeholder=''
                   value={formDamnificado.apelli}
                   onChange={handleDamnChange}
                   className="mb-2"
                   required
+                  maxLength={20}
                   ref={damnApelliRef}
                   onKeyDown={e => handleEnter(e, damnFenaciRef)}
                 />
@@ -588,7 +829,7 @@ const RegistrarAfectacion = () => {
                 <CFormInput
                   label="Contacto"
                   name="contac"
-                  placeholder='Ejm 04147146605'
+                  placeholder='Ejm 04141234567'
                   value={formDamnificado.contac}
                   onChange={handleDamnChange}
                   className="mb-2"
@@ -609,6 +850,7 @@ const RegistrarAfectacion = () => {
                   onChange={handleDamnChange}
                   className="mb-2"
                   required
+                  maxLength={10}
                   ref={damnEsaludRef}
                   onKeyDown={e => handleEnter(e, damnCoafecRef)}
                 />
@@ -642,7 +884,12 @@ const RegistrarAfectacion = () => {
       </CModal>
 
       {/* Modal Víctima */}
-      <CModal visible={modalVictima} onClose={() => { setModalVictima(false); setMsgVictima({ type: '', text: '' }); setErrorsVictima({}); }} size="lg">
+      <CModal visible={modalVictima} onClose={() => {
+        setModalVictima(false);
+        setErrorsVictima({});
+        // mantener msgVictima para mostrar notificación global al cerrar
+        setFormVictima({ cedula: '', tipodo: '', nombre: '', apelli: '', certif: '', coafec: '' });
+      }} size="lg" backdrop="static" keyboard={false}>
         <CModalHeader closeButton><strong>Registrar Víctima</strong></CModalHeader>
         <CModalBody>
           <CRow>
@@ -674,9 +921,9 @@ const RegistrarAfectacion = () => {
                 {errorsVictima.tipodo && <div className="text-danger small mb-2">{errorsVictima.tipodo}</div>}
 
                 <CFormInput
-                  label="Cédula"
+                  label="Documento"
                   name="cedula"
-                  placeholder='Ejm 1234567'
+                  placeholder='Ejm 1234567 o A123456 '
                   value={formVictima.cedula}
                   onChange={handleVictChange}
                   className="mb-2"
@@ -685,30 +932,32 @@ const RegistrarAfectacion = () => {
                   minLength={7}
                   ref={victCeduRef}
                   onKeyDown={e => handleEnter(e, victNombreRef)}
-                  inputMode="numeric"
+                  inputMode="text"
                 />
                 {errorsVictima.cedula && <div className="text-danger small mb-2">{errorsVictima.cedula}</div>}
 
                 <CFormInput
-                  label="Nombre"
+                  label="Nombres"
                   name="nombre"
-                  placeholder='Ejm Daniel'
+                  placeholder=''
                   value={formVictima.nombre}
                   onChange={handleVictChange}
                   className="mb-2"
                   required
+                  maxLength={25}
                   ref={victNombreRef}
                   onKeyDown={e => handleEnter(e, victApelliRef)}
                 />
                 {errorsVictima.nombre && <div className="text-danger small mb-2">{errorsVictima.nombre}</div>}
 
                 <CFormInput
-                  label="Apellido"
+                  label="Apellidos"
                   name="apelli"
-                  placeholder='Ejm Rangel'
+                  placeholder=''
                   value={formVictima.apelli}
                   onChange={handleVictChange}
                   className="mb-2"
+                  maxLength={20}
                   required
                   ref={victApelliRef}
                   onKeyDown={e => handleEnter(e, victCertifRef)}
@@ -718,15 +967,15 @@ const RegistrarAfectacion = () => {
                 <CFormInput
                   label="Certificado de defunción"
                   name="certif"
-                  placeholder='Ejm 1234567'
+                  placeholder='Ejm 1234567 o ABC-123'
                   value={formVictima.certif}
                   onChange={handleVictChange}
                   className="mb-2"
                   maxLength={9}
-                  minLength={7}
+                  minLength={9}
                   ref={victCertifRef}
                   onKeyDown={e => handleEnter(e, victCoafecRef)}
-                  inputMode="numeric"
+                  inputMode="text"
                 />
                 {errorsVictima.certif && <div className="text-danger small mb-2">{errorsVictima.certif}</div>}
 
@@ -757,8 +1006,13 @@ const RegistrarAfectacion = () => {
         </CModalBody>
       </CModal>
 
-      {/* Modal Registrar Pérdida */}
-      <CModal visible={modalPerdida} onClose={() => { setModalPerdida(false); setMsgPerdida({ type: '', text: '' }); setErrorsPerdida({}); }} size="lg">
+ 
+      <CModal visible={modalPerdida} onClose={() => {
+        setModalPerdida(false);
+        setErrorsPerdida({});
+
+        setFormPerdida({ coafec: '', coddoc: '', cedula: '', nombre: '', apelli: '', perdidas: [] });
+      }} size="lg" backdrop="static" keyboard={false}>
         <CModalHeader closeButton><strong>Registrar Pérdidas</strong></CModalHeader>
         <CModalBody>
           <CRow>
@@ -768,12 +1022,72 @@ const RegistrarAfectacion = () => {
                 <ul className="text-start" style={{ paddingLeft: 18, marginBottom: 0, marginTop: 8 }}>
                   <li>Selecciona la afectación a la que corresponde la pérdida.</li>
                   <li>Completa los datos personales de la persona afectada.</li>
-                  <li>Marca uno o varios tipos de pérdida y coloca el valor estimado de cada una.</li>
+                  <li>Marca uno o varios tipos de pérdida y coloca el valor estimado de cada una. Añade además una breve descripción.</li>
                 </ul>
               </div>
             </CCol>
             <CCol md={7}>
               <CForm onSubmit={handleSubmitPerdida}>
+                
+
+                <CFormSelect
+                  label="Tipo de documento"
+                  name="coddoc"
+                  value={formPerdida.coddoc}
+                  onChange={handleChangePerdida}
+                  className="mb-2"
+                  required
+                  ref={perCoddocRef}
+                  onKeyDown={e => handleEnter(e, perCeduRef)}
+                >
+                  <option value="">Seleccione tipo de documento</option>
+                  {tiposDoc.map(t => (<option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>{t.TMA_NOMBRE}</option>))}
+                </CFormSelect>
+                {errorsPerdida.coddoc && <div className="text-danger small mb-2">{errorsPerdida.coddoc}</div>}
+
+                <CFormInput
+                  label="Documento"
+                  name="cedula"
+                  placeholder='Ejm 1234567 o A123456'
+                  value={formPerdida.cedula}
+                  onChange={handleChangePerdida}
+                  className="mb-2"
+                  required
+                  maxLength={9}
+                  minLength={7}
+                  ref={perCeduRef}
+                  onKeyDown={e => handleEnter(e, perNombreRef)}
+                  inputMode="text"
+                />
+                {errorsPerdida.cedula && <div className="text-danger small mb-2">{errorsPerdida.cedula}</div>}
+
+                <CFormInput
+                  label="Nombres"
+                  name="nombre"
+                  placeholder=''
+                  value={formPerdida.nombre}
+                  onChange={handleChangePerdida}
+                  className="mb-2"
+                  required
+                  maxLength={25}
+                  ref={perNombreRef}
+                  onKeyDown={e => handleEnter(e, perApelliRef)}
+                />
+                {errorsPerdida.nombre && <div className="text-danger small mb-2">{errorsPerdida.nombre}</div>}
+
+                <CFormInput
+                  label="Apellidos"
+                  name="apelli"
+                  placeholder=''
+                  value={formPerdida.apelli}
+                  onChange={handleChangePerdida}
+                  className="mb-2"
+                  required
+                  maxLength={25}
+                  ref={perApelliRef}
+                />
+                {errorsPerdida.apelli && <div className="text-danger small mb-2">{errorsPerdida.apelli}</div>}
+
                 <CFormSelect
                   label="Afectación"
                   name="coafec"
@@ -794,86 +1108,48 @@ const RegistrarAfectacion = () => {
                 </CFormSelect>
                 {errorsPerdida.coafec && <div className="text-danger small mb-2">{errorsPerdida.coafec}</div>}
 
-                <CFormSelect
-                  label="Tipo de documento"
-                  name="coddoc"
-                  value={formPerdida.coddoc}
-                  onChange={handleChangePerdida}
-                  className="mb-2"
-                  required
-                  ref={perCoddocRef}
-                  onKeyDown={e => handleEnter(e, perCeduRef)}
-                >
-                  <option value="">Seleccione tipo de documento</option>
-                  {tiposDoc.map(t => (<option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>{t.TMA_NOMBRE}</option>))}
-                </CFormSelect>
-                {errorsPerdida.coddoc && <div className="text-danger small mb-2">{errorsPerdida.coddoc}</div>}
-
-                <CFormInput
-                  label="Cédula"
-                  name="cedula"
-                  placeholder='Ejm 1234567'
-                  value={formPerdida.cedula}
-                  onChange={handleChangePerdida}
-                  className="mb-2"
-                  required
-                  maxLength={9}
-                  minLength={7}
-                  ref={perCeduRef}
-                  onKeyDown={e => handleEnter(e, perNombreRef)}
-                  inputMode="numeric"
-                />
-                {errorsPerdida.cedula && <div className="text-danger small mb-2">{errorsPerdida.cedula}</div>}
-
-                <CFormInput
-                  label="Nombre"
-                  name="nombre"
-                  placeholder='Ejm Daniel'
-                  value={formPerdida.nombre}
-                  onChange={handleChangePerdida}
-                  className="mb-2"
-                  required
-                  ref={perNombreRef}
-                  onKeyDown={e => handleEnter(e, perApelliRef)}
-                />
-                {errorsPerdida.nombre && <div className="text-danger small mb-2">{errorsPerdida.nombre}</div>}
-
-                <CFormInput
-                  label="Apellido"
-                  name="apelli"
-                  placeholder='Ejm Rangel'
-                  value={formPerdida.apelli}
-                  onChange={handleChangePerdida}
-                  className="mb-2"
-                  required
-                  ref={perApelliRef}
-                />
-                {errorsPerdida.apelli && <div className="text-danger small mb-2">{errorsPerdida.apelli}</div>}
-
                 <div className="mb-2">
                   <label><strong>Tipos de pérdida</strong></label>
                   {tiposPerdida.map(tipo => (
-                    <div key={tipo.TTR_COTIPO} className="d-flex align-items-center mb-2">
-                      <CFormCheck
-                        type="checkbox"
-                        id={`tipo-${tipo.TTR_COTIPO}`}
-                        checked={!!formPerdida.perdidas.find(p => p.cotipo === tipo.TTR_COTIPO)}
-                        onChange={() => handleCheckPerdida(tipo.TTR_COTIPO)}
-                        label={tipo.TTR_NOMBRE}
-                      />
-                      {formPerdida.perdidas.find(p => p.cotipo === tipo.TTR_COTIPO) && (
-                        <CFormInput
-                          type="number"
-                          min="1"
-                          step="0.01"
-                          placeholder="Valor estimado"
-                          value={formPerdida.perdidas.find(p => p.cotipo === tipo.TTR_COTIPO)?.vaesti || ''}
-                          onChange={e => handleValorPerdida(tipo.TTR_COTIPO, e.target.value)}
-                          style={{ width: 140, marginLeft: 12 }}
-                          required
+                    <div key={tipo.TTR_COTIPO} className="d-flex align-items-start mb-2">
+                      <div style={{ flex: 1 }}>
+                        <CFormCheck
+                          type="checkbox"
+                          id={`tipo-${tipo.TTR_COTIPO}`}
+                          checked={!!formPerdida.perdidas.find(p => p.cotipo === tipo.TTR_COTIPO)}
+                          onChange={() => handleCheckPerdida(tipo.TTR_COTIPO)}
+                          label={tipo.TTR_NOMBRE}
                         />
-                      )}
-                      {errorsPerdida[`perdida_${tipo.TTR_COTIPO}`] && <div className="text-danger small ms-2">{errorsPerdida[`perdida_${tipo.TTR_COTIPO}`]}</div>}
+                        {formPerdida.perdidas.find(p => p.cotipo === tipo.TTR_COTIPO) && (
+                          <div className="d-flex flex-column mt-2">
+                            <div className="d-flex align-items-center">
+                              <CFormInput
+                                type="number"
+                                min="1"
+                                step="0.01"
+                                placeholder="Valor estimado"
+                                value={formPerdida.perdidas.find(p => p.cotipo === tipo.TTR_COTIPO)?.vaesti || ''}
+                                onChange={e => handleValorPerdida(tipo.TTR_COTIPO, e.target.value)}
+                                style={{ width: 160, marginRight: 12 }}
+                                required
+                              />
+                              <CFormInput
+                                type="text"
+                                placeholder="Breve descripción"
+                                value={formPerdida.perdidas.find(p => p.cotipo === tipo.TTR_COTIPO)?.descri || ''}
+                                onChange={e => handleDescrPerdida(tipo.TTR_COTIPO, e.target.value)}
+                                maxLength={50}
+                                style={{ flex: 1 }}
+                                required
+                              />
+                            </div>
+                            <div className="d-flex">
+                              {errorsPerdida[`perdida_vaesti_${tipo.TTR_COTIPO}`] && <div className="text-danger small me-3">{errorsPerdida[`perdida_vaesti_${tipo.TTR_COTIPO}`]}</div>}
+                              {errorsPerdida[`perdida_descr_${tipo.TTR_COTIPO}`] && <div className="text-danger small">{errorsPerdida[`perdida_descr_${tipo.TTR_COTIPO}`]}</div>}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                   {errorsPerdida.perdidas && <div className="text-danger small">{errorsPerdida.perdidas}</div>}

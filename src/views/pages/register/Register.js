@@ -1,652 +1,588 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-    CForm,
-    CRow,
-    CCol,
-    CFormInput,
-    CFormSelect,
-    CButton,
-    CCard,
-    CCardBody,
-    CCardHeader,
-    CModal,
-    CModalHeader,
-    CModalTitle,
-    CModalBody,
-    CModalFooter
+  CRow, CCol, CFormInput, CFormSelect, CButton, CCard, CCardBody, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CProgress
 } from '@coreui/react';
+import bg from 'src/assets/images/carro.jpg';
 
-import bg  from 'src/assets/images/carro.jpg';
-
-const API = 'https://sistema-de-gestion-backend.onrender.com';
+const API = 'http://localhost:4000';
 
 const Formulario = () => {
-    const [cedula, setCedula] = useState('');
-    const [nombres, setNombre] = useState('');
-    const [apellidos, setApellidos] = useState('');
-    const [direccion, setDireccion] = useState('');
-    const [telefono, setTelefono] = useState('');
-    const [sexo, setSexo] = useState('');
-    const [fecha_nac, setFechaNacimiento] = useState('');
-    const [usuario, setUsuario] = useState('');
-    const [email, setEmail] = useState('');
-    const [contraseña, setPassword] = useState('');
-    const [repeatPassword, setRepeatPassword] = useState('');
-    const [tipodo, setTipodo] = useState('');
-    const [codpais, setCodpais] = useState('');
-    const [coesta, setCoesta] = useState('');
-    const [comuni, setComuni] = useState('');
-    const [coparr, setCoparr] = useState('');
-    const [codcom, setCodcom] = useState('');
-    const [tipoDocumentos, setTipoDocumentos] = useState([]);
-    const [paises, setPaises] = useState([]);
-    const [estados, setEstados] = useState([]);
-    const [municipios, setMunicipios] = useState([]);
-    const [parroquias, setParroquias] = useState([]);
-    const [comunidades, setComunidades] = useState([]);
-    const [modal, setModal] = useState({ show: false, mensaje: '', success: false });
-    const [fieldErrors, setFieldErrors] = useState([]); // lista de errores de validación cliente/servidor
+  const [step, setStep] = useState(1);
+  const [cedula, setCedula] = useState('');
+  const [nombres, setNombre] = useState('');
+  const [apellidos, setApellidos] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [sexo, setSexo] = useState('');
+  const [fecha_nac, setFechaNacimiento] = useState('');
+  const [usuario, setUsuario] = useState('');
+  const [email, setEmail] = useState('');
+  const [contraseña, setPassword] = useState('');
+  const [repeatPassword, setRepeatPassword] = useState('');
+  const [tipodo, setTipodo] = useState('');
+  const [codpais, setCodpais] = useState('');
+  const [coesta, setCoesta] = useState('');
+  const [comuni, setComuni] = useState('');
+  const [coparr, setCoparr] = useState('');
+  const [codcom, setCodcom] = useState('');
+  const [tipoDocumentos, setTipoDocumentos] = useState([]);
+  const [paises, setPaises] = useState([]);
+  const [estados, setEstados] = useState([]);
+  const [municipios, setMunicipios] = useState([]);
+  const [parroquias, setParroquias] = useState([]);
+  const [comunidades, setComunidades] = useState([]);
+  const [modal, setModal] = useState({ show: false, mensaje: '', success: false });
+  const [fieldErrors, setFieldErrors] = useState([]);
+  const [cedulaError, setCedulaError] = useState('');
+  const [telefonoError, setTelefonoError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    // nuevos estados de error por campo (cedula / telefono)
-    const [cedulaError, setCedulaError] = useState('');
-    const [telefonoError, setTelefonoError] = useState('');
-    const [loading, setLoading] = useState(false);
+  const [existsMsg, setExistsMsg] = useState('');
+  const [existsState, setExistsState] = useState(null);
+  const existTimer = useRef(null);
+  const existController = useRef(null);
 
-    const navigate = useNavigate();
+  const [errors, setErrors] = useState({}); // errores por campo
 
-    // Regex y helpers (coinciden con validaciones del servidor)
-    const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$/;
-    const digitsRegex = /^\d+$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const navigate = useNavigate();
 
-    // prefijos válidos para teléfono
-    const validPhonePrefixes = ['0424','0426','0414','0416','0412'];
+  const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$/;
+  const digitsRegex = /^\d+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const validPhonePrefixes = ['0424','0426','0414','0416','0412','0422'];
 
-    // Tipos de documento
-    useEffect(() => {
-        fetch(`${API}/documento`)
-            .then(res => res.json())
-            .then(setTipoDocumentos)
-            .catch(console.error);
-    }, []);
+  useEffect(() => {
+    fetch(`${API}/documento`).then(r => r.json()).then(setTipoDocumentos).catch(()=>{});
+    fetch(`${API}/paises`).then(r => r.json()).then(setPaises).catch(()=>{});
+  }, []);
 
-    // Listar países
-    useEffect(() => {
-        fetch(`${API}/paises`)
-            .then(res => res.json())
-            .then(setPaises)
-            .catch(console.error);
-    }, []);
+  useEffect(() => {
+    if (codpais) fetch(`${API}/estados/${codpais}`).then(r=>r.json()).then(setEstados).catch(()=>{});
+    else setEstados([]);
+    setMunicipios([]); setComuni(''); setParroquias([]); setCoparr(''); setComunidades([]); setCodcom('');
+  }, [codpais]);
 
-    // Listar estados al seleccionar país
-    useEffect(() => {
-        if (codpais) {
-            fetch(`${API}/estados/${codpais}`)
-                .then(res => res.json())
-                .then(setEstados)
-                .catch(console.error);
-        } else {
-            setEstados([]);
-            setCoesta('');
-        }
-        setMunicipios([]);
-        setComuni('');
-        setParroquias([]);
-        setCoparr('');
-        setComunidades([]);
-        setCodcom('');
-    }, [codpais]);
+  useEffect(() => {
+    if (coesta) fetch(`${API}/municipios/${coesta}`).then(r=>r.json()).then(setMunicipios).catch(()=>{});
+    else setMunicipios([]);
+    setParroquias([]); setCoparr(''); setComunidades([]); setCodcom('');
+  }, [coesta]);
 
-    // Listar municipios al seleccionar estado
-    useEffect(() => {
-        if (coesta) {
-            fetch(`${API}/municipios/${coesta}`)
-                .then(res => res.json())
-                .then(setMunicipios)
-                .catch(console.error);
-        } else {
-            setMunicipios([]);
-            setComuni('');
-        }
-        setParroquias([]);
-        setCoparr('');
-        setComunidades([]);
-        setCodcom('');
-    }, [coesta]);
+  useEffect(() => {
+    if (comuni) fetch(`${API}/parroquias/${comuni}`).then(r=>r.json()).then(setParroquias).catch(()=>{});
+    else setParroquias([]);
+    setComunidades([]); setCodcom('');
+  }, [comuni]);
 
-    // Listar parroquias al seleccionar municipio
-    useEffect(() => {
-        if (comuni) {
-            fetch(`${API}/parroquias/${comuni}`)
-                .then(res => res.json())
-                .then(setParroquias)
-                .catch(console.error);
-        } else {
-            setParroquias([]);
-            setCoparr('');
-        }
-        setComunidades([]);
-        setCodcom('');
-    }, [comuni]);
+  useEffect(() => {
+    if (coparr) fetch(`${API}/comunidades/${coparr}`).then(r=>r.json()).then(setComunidades).catch(()=>{});
+    else setComunidades([]);
+    setCodcom('');
+  }, [coparr]);
 
-    // Listar comunidades al seleccionar parroquia
-    useEffect(() => {
-        if (coparr) {
-            fetch(`${API}/comunidades/${coparr}`)
-                .then(res => res.json())
-                .then(setComunidades)
-                .catch(console.error);
-        } else {
-            setComunidades([]);
-            setCodcom('');
-        }
-    }, [coparr]);
+  const today = new Date();
+  const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+  const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
 
-    // cálculo de fecha máxima (mayor de 18 años)
-    const today = new Date();
-    const maxBirth = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-    const maxFechaNacimiento = maxBirth.toISOString().split('T')[0];
+  // Helper para detectar pasaporte: tipodo puede ser 'P' o código '3'
+  const isPassportType = (t) => {
+    const v = String(t || '').trim().toUpperCase();
+    return v === 'P' || v === '3' || v === '03';
+  };
 
-    const validateClient = () => {
-        const errors = [];
-
-        if (!tipodo) errors.push('Seleccione tipo de documento');
-        if (!cedula) errors.push('Documento es obligatorio');
-        else if (!digitsRegex.test(cedula)) errors.push('Documento: solo dígitos');
-        else if (cedula.length < 7 || cedula.length > 9) errors.push('Documento debe tener entre 7 y 9 dígitos');
-
-        if (!nombres) errors.push('Nombres son obligatorios');
-        else if (!nameRegex.test(nombres)) errors.push('Nombres inválidos');
-
-        if (!apellidos) errors.push('Apellidos son obligatorios');
-        else if (!nameRegex.test(apellidos)) errors.push('Apellidos inválidos');
-
-        if (!sexo) errors.push('Seleccione sexo');
-
-        if (!fecha_nac) errors.push('Fecha de nacimiento es obligatoria');
-        else {
-            const f = new Date(fecha_nac);
-            if (isNaN(f.getTime())) errors.push('Fecha de nacimiento inválida');
-            else {
-                const fechaMax = new Date(maxBirth);
-                fechaMax.setHours(0,0,0,0);
-                f.setHours(0,0,0,0);
-                if (f > fechaMax) errors.push('Debes ser mayor de 18 años');
-            }
-        }
-
-        if (!usuario) errors.push('Usuario es obligatorio');
-
-        if (!contraseña) errors.push('Contraseña es obligatoria');
-        else if (contraseña.length < 6) errors.push('Contraseña mínimo 6 caracteres');
-
-        if (contraseña !== repeatPassword) errors.push('Las contraseñas no coinciden');
-
-        if (!codpais) errors.push('Seleccione país');
-        if (!coesta) errors.push('Seleccione estado');
-        if (!comuni) errors.push('Seleccione municipio');
-        if (!coparr) errors.push('Seleccione parroquia');
-        if (!codcom) errors.push('Seleccione comunidad');
-
-        if (!direccion) errors.push('Dirección es obligatoria');
-
-        if (telefono) {
-          if (!digitsRegex.test(telefono)) errors.push('Teléfono: solo dígitos');
-          else if (telefono.length !== 11) errors.push('Teléfono debe tener exactamente 11 dígitos');
-          else {
-            const pref = telefono.slice(0,4);
-            if (!validPhonePrefixes.includes(pref)) errors.push('Teléfono debe comenzar con 0424, 0426, 0414, 0416 o 0412');
+  // Validación en vivo por campo
+  const validateField = (name, value) => {
+    const v = typeof value === 'string' ? value.trim() : value;
+    setErrors(prev => {
+      const next = { ...prev };
+      switch (name) {
+        case 'tipodo':
+          next.tipodo = v ? null : 'Seleccione tipo de documento';
+          break;
+        case 'cedula':
+          if (!v) next.cedula = 'Documento obligatorio';
+          else if (isPassportType(tipodo)) {
+            if (!/^[A-Za-z0-9-]{8,10}$/.test(v)) next.cedula = 'Pasaporte inválido (7-10 caracteres; letras, números y guiones)';
+            else if (v.startsWith('-') || v.endsWith('-')) next.cedula = 'Guion no puede estar al inicio o final';
+            else if (/--/.test(v)) next.cedula = 'Guiones consecutivos no permitidos';
+            else if (!/[A-Za-z]/.test(v)) next.cedula = 'Debe incluir al menos una letra';
+            else if (!/\d/.test(v)) next.cedula = 'Debe incluir al menos un número';
+            else next.cedula = null;
+          } else {
+            next.cedula = /^\d{7,9}$/.test(v) ? null : 'Documento inválido (7-9 dígitos)';
           }
-        }
-
-        if (!email) errors.push('Correo es obligatorio');
-        else if (!emailRegex.test(email)) errors.push('Correo inválido');
-
-        return errors;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (loading) return; // evita doble envío
-        setFieldErrors([]);
-        setCedulaError('');
-        setTelefonoError('');
-
-        const clientErrors = validateClient();
-        if (clientErrors.length) {
-            setFieldErrors(clientErrors);
-            setModal({ show: true, mensaje: clientErrors.join('\n'), success: false });
-            return;
-        }
-
-        setLoading(true);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // timeout 10s
-
-        try {
-            const response = await fetch(`${API}/users`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({
-                    cedula,
-                    nombres,
-                    apellidos,
-                    direccion,
-                    telefono,
-                    sexo,
-                    fecha_nac,
-                    usuario,
-                    email,
-                    contraseña,
-                    tipodo,
-                    codcom
-                }),
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-
-           
-            let data = {};
-            try { data = await response.json(); } catch(_) { data = {}; }
-
-            if (response.ok) {
-                setModal({ show: true, mensaje: 'Usuario registrado correctamente', success: true });
-                setFieldErrors([]);
-            } else if (response.status === 409) {
-                // conflicto (usuario ya existe)
-                const detalles = data.detalles || [data.mensaje || 'Registro duplicado'];
-                setFieldErrors(detalles);
-                setModal({ show: true, mensaje: detalles.join('\n'), success: false });
-            } else if (response.status === 400) {
-                const mensajes = data.errores || [data.message || 'Error de validación'];
-                setFieldErrors(mensajes);
-                setModal({ show: true, mensaje: mensajes.join('\n'), success: false });
-            } else {
-                setModal({ show: true, mensaje: data.message || 'Error al registrar el usuario', success: false });
+          break;
+        case 'nombres':
+          next.nombres = v ? (nameRegex.test(v) ? null : 'Nombres no permiten números ni símbolos') : 'Nombres obligatorios';
+          break;
+        case 'apellidos':
+          next.apellidos = v ? (nameRegex.test(v) ? null : 'Apellidos no permiten números ni símbolos') : 'Apellidos obligatorios';
+          break;
+        case 'sexo':
+          next.sexo = v ? null : 'Seleccione sexo';
+          break;
+        case 'fecha_nac':
+          if (!v) next.fecha_nac = 'Fecha de nacimiento obligatoria';
+          else {
+            const f = new Date(v);
+            if (isNaN(f.getTime())) next.fecha_nac = 'Fecha inválida';
+            else {
+              const fechaMax = new Date(maxBirth); fechaMax.setHours(0,0,0,0); f.setHours(0,0,0,0);
+              next.fecha_nac = f > fechaMax ? 'Debes ser mayor de 18 años' : null;
             }
-        } catch (err) {
-            if (err.name === 'AbortError') {
-                setModal({ show: true, mensaje: 'La petición tardó demasiado y fue cancelada. Intente de nuevo.', success: false });
-            } else {
-                setModal({ show: true, mensaje: 'Error de conexión al servidor', success: false });
-            }
-        } finally {
-            clearTimeout(timeoutId);
-            setLoading(false);
-        }
-    };
+          }
+          break;
+        case 'codpais':
+          next.codpais = v ? null : 'Seleccione país';
+          break;
+        case 'coesta':
+          next.coesta = v ? null : 'Seleccione estado';
+          break;
+        case 'comuni':
+          next.comuni = v ? null : 'Seleccione municipio';
+          break;
+        case 'coparr':
+          next.coparr = v ? null : 'Seleccione parroquia';
+          break;
+        case 'codcom':
+          next.codcom = v ? null : 'Seleccione comunidad';
+          break;
+        case 'direccion':
+          next.direccion = v ? null : 'Dirección obligatoria';
+          break;
+        case 'telefono':
+          next.telefono = v ? (/^\d{11}$/.test(v) ? (validPhonePrefixes.includes(v.slice(0,4)) ? null : 'Prefijo inválido 0414-0424-0416-0422-0426-0412') : 'Teléfono debe tener 11 dígitos') : null;
+          break;
+        case 'email':
+          next.email = v ? (emailRegex.test(v) ? null : 'Correo inválido') : 'Correo obligatorio';
+          break;
+        case 'usuario':
+          next.usuario = v ? null : 'Usuario obligatorio';
+          break;
+        case 'contraseña':
+          next.contraseña = v ? (v.length >= 6 ? null : 'Contraseña mínimo 6 caracteres') : 'Contraseña obligatoria';
+          break;
+        case 'repeatPassword':
+          next.repeatPassword = v ? (v === contraseña ? null : 'Contraseñas no coinciden') : 'Confirme la contraseña';
+          break;
+        default:
+          break;
+      }
+      return next;
+    });
+  };
 
-    const handleCloseModal = () => {
-        const wasSuccess = modal.success;
-        setModal({ show: false, mensaje: '', success: false });
-        if (wasSuccess) navigate('/login');
-    };
+  // Verifica existencia automáticamente con debounce (ahora SIN distinguir por tipo)
+  useEffect(() => {
+    setExistsMsg(''); setExistsState(null);
+    if (!cedula) return; // si no hay documento, salir
+    const passport = isPassportType(tipodo);
+    if (passport) {
+      if (cedula.length < 1) return;
+    } else {
+      if (!/^\d{3,}$/.test(cedula)) return;
+    }
 
-    // Refs para navegación con Enter
-    const cedulaRef = useRef(null);
-    const nombresRef = useRef(null);
-    const apellidosRef = useRef(null);
-    const sexoRef = useRef(null);
-    const fechaRef = useRef(null);
-    const usuarioRef = useRef(null);
-    const passwordRef = useRef(null);
-    const repeatRef = useRef(null);
-    const paisRef = useRef(null);
-    const estadoRef = useRef(null);
-    const muniRef = useRef(null);
-    const parrRef = useRef(null);
-    const comRef = useRef(null);
-    const direccionRef = useRef(null);
-    const telefonoRef = useRef(null);
-    const emailRef = useRef(null);
+    if (existTimer.current) clearTimeout(existTimer.current);
+    if (existController.current) {
+      try { existController.current.abort(); } catch {}
+      existController.current = null;
+    }
 
-    // función helper para avanzar al siguiente campo cuando presionan Enter
-    const handleEnter = (e, nextRef) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (nextRef && nextRef.current) nextRef.current.focus();
-        }
-    };
-
-   
-    const handleCedulaChange = e => {
-        // solo dígitos y máximo 9 caracteres
-        const cleaned = e.target.value.replace(/\D/g, '').slice(0, 9);
-        setCedula(cleaned);
-        // validación inmediata mínima/longitud
-        if (cleaned.length > 0 && (cleaned.length < 7 || cleaned.length > 9)) {
-            setCedulaError('Documento debe tener entre 7 y 9 dígitos');
+    existTimer.current = setTimeout(async () => {
+      existController.current = new AbortController();
+      try {
+        // <-- ELIMINADO: envío del tipo. Ahora se consulta sólo por documento.
+        const q = `${API}/existe?documento=${encodeURIComponent(cedula)}`;
+        const res = await fetch(q, { signal: existController.current.signal, headers: { Accept: 'application/json' } });
+        const data = await res.json().catch(()=>({}));
+        if (res.ok) {
+          setExistsState(Boolean(data.exists));
+          setExistsMsg(data.exists ? 'Documento ya registrado' : 'Documento disponible');
+          setCedulaError('');
+          // marcar error inline si existe, sin importar tipo
+          setErrors(prev => ({ ...prev, cedula: data.exists ? 'Documento ya registrado' : prev.cedula }));
         } else {
-            setCedulaError('');
+          setExistsState(null);
+          setExistsMsg(data.mensaje || 'No se pudo verificar');
         }
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+        setExistsState(null);
+        setExistsMsg('Error verificando existencia');
+      } finally {
+        existController.current = null;
+      }
+    }, 600);
+
+    return () => {
+      if (existTimer.current) clearTimeout(existTimer.current);
+      if (existController.current) {
+        try { existController.current.abort(); } catch {}
+        existController.current = null;
+      }
     };
+  }, [cedula]); // ahora solo depende de cedula
 
-    const handleNombresChange = e => {
-        // solo letras, espacios, acentos, guion y apóstrofe
-        setNombre(e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, ''));
-    };
+  // Manejo cedula: permite letras si pasaporte (8-10), alfanum y guiones, no sólo letras
+  const handleCedulaChange = e => {
+    const val = e.target.value;
+    const passport = isPassportType(tipodo);
+    if (passport) {
+      const cleaned = val.replace(/[^A-Za-z0-9-]/g, '').slice(0, 10).toUpperCase();
+      setCedula(cleaned);
+      validateField('cedula', cleaned);
+    } else {
+      const cleaned = val.replace(/\D/g, '').slice(0, 9);
+      setCedula(cleaned);
+      validateField('cedula', cleaned);
+    }
+  };
 
-    const handleApellidosChange = e => {
-        setApellidos(e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, ''));
-    };
+  const handleTipodoChange = e => {
+    const v = e.target.value;
+    setTipodo(v);
+    // al cambiar tipo, revalidar cédula y tipodo
+    validateField('tipodo', v);
+    validateField('cedula', cedula);
+  };
 
-    const handleTelefonoChange = e => {
-        // solo dígitos y máximo 11 caracteres
-        const cleaned = e.target.value.replace(/\D/g, '').slice(0, 11);
-        setTelefono(cleaned);
+  const handleNombresChange = e => {
+    const v = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, '');
+    setNombre(v);
+    validateField('nombres', v);
+  };
+  const handleApellidosChange = e => {
+    const v = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, '');
+    setApellidos(v);
+    validateField('apellidos', v);
+  };
 
-        // validación inmediata de prefijo y longitud
-        if (cleaned.length > 0 && cleaned.length !== 11) {
-            setTelefonoError('Teléfono debe tener 11 dígitos');
-        } else if (cleaned.length === 11) {
-            const pref = cleaned.slice(0,4);
-            if (!validPhonePrefixes.includes(pref)) {
-                setTelefonoError('Teléfono debe comenzar con 0424, 0426, 0414, 0416 o 0412');
-            } else {
-                setTelefonoError('');
-            }
-        } else {
-            setTelefonoError('');
+  const handleSexoChange = e => { setSexo(e.target.value); validateField('sexo', e.target.value); };
+  const handleFechaChange = e => { setFechaNacimiento(e.target.value); validateField('fecha_nac', e.target.value); };
+
+  const handleCodpais = e => { setCodpais(e.target.value); validateField('codpais', e.target.value); };
+  const handleCoesta = e => { setCoesta(e.target.value); validateField('coesta', e.target.value); };
+  const handleComuni = e => { setComuni(e.target.value); validateField('comuni', e.target.value); };
+  const handleCoparr = e => { setCoparr(e.target.value); validateField('coparr', e.target.value); };
+  const handleCodcom = e => { setCodcom(e.target.value); validateField('codcom', e.target.value); };
+
+  const handleDireccionChange = e => { setDireccion(e.target.value); validateField('direccion', e.target.value); };
+
+  const handleTelefonoChange = e => {
+    const cleaned = e.target.value.replace(/\D/g, '').slice(0, 11);
+    setTelefono(cleaned);
+    validateField('telefono', cleaned);
+    setTelefonoError(cleaned && (cleaned.length < 11) ? 'Teléfono debe tener 11 dígitos' : '');
+  };
+
+  const handleEmailChange = e => { setEmail(e.target.value); validateField('email', e.target.value); };
+
+  const handleUsuarioChange = e => { setUsuario(e.target.value); validateField('usuario', e.target.value); };
+  const handlePasswordChange = e => { setPassword(e.target.value); validateField('contraseña', e.target.value); validateField('repeatPassword', repeatPassword); };
+  const handleRepeatPasswordChange = e => { setRepeatPassword(e.target.value); validateField('repeatPassword', e.target.value); };
+
+  const validateStep = (s) => {
+    const errs = [];
+    if (s === 1) {
+      if (!tipodo) errs.push('Seleccione tipo de documento');
+      if (!cedula) errs.push('Documento obligatorio');
+      else if (isPassportType(tipodo)) {
+        if (!/^[A-Za-z0-9-]{7,10}$/.test(cedula)) errs.push('Pasaporte inválido (7-10 caracteres; letras, números y guiones)');
+        else if (cedula.startsWith('-') || cedula.endsWith('-')) errs.push('Pasaporte no puede empezar o terminar con guion');
+        else if (/--/.test(cedula)) errs.push('Pasaporte no puede tener guiones consecutivos');
+        else if (!/[A-Za-z]/.test(cedula)) errs.push('Pasaporte debe incluir al menos una letra');
+        else if (!/\d/.test(cedula)) errs.push('Pasaporte debe incluir al menos un número');
+      } else if (!/^\d{7,9}$/.test(cedula)) errs.push('Documento inválido (7-9 dígitos)');
+      if (!nombres) errs.push('Nombres obligatorios');
+      if (!apellidos) errs.push('Apellidos obligatorios');
+      if (!sexo) errs.push('Seleccione sexo');
+      if (!fecha_nac) errs.push('Fecha de nacimiento obligatoria');
+      else {
+        const f = new Date(fecha_nac);
+        if (isNaN(f.getTime())) errs.push('Fecha inválida');
+        else {
+          const fechaMax = new Date(maxBirth); fechaMax.setHours(0,0,0,0); f.setHours(0,0,0,0);
+          if (f > fechaMax) errs.push('Debes ser mayor de 18 años');
         }
-    };
+      }
+      if (existsState === true) errs.push('Documento ya registrado');
+    }
+    if (s === 2) {
+      if (!codpais) errs.push('Seleccione país');
+      if (!coesta) errs.push('Seleccione estado');
+      if (!comuni) errs.push('Seleccione municipio');
+      if (!coparr) errs.push('Seleccione parroquia');
+      if (!codcom) errs.push('Seleccione comunidad');
+      if (!direccion) errs.push('Dirección obligatoria');
+      if (telefono && !/^\d{11}$/.test(telefono)) errs.push('Teléfono inválido');
+      if (!email) errs.push('Correo obligatorio');
+      else if (!emailRegex.test(email)) errs.push('Correo inválido');
+    }
+    if (s === 3) {
+      if (!usuario) errs.push('Usuario obligatorio');
+      if (!contraseña) errs.push('Contraseña obligatoria');
+      else if (contraseña.length < 6) errs.push('Contraseña mínimo 6 caracteres');
+      if (contraseña !== repeatPassword) errs.push('Contraseñas no coinciden');
+    }
+    return errs;
+  };
 
-    return (
-        <div
-            style={{
-                minHeight: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundImage: `url(${bg})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-            }}
-        >
-            <CCard className="shadow" style={{ maxWidth: '800px', width: '100%' }}>
-                <CCardHeader className=" text-white text-center" style={{ backgroundColor: '#FF7043' }}>
-                    <h4>Registro de Usuario</h4>
-                </CCardHeader>
-                <CCardBody>
-                    <CForm onSubmit={handleSubmit}>
-                        <CRow>
-                            <CCol md={6}>
-                                <CFormSelect
-                                    label="Tipo de Documento"
-                                    value={tipodo}
-                                    onChange={e => setTipodo(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    ref={paisRef} /* pequeño ajuste: no afecta el select navigation si no se usa */
-                                >
-                                    <option value="">Seleccione tipo de documento</option>
-                                    {tipoDocumentos.map(tipo => (
-                                        <option key={tipo.TMA_CODDOC} value={tipo.TMA_CODDOC}>
-                                            {tipo.TMA_NOMBRE}
-                                        </option>
-                                    ))}
-                                </CFormSelect>
+  const next = () => {
+    const errs = validateStep(step);
+    if (errs.length) {
+      setFieldErrors(errs);
+      setModal({ show: true, mensaje: errs.join('\n'), success: false });
+      return;
+    }
+    setFieldErrors([]);
+    setStep(s => Math.min(3, s + 1));
+  };
+  const back = () => setStep(s => Math.max(1, s - 1));
 
-                                <CFormInput
-                                    type="text"
-                                    label="Documento de identidad"
-                                    placeholder="Ingrese el N° documento"
-                                    value={cedula}
-                                    onChange={handleCedulaChange}
-                                    required
-                                    className="mb-3"
-                                    ref={cedulaRef}
-                                    onKeyDown={e => handleEnter(e, nombresRef)}
-                                    maxLength={9}
-                                    inputMode="numeric"
-                                />
-                                {cedulaError && <div className="text-danger small mb-2">{cedulaError}</div>}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs1 = validateStep(1), errs2 = validateStep(2), errs3 = validateStep(3);
+    const all = [...errs1, ...errs2, ...errs3];
+    if (all.length) {
+      setFieldErrors(all);
+      setModal({ show: true, mensaje: all.join('\n'), success: false });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cedula, nombres, apellidos, direccion, telefono, sexo, fecha_nac,
+          usuario, email, contraseña, tipodo, codcom
+        })
+      });
+      const data = await res.json().catch(()=>({}));
+      if (res.ok) {
+        setModal({ show: true, mensaje: 'Usuario registrado correctamente', success: true });
+      } else {
+        const detalles = data.detalles || data.errores || [data.message || 'Error'];
+        setFieldErrors(detalles);
+        setModal({ show: true, mensaje: detalles.join('\n'), success: false });
+      }
+    } catch (err) {
+      setModal({ show: true, mensaje: 'Error de conexión al servidor', success: false });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                                <CFormInput
-                                    type="text"
-                                    label="Nombres"
-                                    placeholder="Ingrese sus nombres"
-                                    value={nombres}
-                                    onChange={handleNombresChange}
-                                    required
-                                    className="mb-3"
-                                    ref={nombresRef}
-                                    onKeyDown={e => handleEnter(e, apellidosRef)}
-                                />
+  const handleCloseModal = () => {
+    const wasSuccess = modal.success;
+    setModal({ show: false, mensaje: '', success: false });
+    if (wasSuccess) navigate('/login');
+  };
 
-                                <CFormInput
-                                    type="text"
-                                    label="Apellidos"
-                                    placeholder="Ingrese sus apellidos"
-                                    value={apellidos}
-                                    onChange={handleApellidosChange}
-                                    required
-                                    className="mb-3"
-                                    ref={apellidosRef}
-                                    onKeyDown={e => handleEnter(e, sexoRef)}
-                                />
-
-                                <CFormSelect
-                                    label="Sexo"
-                                    value={sexo}
-                                    onChange={e => setSexo(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    ref={sexoRef}
-                                    onKeyDown={e => handleEnter(e, fechaRef)}
-                                >
-                                    <option value="">Seleccione sexo</option>
-                                    <option value="M">Masculino</option>
-                                    <option value="F">Femenino</option>
-                                </CFormSelect>
-
-                                <CFormInput
-                                    type="date"
-                                    label="Fecha de Nacimiento"
-                                    value={fecha_nac}
-                                    onChange={e => setFechaNacimiento(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    max={maxFechaNacimiento}
-                                    ref={fechaRef}
-                                    onKeyDown={e => handleEnter(e, usuarioRef)}
-                                />
-
-                                <CFormInput
-                                    type="text"
-                                    label="Usuario"
-                                    placeholder="Ingrese su usuario"
-                                    value={usuario}
-                                    onChange={e => setUsuario(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    ref={usuarioRef}
-                                    onKeyDown={e => handleEnter(e, passwordRef)}
-                                />
-
-                                <CFormInput
-                                    type="password"
-                                    label="Contraseña"
-                                    placeholder="Ingrese su contraseña"
-                                    value={contraseña}
-                                    onChange={e => setPassword(e.target.value)}
-                                    required
-                                    min={6}
-                                    className="mb-3"
-                                    ref={passwordRef}
-                                    onKeyDown={e => handleEnter(e, repeatRef)}
-                                />
-
-                                <CFormInput
-                                    type="password"
-                                    label="Repetir contraseña"
-                                    placeholder="Repita su contraseña"
-                                    value={repeatPassword}
-                                    onChange={e => setRepeatPassword(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    ref={repeatRef}
-                                    onKeyDown={e => handleEnter(e, paisRef)}
-                                />
-                            </CCol>
-
-                            <CCol md={6}>
-                                <CFormSelect
-                                    label="País"
-                                    value={codpais}
-                                    onChange={e => setCodpais(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    ref={paisRef}
-                                    onKeyDown={e => handleEnter(e, estadoRef)}
-                                >
-                                    <option value="">Seleccione país</option>
-                                    {paises.map(pais => (
-                                        <option key={pais.TMA_COPAIS} value={pais.TMA_COPAIS}>
-                                            {pais.TMA_NOMBRE}
-                                        </option>
-                                    ))}
-                                </CFormSelect>
-
-                                <CFormSelect
-                                    label="Estado"
-                                    value={coesta}
-                                    onChange={e => setCoesta(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    disabled={!codpais}
-                                    ref={estadoRef}
-                                    onKeyDown={e => handleEnter(e, muniRef)}
-                                >
-                                    <option value="">Seleccione estado</option>
-                                    {estados.map(edo => (
-                                        <option key={edo.TMA_COESTA} value={edo.TMA_COESTA}>
-                                            {edo.TMA_NOMBRE}
-                                        </option>
-                                    ))}
-                                </CFormSelect>
-
-                                <CFormSelect
-                                    label="Municipio"
-                                    value={comuni}
-                                    onChange={e => setComuni(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    disabled={!coesta}
-                                    ref={muniRef}
-                                    onKeyDown={e => handleEnter(e, parrRef)}
-                                >
-                                    <option value="">Seleccione municipio</option>
-                                    {municipios.map(muni => (
-                                        <option key={muni.TMA_COMUNI} value={muni.TMA_COMUNI}>
-                                            {muni.TMA_NOMBRE}
-                                        </option>
-                                    ))}
-                                </CFormSelect>
-
-                                <CFormSelect
-                                    label="Parroquia"
-                                    value={coparr}
-                                    onChange={e => setCoparr(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    disabled={!comuni}
-                                    ref={parrRef}
-                                    onKeyDown={e => handleEnter(e, comRef)}
-                                >
-                                    <option value="">Seleccione parroquia</option>
-                                    {parroquias.map(parr => (
-                                        <option key={parr.TMA_COPARR} value={parr.TMA_COPARR}>
-                                            {parr.TMA_NOMBRE}
-                                        </option>
-                                    ))}
-                                </CFormSelect>
-
-                                <CFormSelect
-                                    label="Comunidad"
-                                    value={codcom}
-                                    onChange={e => setCodcom(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    disabled={!coparr}
-                                    ref={comRef}
-                                    onKeyDown={e => handleEnter(e, direccionRef)}
-                                >
-                                    <option value="">Seleccione comunidad</option>
-                                    {comunidades.map(comu => (
-                                        <option key={comu.TMA_CODCOM} value={comu.TMA_CODCOM}>
-                                            {comu.TMA_NOMBRE}
-                                        </option>
-                                    ))}
-                                </CFormSelect>
-
-                                <CFormInput
-                                    type="text"
-                                    label="Dirección"
-                                    placeholder="Ingrese su dirección"
-                                    value={direccion}
-                                    onChange={e => setDireccion(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    ref={direccionRef}
-                                    onKeyDown={e => handleEnter(e, telefonoRef)}
-                                />
-
-                                <CFormInput
-                                    type="text"
-                                    label="Teléfono"
-                                    placeholder="Ejm 04141234567"
-                                    value={telefono}
-                                    onChange={handleTelefonoChange}
-                                    className="mb-3"
-                                    ref={telefonoRef}
-                                    onKeyDown={e => handleEnter(e, emailRef)}
-                                    maxLength={11}
-                                    inputMode="numeric"
-                                />
-                                {telefonoError && <div className="text-danger small mb-2">{telefonoError}</div>}
-
-                                <CFormInput
-                                    type="email"
-                                    label="Correo"
-                                    placeholder="Ejm correo@gmail.com"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    required
-                                    className="mb-3"
-                                    ref={emailRef}
-                                />
-                            </CCol>
-                        </CRow>
-                        <div className="text-center">
-                            <CButton disabled={loading} style={{ backgroundColor: '#FF7043', color: 'white' }} type="submit">
-                                {loading ? 'Enviando...' : 'Enviar'}
-                            </CButton>
-                            <Link to="/login">
-                                <CButton style={{ backgroundColor: 'white', color: 'black', borderColor: '#FF7043', marginLeft: '10px' }} type="button">
-                                    Login
-                                </CButton>
-                            </Link>
-                        </div>
-                    </CForm>
-                </CCardBody>
-            </CCard>
-            {/* Modal para mensajes */}
-            <CModal alignment="center" visible={modal.show} onClose={handleCloseModal}>
-                <CModalHeader>
-                    <CModalTitle>{modal.success ? 'Registro exitoso' : 'Error'}</CModalTitle>
-                </CModalHeader>
-                <CModalBody className="text-center" style={{ whiteSpace: 'pre-wrap' }}>
-                    {modal.mensaje}
-                </CModalBody>
-                <CModalFooter>
-                    <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={handleCloseModal}>
-                        Aceptar
-                    </CButton>
-                </CModalFooter>
-            </CModal>
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${bg})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      padding: 24
+    }}>
+      <CCard className="shadow" style={{ width: '900px', maxWidth: '95%', borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', background: 'linear-gradient(90deg,#ff8a65,#ff7043)', color: '#fff' }}>
+          <div>
+            <h3 style={{ margin: 0, fontWeight: 700, letterSpacing: '0.2px' }}>Registro de Usuario</h3>
+            <div style={{ fontSize: 13, opacity: 0.95 }}>Rellena los datos en los tres pasos</div>
+          </div>
         </div>
-    );
+
+        <CCardBody style={{ padding: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              {[1,2,3].map(n => (
+                <div key={n} style={{ display: 'flex', alignItems: 'center', gap:8 }}>
+                  <div style={{
+                    width:30, height:30, borderRadius: 8,
+                    background: step === n ? '#FF7043' : '#FFE8DE',
+                    color: step === n ? '#fff' : '#ff7043',
+                    display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700
+                  }}>{n}</div>
+                  <div style={{ fontSize:12, color: step === n ? '#333' : '#777' }}>{n === 1 ? 'Datos de Persona' : n===2 ? 'Datos de Residencia' : 'Datos de Cuenta'}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ width: 260 }}>
+              <CProgress value={step === 1 ? 33 : step === 2 ? 66 : 100} height="8px" color="warning" />
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ maxWidth: 820, margin: '0 auto' }}>
+            {step === 1 && (
+              <div style={{ display:'flex', justifyContent:'center' }}>
+                <div style={{ width: 760 }}>
+                  <CRow className="g-3">
+                    <CCol md={6} style={{ margin: '0 auto' }}>
+                      <label style={{ display:'block', fontSize:13, color:'#555', marginBottom:6 }}>1.1 Tipo de Documento</label>
+                      <CFormSelect value={tipodo} onChange={handleTipodoChange} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }}>
+                        <option value="">Seleccione tipo de documento</option>
+                        {tipoDocumentos.map(t => <option key={t.TMA_CODDOC} value={String(t.TMA_CODDOC)}>{t.TMA_NOMBRE}</option>)}
+                      </CFormSelect>
+                      {errors.tipodo && <div className="text-danger small mb-2">{errors.tipodo}</div>}
+
+                      <label style={{ display:'block', fontSize:13, color:'#555', marginBottom:6 }}>1.2 Documento de identidad</label>
+                      <CFormInput type="text" value={cedula} onChange={handleCedulaChange} className="mb-1" placeholder='31800900 - BF950025'  style={{ borderRadius:10, padding:'10px 12px' }} maxLength={isPassportType(tipodo) ? 10 : 9} />
+                      <div style={{ minHeight: '22px', marginBottom: 8 }}>
+                        {errors.cedula ? <div className="text-danger small">{errors.cedula}</div>
+                          : existsState === true ? <div className="text-danger small">{existsMsg}</div>
+                          : existsState === false ? <div className="text-success small">{existsMsg}</div>
+                          : <div style={{ visibility: 'hidden' }} className="small">placeholder</div>}
+                      </div>
+
+                      <label style={{ display:'block', fontSize:13, color:'#555', marginBottom:6 }}>1.3 Nombres</label>
+                      <CFormInput type="text" value={nombres} onChange={handleNombresChange} className="mb-1" placeholder='' style={{ borderRadius:10, padding:'10px 12px' }} />
+                      {errors.nombres && <div className="text-danger small mb-2">{errors.nombres}</div>}
+
+                      <label style={{ display:'block', fontSize:13, color:'#555', marginBottom:6 }}>1.4 Apellidos</label>
+                      <CFormInput type="text" value={apellidos} onChange={handleApellidosChange} className="mb-1" placeholder='' style={{ borderRadius:10, padding:'10px 12px' }} />
+                      {errors.apellidos && <div className="text-danger small mb-2">{errors.apellidos}</div>}
+
+                      <label style={{ display:'block', fontSize:13, color:'#555', marginBottom:6 }}>1.5 Sexo</label>
+                      <CFormSelect value={sexo} onChange={handleSexoChange} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }}>
+                        <option value="">Seleccione sexo</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                      </CFormSelect>
+                      {errors.sexo && <div className="text-danger small mb-2">{errors.sexo}</div>}
+
+                      <label style={{ display:'block', fontSize:13, color:'#555', marginBottom:6 }}>1.6 Fecha de Nacimiento</label>
+                      <CFormInput type="date" value={fecha_nac} onChange={handleFechaChange} max={maxFechaNacimiento} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }} />
+                      {errors.fecha_nac && <div className="text-danger small mb-2">{errors.fecha_nac}</div>}
+                    </CCol>
+                  </CRow>
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div style={{ display:'flex', justifyContent:'center' }}>
+                <div style={{ width: 760 }}>
+                  <CRow className="g-3">
+                    <CCol md={6} style={{ margin: '0 auto' }}>
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>2.1 País</label>
+                      <CFormSelect value={codpais} onChange={handleCodpais} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }}>
+                        <option value="">Seleccione país</option>
+                        {paises.map(p=> <option key={p.TMA_COPAIS} value={p.TMA_COPAIS}>{p.TMA_NOMBRE}</option>)}
+                      </CFormSelect>
+                      {errors.codpais && <div className="text-danger small mb-2">{errors.codpais}</div>}
+
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>2.2 Estado</label>
+                      <CFormSelect value={coesta} onChange={handleCoesta} className="mb-1" disabled={!codpais} style={{ borderRadius:10, padding:'10px 12px' }}>
+                        <option value="">Seleccione estado</option>
+                        {estados.map(e=> <option key={e.TMA_COESTA} value={e.TMA_COESTA}>{e.TMA_NOMBRE}</option>)}
+                      </CFormSelect>
+                      {errors.coesta && <div className="text-danger small mb-2">{errors.coesta}</div>}
+
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>2.3 Municipio</label>
+                      <CFormSelect value={comuni} onChange={handleComuni} className="mb-1" disabled={!coesta} style={{ borderRadius:10, padding:'10px 12px' }}>
+                        <option value="">Seleccione municipio</option>
+                        {municipios.map(m=> <option key={m.TMA_COMUNI} value={m.TMA_COMUNI}>{m.TMA_NOMBRE}</option>)}
+                      </CFormSelect>
+                      {errors.comuni && <div className="text-danger small mb-2">{errors.comuni}</div>}
+
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>2.4 Parroquia</label>
+                      <CFormSelect value={coparr} onChange={handleCoparr} className="mb-1" disabled={!comuni} style={{ borderRadius:10, padding:'10px 12px' }}>
+                        <option value="">Seleccione parroquia</option>
+                        {parroquias.map(p=> <option key={p.TMA_COPARR} value={p.TMA_COPARR}>{p.TMA_NOMBRE}</option>)}
+                      </CFormSelect>
+                      {errors.coparr && <div className="text-danger small mb-2">{errors.coparr}</div>}
+
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>2.5 Comunidad</label>
+                      <CFormSelect value={codcom} onChange={handleCodcom} className="mb-1" disabled={!coparr} style={{ borderRadius:10, padding:'10px 12px' }}>
+                        <option value="">Seleccione comunidad</option>
+                        {comunidades.map(c=> <option key={c.TMA_CODCOM} value={c.TMA_CODCOM}>{c.TMA_NOMBRE}</option>)}
+                      </CFormSelect>
+                      {errors.codcom && <div className="text-danger small mb-2">{errors.codcom}</div>}
+
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>2.6 Dirección</label>
+                      <CFormInput type="text" value={direccion} onChange={handleDireccionChange} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }} />
+                      {errors.direccion && <div className="text-danger small mb-2">{errors.direccion}</div>}
+
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>2.7 Teléfono</label>
+                      <CFormInput type="text" value={telefono} onChange={handleTelefonoChange} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }} />
+                      {errors.telefono && <div className="text-danger small mb-2">{errors.telefono}</div>}
+
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>2.8 Correo</label>
+                      <CFormInput type="email" value={email} onChange={handleEmailChange} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }} />
+                      {errors.email && <div className="text-danger small mb-2">{errors.email}</div>}
+                    </CCol>
+                  </CRow>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div style={{ display:'flex', justifyContent:'center' }}>
+                <div style={{ width: 760 }}>
+                  <CRow className="g-3">
+                    <CCol md={6} style={{ margin: '0 auto' }}>
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>3.1 Usuario</label>
+                      <CFormInput type="text" value={usuario} onChange={handleUsuarioChange} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }} />
+                      {errors.usuario && <div className="text-danger small mb-2">{errors.usuario}</div>}
+
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>3.2 Contraseña</label>
+                      <CFormInput type="password" value={contraseña} onChange={handlePasswordChange} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }} />
+                      {errors.contraseña && <div className="text-danger small mb-2">{errors.contraseña}</div>}
+
+                      <label style={{ fontSize:13, color:'#555', marginBottom:6 }}>3.3 Repetir contraseña</label>
+                      <CFormInput type="password" value={repeatPassword} onChange={handleRepeatPasswordChange} className="mb-1" style={{ borderRadius:10, padding:'10px 12px' }} />
+                      {errors.repeatPassword && <div className="text-danger small mb-2">{errors.repeatPassword}</div>}
+                    </CCol>
+                  </CRow>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop: 18 }}>
+              <div>
+                {step > 1 && (
+                  <CButton onClick={back} style={{ backgroundColor:'#fff', color:'#FF7043', borderColor:'#FF7043' }}>Anterior</CButton>
+                )}
+              </div>
+
+              <div style={{ display:'flex', gap: 12 }}>
+                {step < 3 && (
+                  <CButton onClick={next} disabled={validateStep(step).length > 0} style={{
+                    backgroundColor: validateStep(step).length > 0 ? '#ffd6c9' : '#FF7043',
+                    color: '#fff'
+                  }}>
+                    Siguiente
+                  </CButton>
+                )}
+
+                {step === 3 && (
+                  <CButton type="submit" disabled={loading || validateStep(3).length > 0} style={{ backgroundColor: '#FF7043', color: '#fff' }}>
+                    {loading ? 'Enviando...' : 'Registrar'}
+                  </CButton>
+                )}
+                <Link to="/login"><CButton style={{ backgroundColor: 'transparent', color: '#6b6b6b' }}>Login</CButton></Link>
+              </div>
+            </div>
+          </form>
+        </CCardBody>
+      </CCard>
+
+      <CModal alignment="center" visible={modal.show} onClose={handleCloseModal}>
+        <CModalHeader><CModalTitle>{modal.success ? 'Registro exitoso' : 'Error'}</CModalTitle></CModalHeader>
+        <CModalBody className="text-center" style={{ whiteSpace: 'pre-wrap' }}>{modal.mensaje}</CModalBody>
+        <CModalFooter><CButton style={{backgroundColor:'white', color:'#ff7043'}} onClick={handleCloseModal}>Aceptar</CButton></CModalFooter>
+      </CModal>
+    </div>
+  );
 };
 
 export default Formulario;

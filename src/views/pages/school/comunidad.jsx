@@ -6,6 +6,9 @@ import {
 } from '@coreui/react';
 
 const API = 'https://sistema-de-gestion-backend.onrender.com';
+/*const API = 'http://localhost:4000';*/
+
+const MAX_HABITANTES = 1000000;
 
 const ComunidadesCrudCoreUI = () => {
   // Filtros geográficos para el formulario
@@ -34,6 +37,9 @@ const ComunidadesCrudCoreUI = () => {
   const [visible, setVisible] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', color: 'success' });
   const [errorModal, setErrorModal] = useState({ show: false, message: '' });
+
+  // FILTRO en lista
+  const [filter, setFilter] = useState('');
 
   // PAGINACIÓN
   const [currentPage, setCurrentPage] = useState(1);
@@ -131,6 +137,8 @@ const ComunidadesCrudCoreUI = () => {
     if (name === 'habita') {
       if (!v) msg = 'Habitantes es obligatorio';
       else if (!/^\d+$/.test(v)) msg = 'Solo números enteros';
+      else if (parseInt(v, 10) < 1) msg = 'Debe ser mayor que 0';
+      else if (parseInt(v, 10) > MAX_HABITANTES) msg = `Número excesivo (máx ${MAX_HABITANTES.toLocaleString()})`;
     }
 
     if (name === 'coparr') {
@@ -139,7 +147,7 @@ const ComunidadesCrudCoreUI = () => {
 
     if (name === 'latitud') {
       if (!v) msg = 'Latitud es obligatoria';
-      // exigir formato decimal (debe contener punto)
+    
       else if (!/^-?\d+\.\d+$/.test(v)) msg = 'La latitud debe tener decimales (ej. 7.1548 o -7.1548)';
       else {
         const num = parseFloat(v);
@@ -161,24 +169,25 @@ const ComunidadesCrudCoreUI = () => {
   };
 
   // validar todo antes de enviar -> devuelve array de campos inválidos
-  const validateAll = () => {
+  const validateAll = (useFormCoparr = true) => {
     const fields = ['nombre', 'direccion', 'habita', 'coparr', 'latitud', 'longitud'];
     const invalids = [];
     // validar uno por uno y recoger los que fallan
     fields.forEach(f => {
-      const value = f === 'coparr' ? coparr : form[f];
+      // usar form.coparr si está disponible (edición en modal)
+      const value = f === 'coparr' ? (useFormCoparr ? (form.coparr ?? coparr) : coparr) : form[f];
       const ok = validateField(f, value);
       if (!ok) invalids.push(f);
     });
     return invalids;
   };
 
-  // Manejar cambios en el formulario (con limpieza/validación en tiempo real)
   const handleChange = e => {
     const { name, value } = e.target;
     let val = value;
     if (name === 'habita') {
-      val = value.replace(/\D/g, '');
+      const cleaned = value.replace(/\D/g, '');
+      val = cleaned ? (parseInt(cleaned, 10) > MAX_HABITANTES ? String(MAX_HABITANTES) : cleaned) : '';
     }
     if (name === 'latitud' || name === 'longitud') {
       val = value.replace(/[^0-9\.\-]/g, '');
@@ -245,26 +254,32 @@ const ComunidadesCrudCoreUI = () => {
 
   // Guardar edición
   const handleUpdate = async () => {
-    if (!validateAll().length) {
-      const res = await fetch(`${API}/comunidades/${editId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      });
-      if (res.ok) {
-        setToast({ show: true, message: 'Comunidad actualizada', color: 'info' });
-        setVisible(false); setEditId(null);
-        setForm({ nombre: '', direccion: '', habita: '', coparr: '', latitud: '', longitud: '' });
-        cargarComunidades();
-      } else {
-        const error = await res.json();
-        setErrorModal({ show: true, message: error.message || 'Error al actualizar' });
+    const invalids = validateAll(true);
+    if (invalids.length === 0) {
+      try {
+        const res = await fetch(`${API}/comunidades/${editId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+        if (res.ok) {
+          setToast({ show: true, message: 'Comunidad actualizada', color: 'info' });
+          setVisible(false); setEditId(null);
+          setForm({ nombre: '', direccion: '', habita: '', coparr: '', latitud: '', longitud: '' });
+          cargarComunidades();
+        } else {
+          const error = await res.json().catch(()=>({}));
+          setErrorModal({ show: true, message: error.message || 'Error al actualizar' });
+        }
+      } catch (err) {
+        setErrorModal({ show: true, message: 'Error de conexión al servidor' });
       }
     } else {
-      // foco al primer error del modal
+      // foco al primer error del modal y mantener visible
       const map = { nombre: nombreRef, direccion: direccionRef, habita: habitaRef, coparr: parrRef, latitud: latRef, longitud: longRef };
-      const first = validateAll()[0];
+      const first = invalids[0];
       if (map[first] && map[first].current) map[first].current.focus();
+      setVisible(true);
     }
   };
 
@@ -286,7 +301,7 @@ const ComunidadesCrudCoreUI = () => {
                   cargarComunidades();
                 } else {
                   const error = await res.json();
-                  setErrorModal({ show: true, message: error.message || 'Error al eliminar' });
+                  setErrorModal({ show: true, message: error.message || 'No se puede eliminar, ya contiene registros importantes' });
                 }
               }}>
               Eliminar
@@ -300,12 +315,36 @@ const ComunidadesCrudCoreUI = () => {
     });
   };
 
-  // PAGINACIÓN: calcular datos a mostrar
-  const totalPages = Math.ceil(comunidades.length / itemsPerPage) || 1;
-  const comunidadesToShow = comunidades.slice(
+  // FILTRADO y PAGINACIÓN
+  const filteredComunidades = comunidades.filter(comu => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return true;
+    const parroquiaNombre = parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || '';
+    return (
+      (comu.TMA_NOMBRE || '').toLowerCase().includes(q) ||
+      (comu.TMA_DIRECC || '').toLowerCase().includes(q) ||
+      (parroquiaNombre || '').toLowerCase().includes(q)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredComunidades.length / itemsPerPage));
+  const comunidadesToShow = filteredComunidades.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Placeholder helpers (limpia placeholder al focus y lo restaura en blur si está vacío)
+  const handleFocusClear = e => {
+    try {
+      e.target.dataset.ph = e.target.placeholder || '';
+      e.target.placeholder = '';
+    } catch {}
+  };
+  const handleBlurRestore = e => {
+    try {
+      if (!e.target.value) e.target.placeholder = e.target.dataset.ph || '';
+    } catch {}
+  };
 
   return (
     <CContainer className="py-4">
@@ -414,9 +453,13 @@ const ComunidadesCrudCoreUI = () => {
                   value={form.nombre}
                   onChange={handleChange}
                   required
+                  maxLength={50}
+                  minLength={10}
                   className="mb-1"
                   ref={nombreRef}
                   onKeyDown={e => handleEnter(e, direccionRef)}
+                  onFocus={handleFocusClear}
+                  onBlur={handleBlurRestore}
                 />
                 {errors.nombre && <div className="text-danger small mb-2">{errors.nombre}</div>}
 
@@ -427,10 +470,13 @@ const ComunidadesCrudCoreUI = () => {
                   value={form.direccion}
                   onChange={handleChange}
                   required
-                  max={200}
+                  max={100}
+                  minLength={5}
                   className="mb-1"
                   ref={direccionRef}
                   onKeyDown={e => handleEnter(e, habitaRef)}
+                  onFocus={handleFocusClear}
+                  onBlur={handleBlurRestore}
                 />
                 {errors.direccion && <div className="text-danger small mb-2">{errors.direccion}</div>}
 
@@ -443,9 +489,12 @@ const ComunidadesCrudCoreUI = () => {
                   onChange={handleChange}
                   required
                   min={1}
+                  max={MAX_HABITANTES}
                   className="mb-1"
                   ref={habitaRef}
                   onKeyDown={e => handleEnter(e, latRef)}
+                  onFocus={handleFocusClear}
+                  onBlur={handleBlurRestore}
                 />
                 {errors.habita && <div className="text-danger small mb-2">{errors.habita}</div>}
 
@@ -457,9 +506,12 @@ const ComunidadesCrudCoreUI = () => {
                   onChange={handleChange}
                   className="mb-1"
                   ref={latRef}
+                  maxLength={6}
                   onKeyDown={e => handleEnter(e, longRef)}
                   pattern="^-?\d+\.\d+$"
                   title="Formato decimal obligatorio. Ej: 7.1548 o -7.1548. Rango -90 a 90."
+                  onFocus={handleFocusClear}
+                  onBlur={handleBlurRestore}
                 />
                 {errors.latitud && <div className="text-danger small mb-2">{errors.latitud}</div>}
 
@@ -471,9 +523,12 @@ const ComunidadesCrudCoreUI = () => {
                   onChange={handleChange}
                   className="mb-1"
                   ref={longRef}
+                  maxLength={8}
                   onKeyDown={e => handleEnter(e, submitRef)}
                   pattern="^-\d+(\.\d+)?$"
                   title="Debe ser un número decimal negativo. Ej: -72.1245. Rango -180 a 0."
+                  onFocus={handleFocusClear}
+                  onBlur={handleBlurRestore}
                 />
                 {errors.longitud && <div className="text-danger small mb-2">{errors.longitud}</div>}
 
@@ -487,17 +542,29 @@ const ComunidadesCrudCoreUI = () => {
           </CCard>
         </CCol>
 
-        {/* LISTADO: tabla para md+ y tarjetas para xs */}
+        
         <CCol xs={12} md={7}>
-          <CCard className="shadow-sm">
-            <CCardHeader><strong>Comunidades Registradas</strong></CCardHeader>
-            <CCardBody>
+          <CCard className="shadow-sm" style={{ maxWidth: 900, margin: '0 auto' }}>
+            <CCardHeader className="d-flex flex-column gap-2 align-items-center">
+              <strong>Comunidades Registradas</strong>
+              <div style={{ width: '100%', maxWidth: 700 }}>
+                <CFormInput
+                  size="sm"
+                  placeholder="Filtrar por nombre, dirección o parroquia..."
+                  value={filter}
+                  onChange={e => { setFilter(e.target.value); setCurrentPage(1); }}
+                  onFocus={handleFocusClear}
+                  onBlur={handleBlurRestore}
+                />
+              </div>
+            </CCardHeader>
+            <CCardBody style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {isSmall ? (
-                <div className="d-flex flex-column gap-3">
+                <div className="d-flex flex-column gap-3" style={{ width: '100%', maxWidth: 760 }}>
                   {comunidadesToShow.map(comu => (
-                    <CCard key={comu.TMA_CODCOM} className="p-3" style={{ borderRadius: 10 }}>
+                    <CCard key={comu.TMA_CODCOM} className="p-3" style={{ borderRadius: 10, width: '100%' }}>
                       <div className="d-flex justify-content-between align-items-start">
-                        <div>
+                        <div style={{ textAlign: 'left' }}>
                           <h6 style={{ margin: 0 }}>{comu.TMA_NOMBRE}</h6>
                           <small className="text-muted">
                             {parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || comu.TMA_COPARR}
@@ -516,31 +583,31 @@ const ComunidadesCrudCoreUI = () => {
                   ))}
                 </div>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <CTable align="middle" hover className="mb-0" style={{ minWidth: 650 }}>
+                <div style={{ overflowX: 'auto', width: '100%' }}>
+                  <CTable align="middle" hover className="mb-0" style={{ minWidth: 760, margin: '0 auto' }}>
                     <CTableHead color="light">
                       <CTableRow>
                         <CTableHeaderCell>Nombre</CTableHeaderCell>
                         <CTableHeaderCell>Dirección</CTableHeaderCell>
-                        <CTableHeaderCell>Habitantes</CTableHeaderCell>
+                        <CTableHeaderCell style={{ textAlign: 'center' }}>Habitantes</CTableHeaderCell>
                         <CTableHeaderCell>Parroquia</CTableHeaderCell>
-                        <CTableHeaderCell>Latitud</CTableHeaderCell>
-                        <CTableHeaderCell>Longitud</CTableHeaderCell>
-                        {rol === 'admin' && <CTableHeaderCell>Acciones</CTableHeaderCell>}
+                        <CTableHeaderCell style={{ textAlign: 'center' }}>Latitud</CTableHeaderCell>
+                        <CTableHeaderCell style={{ textAlign: 'center' }}>Longitud</CTableHeaderCell>
+                        {rol === 'admin' && <CTableHeaderCell style={{ textAlign: 'center' }}>Acciones</CTableHeaderCell>}
                       </CTableRow>
                     </CTableHead>
                     <CTableBody>
                       {comunidadesToShow.map(comu => (
                         <CTableRow key={comu.TMA_CODCOM}>
-                          <CTableDataCell>{comu.TMA_NOMBRE}</CTableDataCell>
-                          <CTableDataCell>{comu.TMA_DIRECC}</CTableDataCell>
+                          <CTableDataCell style={{ maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{comu.TMA_NOMBRE}</CTableDataCell>
+                          <CTableDataCell style={{ maxWidth: 260, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{comu.TMA_DIRECC}</CTableDataCell>
                           <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_HABITA}</CTableDataCell>
                           <CTableDataCell>{parroquias.find(p => p.TMA_COPARR === comu.TMA_COPARR)?.TMA_NOMBRE || comu.TMA_COPARR}</CTableDataCell>
                           <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LATITU}</CTableDataCell>
                           <CTableDataCell style={{ textAlign: 'center' }}>{comu.TMA_LONGIT}</CTableDataCell>
                           {rol === 'admin' && (
-                            <CTableDataCell>
-                              <div className="d-flex gap-2">
+                            <CTableDataCell style={{ textAlign: 'center' }}>
+                              <div className="d-flex gap-2 justify-content-center">
                                 <CButton size="sm" style={{ backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043' }} onClick={() => handleEditar(comu)}>Editar</CButton>
                                 <CButton size="sm" style={{ backgroundColor: 'white', color: 'red', borderColor: 'red' }} onClick={() => handleEliminar(comu.TMA_CODCOM)}>Eliminar</CButton>
                               </div>
@@ -554,13 +621,13 @@ const ComunidadesCrudCoreUI = () => {
               )}
 
               {/* Paginación */}
-              <div className="d-flex justify-content-center my-3">
+              <div className="d-flex justify-content-center my-3" style={{ width: '100%' }}>
                 <CPagination align="center" className="mb-0">
-                  <CPaginationItem disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>&laquo;</CPaginationItem>
+                  <CPaginationItem disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>&laquo;</CPaginationItem>
                   {[...Array(totalPages)].map((_, idx) => (
                     <CPaginationItem key={idx + 1} active={currentPage === idx + 1} onClick={() => setCurrentPage(idx + 1)} style={ currentPage === idx + 1 ? { backgroundColor: '#ff7043', color: 'white', borderColor: '#ff7043', borderRadius: 6 } : {}}>{idx + 1}</CPaginationItem>
                   ))}
-                  <CPaginationItem disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>&raquo;</CPaginationItem>
+                  <CPaginationItem disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>&raquo;</CPaginationItem>
                 </CPagination>
               </div>
             </CCardBody>
@@ -568,24 +635,24 @@ const ComunidadesCrudCoreUI = () => {
         </CCol>
       </CRow>
 
-      {/* Modal para editar */}
-      <CModal visible={visible} onClose={() => setVisible(false)}>
+      
+      <CModal visible={visible} onClose={() => setVisible(false)} backdrop="static" keyboard={false}>
         <CModalHeader><CModalTitle>Editar Comunidad</CModalTitle></CModalHeader>
         <CModalBody>
           <CForm>
-            <CFormInput id="modal-nombre" label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} required className="mb-3" />
+            <CFormInput id="modal-nombre" label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} required className="mb-3" maxLength={40} minLength={5} onFocus={handleFocusClear} onBlur={handleBlurRestore} />
             {errors.nombre && <div className="text-danger small mb-2">{errors.nombre}</div>}
-            <CFormInput label="Dirección" name="direccion" value={form.direccion} onChange={handleChange} required className="mb-3" />
+            <CFormInput label="Dirección" name="direccion" value={form.direccion} onChange={handleChange} required className="mb-3" maxLength={100} minLength={10} onFocus={handleFocusClear} onBlur={handleBlurRestore} />
             {errors.direccion && <div className="text-danger small mb-2">{errors.direccion}</div>}
-            <CFormInput label="Habitantes" name="habita" type="number" value={form.habita} onChange={handleChange} required className="mb-3" />
+            <CFormInput label="Habitantes" name="habita" type="number" value={form.habita} onChange={handleChange} required className="mb-3" min={1} max={MAX_HABITANTES} onFocus={handleFocusClear} onBlur={handleBlurRestore} />
             {errors.habita && <div className="text-danger small mb-2">{errors.habita}</div>}
             <CFormSelect label="Parroquia" name="coparr" value={form.coparr} onChange={handleChange} required className="mb-3">
               <option value="">Seleccione una parroquia</option>
               {parroquias.map(p => <option key={p.TMA_COPARR} value={p.TMA_COPARR}>{p.TMA_NOMBRE}</option>)}
             </CFormSelect>
-            <CFormInput label="Latitud" name="latitud" value={form.latitud} onChange={handleChange} className="mb-3" />
+            <CFormInput label="Latitud" name="latitud" value={form.latitud} onChange={handleChange} className="mb-3" maxLength={6} onFocus={handleFocusClear} onBlur={handleBlurRestore} />
             {errors.latitud && <div className="text-danger small mb-2">{errors.latitud}</div>}
-            <CFormInput label="Longitud" name="longitud" value={form.longitud} onChange={handleChange} className="mb-3" />
+            <CFormInput label="Longitud" name="longitud" value={form.longitud} onChange={handleChange} className="mb-3" onFocus={handleFocusClear} onBlur={handleBlurRestore} />
             {errors.longitud && <div className="text-danger small mb-2">{errors.longitud}</div>}
           </CForm>
         </CModalBody>

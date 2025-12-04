@@ -150,6 +150,19 @@ export default function getNav() {
           to: '/listadoafectaciones',
           icon: <CIcon icon={cilList} customClassName="nav-icon" />,
         },
+
+       
+  
+            
+          ],
+        },
+
+                {
+          component: CNavGroup,
+          name: 'Reportes',
+          icon: <CIcon icon={cilChevronBottom} customClassName="nav-icon" />,
+          items: [
+
          {
           component: CNavItem,
           name: 'Reporte Individual',
@@ -163,20 +176,23 @@ export default function getNav() {
           icon: <CIcon icon={cilShareBoxed} customClassName="nav-icon" />,
         },
        
-        {
-          component: CNavItem,
-          name: 'Editar',
-          to: '/editarusuario',
-          icon: <CIcon icon={cilList} customClassName="nav-icon" />,
-        },
+  
             
           ],
         },
+
         {
           component: CNavItem,
           name: 'Zonas De Riesgo',
           to: '/zonas',
           icon: <CIcon icon={cilMap} customClassName="nav-icon" />,
+        },
+
+        {
+          component: CNavItem,
+          name: 'Editar Usuarios',
+          to: '/editarusuario',
+          icon: <CIcon icon={cilList} customClassName="nav-icon" />,
         },
 
         

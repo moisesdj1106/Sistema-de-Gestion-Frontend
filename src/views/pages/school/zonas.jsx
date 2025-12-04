@@ -9,6 +9,7 @@ import L from 'leaflet';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip);
 
 const API = 'https://sistema-de-gestion-backend.onrender.com';
+/*const API = 'http://localhost:4000';*/
 
 const customIcon = new L.Icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/854/854878.png", // icono de ubicación genérico

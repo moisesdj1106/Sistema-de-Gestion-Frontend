@@ -6,6 +6,8 @@ import {
 } from '@coreui/react';
 
 const API = 'https://sistema-de-gestion-backend.onrender.com';
+/*const API = 'http://localhost:4000';*/
+
 
 const ListadoAfectaciones = () => {
   const [afectaciones, setAfectaciones] = useState([]);
@@ -174,7 +176,7 @@ const ListadoAfectaciones = () => {
 
   return (
     <CContainer className="py-4">
-      {/* Modal centrado para éxito o error */}
+      
       <CModal
         alignment="center"
         visible={toast.show}

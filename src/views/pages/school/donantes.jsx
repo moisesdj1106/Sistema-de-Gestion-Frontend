@@ -3,7 +3,8 @@ import {
   CCard, CCardBody, CCol, CRow, CForm, CFormInput, CFormSelect, CButton, CAlert
 } from '@coreui/react'
 
-const API = 'https://sistema-de-gestion-backend.onrender.com'
+const API = 'https://sistema-de-gestion-backend.onrender.com';
+/*const API = 'http://localhost:4000'*/
 
 const RegistrarDonante = () => {
   const [tiposDocumento, setTiposDocumento] = useState([])
@@ -19,16 +20,65 @@ const RegistrarDonante = () => {
   const [fieldErrors, setFieldErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
-  // refs para atajos (Enter -> siguiente campo)
   const cedulaRef = useRef(null)
   const tipodnRef = useRef(null)
   const nombreRef = useRef(null)
   const contacRef = useRef(null)
   const submitRef = useRef(null)
 
-  // regex helpers (coinciden con validaciones servidor)
+ 
   const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$/
   const digitsOnly = /^\d+$/
+  const passportRegex = /^[A-Za-z0-9\-]{6,15}$/ // permite letras/números/guion para pasaporte
+  const allowedPhonePrefixes = ['0412', '0414', '0416', '0424', '0426'] // prefijos válidos
+
+  const getDocNameById = (id) =>
+    tiposDocumento && tiposDocumento.length
+      ? tiposDocumento.find((t) => String(t.TMA_CODDOC) === String(id))?.TMA_NOMBRE || ''
+      : ''
+
+
+  const isPassportType = (id) => {
+    const idStr = String(id || '').trim().toUpperCase()
+    if (idStr === 'P' || idStr === '3' || idStr === '03') return true
+    const name = getDocNameById(id) || ''
+    return /pasap|pasaporte/i.test(name)
+  }
+
+
+  const validateCedulaField = (value, coddoc) => {
+    // normalizar coddoc
+    const cod = String(coddoc || '').trim()
+    // detectar pasaporte por tipo seleccionado o, como respaldo, por la presencia de letras en el valor
+    const passportByType = isPassportType(cod)
+    const passportByValue = /[A-Za-z]/.test(String(value || ''))
+    const passport = passportByType || passportByValue
+
+    if (!cod && !passportByValue) return 'Seleccione tipo de documento'
+
+    if (passport) {
+      if (!value) return 'Número de pasaporte requerido'
+      if (!passportRegex.test(value)) return 'Formato inválido (letras y números, y guion)'
+      if (value.startsWith('-') || value.endsWith('-')) return 'Guion no puede estar al inicio o final'
+      if (/--/.test(value)) return 'Guiones consecutivos no permitidos'
+      return ''
+    } else {
+      if (!value) return 'Documento es obligatorio'
+      if (!digitsOnly.test(value)) return 'Solo dígitos'
+      if (value.length < 7 || value.length > 9) return '7-9 dígitos'
+      return ''
+    }
+  }
+
+  // valida teléfono en tiempo real (prefijo + 11 dígitos)
+  const validatePhoneField = (value) => {
+    if (!value) return 'Contacto es obligatorio'
+    if (!digitsOnly.test(value)) return 'Solo dígitos'
+    if (value.length !== 11) return 'Debe tener 11 dígitos'
+    const pref = value.slice(0, 4)
+    if (!allowedPhonePrefixes.includes(pref)) return `Prefijo inválido (${allowedPhonePrefixes.join(', ')})`
+    return ''
+  }
 
   useEffect(() => {
     fetch(`${API}/documento`)
@@ -44,17 +94,48 @@ const RegistrarDonante = () => {
 
   const handleChange = e => {
     const { name, value } = e.target
+    // Si cambia el tipo de documento, actualizar y revalidar la cédula según el nuevo tipo
+    if (name === 'coddoc') {
+      const newCoddoc = value
+      setForm(prev => ({ ...prev, coddoc: newCoddoc }))
+      // revalidar cedula actual con el nuevo coddoc
+      const cedErr = validateCedulaField(form.cedula, newCoddoc)
+      setFieldErrors(prev => ({ ...prev, coddoc: '', cedula: cedErr }))
+      setMsg({ type: '', text: '' })
+      return
+    }
+
     setForm(prev => ({ ...prev, [name]: value }))
     setFieldErrors(prev => ({ ...prev, [name]: '' }))
     setMsg({ type: '', text: '' })
+    // validación en directo para algunos campos
+    if (name === 'nombre') {
+      if (value && !nameRegex.test(value)) setFieldErrors(prev => ({ ...prev, nombre: 'Formato inválido' }))
+    }
+    if (name === 'contac') {
+      const phoneErr = value ? validatePhoneField(value) : ''
+      setFieldErrors(prev => ({ ...prev, contac: phoneErr }))
+    }
   }
 
   // helpers de sanitización en tiempo real
   const handleCedulaChange = (e) => {
-    let value = e.target.value.replace(/\D/g, '') // solo dígitos
-    if (value.length > 9) value = value.slice(0, 9)
+    let value = e.target.value
+    // obtener el tipo de documento más actualizado (select o estado en form)
+    const selectCoddoc = document.querySelector('select[name="coddoc"]')?.value
+    const coddoc = String(selectCoddoc || form.coddoc || '')
+    if (isPassportType(coddoc)) {
+      // permitir letras y números y guion; mantener mayúsculas para pasaporte
+      value = value.replace(/[^A-Za-z0-9\-]/g, '').toUpperCase()
+      if (value.length > 15) value = value.slice(0, 15)
+    } else {
+      // solo dígitos para cédula venezolana
+      value = value.replace(/\D/g, '')
+      if (value.length > 9) value = value.slice(0, 9)
+    }
     setForm(prev => ({ ...prev, cedula: value }))
-    setFieldErrors(prev => ({ ...prev, cedula: '' }))
+    const cedErr = validateCedulaField(value, coddoc)
+    setFieldErrors(prev => ({ ...prev, cedula: cedErr }))
     setMsg({ type: '', text: '' })
   }
 
@@ -62,7 +143,8 @@ const RegistrarDonante = () => {
     // solo letras, espacios, guiones y apóstrofe, incluyendo tildes y ñ
     const value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]/g, '')
     setForm(prev => ({ ...prev, nombre: value }))
-    setFieldErrors(prev => ({ ...prev, nombre: '' }))
+    // validación en directo
+    setFieldErrors(prev => ({ ...prev, nombre: value && !nameRegex.test(value) ? 'Formato inválido' : '' }))
     setMsg({ type: '', text: '' })
   }
 
@@ -70,7 +152,9 @@ const RegistrarDonante = () => {
     let value = e.target.value.replace(/\D/g, '') // solo dígitos
     if (value.length > 11) value = value.slice(0, 11)
     setForm(prev => ({ ...prev, contac: value }))
-    setFieldErrors(prev => ({ ...prev, contac: '' }))
+    // validación en tiempo real para prefijo y longitud
+    const phoneErr = value ? validatePhoneField(value) : ''
+    setFieldErrors(prev => ({ ...prev, contac: phoneErr }))
     setMsg({ type: '', text: '' })
   }
 
@@ -90,15 +174,10 @@ const RegistrarDonante = () => {
       fieldErr.coddoc = 'Requerido'
     }
 
-    if (!form.cedula) {
-      errors.push('Documento es obligatorio')
-      fieldErr.cedula = 'Requerido'
-    } else if (!digitsOnly.test(form.cedula)) {
-      errors.push('Documento: solo dígitos')
-      fieldErr.cedula = 'Solo dígitos'
-    } else if (form.cedula.length < 7 || form.cedula.length > 9) {
-      errors.push('Documento debe tener entre 7 y 9 dígitos')
-      fieldErr.cedula = '7-9 dígitos'
+    const cedulaError = validateCedulaField(form.cedula, form.coddoc)
+    if (cedulaError) {
+      errors.push(cedulaError)
+      fieldErr.cedula = cedulaError
     }
 
     if (!form.tipodn) {
@@ -114,15 +193,10 @@ const RegistrarDonante = () => {
       fieldErr.nombre = 'Formato inválido'
     }
 
-    if (!form.contac) {
-      errors.push('Contacto es obligatorio')
-      fieldErr.contac = 'Requerido'
-    } else if (!digitsOnly.test(form.contac)) {
-      errors.push('Contacto: solo dígitos')
-      fieldErr.contac = 'Solo dígitos'
-    } else if (form.contac.length !== 11) {
-      errors.push('Contacto debe tener 11 dígitos (ej: 04141234567)')
-      fieldErr.contac = '11 dígitos'
+    const phoneError = validatePhoneField(form.contac)
+    if (phoneError) {
+      errors.push(phoneError)
+      fieldErr.contac = phoneError
     }
 
     return { errors, fieldErr }
@@ -225,16 +299,16 @@ const RegistrarDonante = () => {
                   <CFormInput
                     label="N° Documento"
                     name="cedula"
-                    placeholder='Ejm 1234567'
+                    type="text"
+                    placeholder={isPassportType(form.coddoc) ? 'Ejm AB12345' : 'Ejm 1234567'}
                     value={form.cedula}
                     onChange={handleCedulaChange}
-                    inputMode="numeric"
-                    pattern="\d*"
                     ref={cedulaRef}
                     onKeyDown={e => handleEnter(e, tipodnRef)}
                     aria-invalid={!!fieldErrors.cedula}
-                    title="Solo números (7-9 dígitos)"
-                    maxLength={9}
+                    title={isPassportType(form.coddoc) ? 'Pasaporte: letras y números (4-15)' : 'Solo números (7-9 dígitos)'}
+                    maxLength={isPassportType(form.coddoc) ? 15 : 9}
+                    autoComplete="off"
                   />
                   {fieldErrors.cedula && <div className="text-danger small mt-1">{fieldErrors.cedula}</div>}
                 </CCol>

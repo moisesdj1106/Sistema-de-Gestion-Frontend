@@ -9,6 +9,8 @@ import {
 
 const API = 'https://sistema-de-gestion-backend.onrender.com';
 
+/*const API = 'http://localhost:4000';*/
+
 const ListaPerdidas = () => {
   const [perdidas, setPerdidas] = useState([]);
   const [total, setTotal] = useState(0);
@@ -58,6 +60,34 @@ const ListaPerdidas = () => {
   const onlyLetters = s => String(s ?? '').replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]/g, '');
   const onlyDecimal = s => String(s ?? '').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 
+  // Pasaporte: detectar por id '3', valor 'p'/'P' o por nombre en tiposDoc
+  const isPassportId = (id) => {
+    if (id === null || id === undefined) return false;
+    const s = String(id).trim();
+    if (!s) return false;
+    if (s.toLowerCase() === 'p' || s === '3') return true;
+    if (Array.isArray(tiposDoc)) {
+      const found = tiposDoc.find(t => String(t.TMA_CODDOC) === s || /pasap|pasaporte/i.test(String(t.TMA_NOMBRE)));
+      if (found && /pasap|pasaporte/i.test(String(found.TMA_NOMBRE))) return true;
+    }
+    return false;
+  };
+  const sanitizePassport = s => String(s ?? '').toUpperCase().replace(/[^A-Z0-9 .\-\/]/g, '');
+  // Validación de documento (cédula o pasaporte)
+  const validateDocByType = (val, coddoc) => {
+    const v = String(val ?? '').trim();
+    if (!v) return 'Documento obligatorio';
+    if (isPassportId(coddoc)) {
+      if (!/^[A-Z0-9 .\-\/]{3,9}$/.test(v)) return 'Pasaporte inválido (3-9: letras, números, espacio, - .)';
+      if (!/[A-Z]/.test(v)) return 'Pasaporte debe contener al menos una letra';
+      if (!/\d/.test(v)) return 'Pasaporte debe contener al menos un número';
+      return '';
+    } else {
+      if (!/^\d{7,9}$/.test(v)) return 'Cédula inválida (7-9 dígitos)';
+      return '';
+    }
+  };
+
   const handleEdit = (perdida) => {
     // normalizar campo names para edición (trabajar sobre copia)
     setEditPerdida({
@@ -80,13 +110,48 @@ const ListaPerdidas = () => {
     const { name, value } = e.target;
     if (!editPerdida) return;
     let val = value;
-    if (name === 'TTR_CEDULA') val = onlyDigits(value);
+    // nombres/apellidos: solo letras en vivo
+    if (name === 'TTR_NOMBRE' || name === 'TTR_APELLI') {
+      val = onlyLetters(value);
+      setEditPerdida(prev => ({ ...prev, [name]: val }));
+      validateEditField(name, val);
+      setMsg({ type: '', text: '' });
+      return;
+    }
+    // tipo de documento: cuando cambia, sanear y revalidar cédula según nuevo tipo
+    if (name === 'TTR_CODDOC') {
+      setEditPerdida(prev => {
+        const newCod = value;
+        const newCed = isPassportId(newCod) ? sanitizePassport(prev.TTR_CEDULA) : onlyDigits(prev.TTR_CEDULA);
+        // revalidar cédula con el nuevo tipo
+        setTimeout(() => validateEditField('TTR_CEDULA', newCed), 0);
+        return { ...prev, TTR_CODDOC: newCod, TTR_CEDULA: newCed };
+      });
+      validateEditField('TTR_CODDOC', value);
+      setMsg({ type: '', text: '' });
+      return;
+    }
+    // cedula: comportamiento dinámico según tipo de documento actual
+    if (name === 'TTR_CEDULA') {
+      const passport = isPassportId(editPerdida.TTR_CODDOC);
+      if (passport) {
+        val = sanitizePassport(value);
+        setEditPerdida(prev => ({ ...prev, TTR_CEDULA: val }));
+        validateEditField('TTR_CEDULA', val);
+      } else {
+        val = onlyDigits(value);
+        setEditPerdida(prev => ({ ...prev, TTR_CEDULA: val }));
+        validateEditField('TTR_CEDULA', val);
+      }
+      setMsg({ type: '', text: '' });
+      return;
+    }
+    // valor estimado decimal
     if (name === 'TTR_VAESTI') val = onlyDecimal(value);
-    if (name === 'TTR_NOMBRE' || name === 'TTR_APELLI') val = onlyLetters(value);
-    // selects: keep as string
-    setEditPerdida(prev => ({ ...prev, [name]: val }));
-    validateEditField(name, val);
-    setMsg({ type: '', text: '' });
+     // selects: keep as string
+     setEditPerdida(prev => ({ ...prev, [name]: val }));
+     validateEditField(name, val);
+     setMsg({ type: '', text: '' });
   };
 
   const handleEnter = (e, nextRef) => {
@@ -107,8 +172,7 @@ const ListaPerdidas = () => {
       if (!v) msgErr = 'Seleccione tipo de documento';
     }
     if (name === 'TTR_CEDULA') {
-      if (!v) msgErr = 'Cédula obligatoria';
-      else if (!/^\d{7,9}$/.test(v)) msgErr = 'Cédula inválida (7-9 dígitos)';
+      msgErr = validateDocByType(v, editPerdida?.TTR_CODDOC);
     }
     if (name === 'TTR_NOMBRE') {
       if (!v) msgErr = 'Nombre obligatorio';
@@ -220,6 +284,26 @@ const ListaPerdidas = () => {
     }
   };
 
+  // Bloquear botón atrás mientras modal editar esté abierto
+  useEffect(() => {
+    let onPop = null;
+    const attach = () => {
+      try { history.pushState(null, '') } catch (e) {}
+      onPop = () => {
+        if (modalEdit) {
+          try { history.pushState(null, '') } catch (err) {}
+        }
+      };
+      window.addEventListener('popstate', onPop);
+    };
+    const detach = () => {
+      if (onPop) window.removeEventListener('popstate', onPop);
+      onPop = null;
+    };
+    if (modalEdit) attach();
+    return () => detach();
+  }, [modalEdit]);
+
   const totalPages = Math.ceil(total / 10);
 
   return (
@@ -283,7 +367,12 @@ const ListaPerdidas = () => {
                 ))}
               </CPagination>
               {/* Modal Editar */}
-              <CModal visible={modalEdit} onClose={() => setModalEdit(false)}>
+              <CModal visible={modalEdit} onClose={() => {
+                setModalEdit(false);
+                setEditPerdida(null);
+                setErrorsEdit({});
+                setMsg({ type: '', text: '' });
+              }} backdrop="static" keyboard={false}>
                 <CModalHeader closeButton>Editar Pérdida</CModalHeader>
                 <CModalBody>
                   {editPerdida && (
@@ -327,22 +416,26 @@ const ListaPerdidas = () => {
                       </CFormSelect>
                       {errorsEdit.TTR_CODDOC && <div className="text-danger small mb-2">{errorsEdit.TTR_CODDOC}</div>}
 
-                      <CFormInput
-                        label="Cédula"
-                        name="TTR_CEDULA"
-                        value={editPerdida.TTR_CEDULA}
-                        onChange={handleEditChange}
-                        className="mb-2"
-                        required
-                        maxLength={9}
-                        minLength={7}
-                        inputMode="numeric"
-                        pattern="^\d{7,9}$"
-                        title="7 a 9 dígitos"
-                        ref={ceduRef}
-                        onKeyDown={e => handleEnter(e, nombreRef)}
-                      />
-                      {errorsEdit.TTR_CEDULA && <div className="text-danger small mb-2">{errorsEdit.TTR_CEDULA}</div>}
+                      {(() => {
+                        const passport = isPassportId(editPerdida.TTR_CODDOC);
+                        return (
+                          <CFormInput
+                            label="Documento"
+                            name="TTR_CEDULA"
+                            value={editPerdida.TTR_CEDULA}
+                            onChange={handleEditChange}
+                            className="mb-2"
+                            required
+                            ref={ceduRef}
+                            onKeyDown={e => handleEnter(e, nombreRef)}
+                            inputMode={passport ? 'text' : 'numeric'}
+                            maxLength={passport ? 20 : 9}
+                            minLength={passport ? 3 : 7}
+                            placeholder={passport ? 'Ej: A12-3456 / AB1234' : 'Ej: 12345678'}
+                          />
+                        )
+                      })()}
+                       {errorsEdit.TTR_CEDULA && <div className="text-danger small mb-2">{errorsEdit.TTR_CEDULA}</div>}
 
                       <CFormInput
                         label="Nombre"
@@ -405,24 +498,29 @@ const ListaPerdidas = () => {
                       {errorsEdit.TTR_VAESTI && <div className="text-danger small mb-2">{errorsEdit.TTR_VAESTI}</div>}
 
                       <CModalFooter>
-                        <CButton color="primary" type="submit" ref={saveRef}>Guardar</CButton>
-                        <CButton color="secondary" onClick={() => setModalEdit(false)}>Cancelar</CButton>
+                        <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} type="submit" ref={saveRef}>Guardar</CButton>
+                        <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => {
+                          setModalEdit(false);
+                          setEditPerdida(null);
+                          setErrorsEdit({});
+                          setMsg({ type: '', text: '' });
+                        }}>Cancelar</CButton>
                       </CModalFooter>
-                    </form>
-                  )}
-                </CModalBody>
-              </CModal>
-              {/* Modal Eliminar */}
-              <CModal visible={modalDelete} onClose={() => setModalDelete(false)}>
-                <CModalHeader closeButton>Eliminar Pérdida</CModalHeader>
-                <CModalBody>
-                  ¿Seguro que desea eliminar esta pérdida?
-                </CModalBody>
-                <CModalFooter>
-                  <CButton color="danger" onClick={handleDelete}>Eliminar</CButton>
-                  <CButton color="secondary" onClick={() => setModalDelete(false)}>Cancelar</CButton>
-                </CModalFooter>
-              </CModal>
+                     </form>
+                   )}
+                 </CModalBody>
+               </CModal>
+               {/* Modal Eliminar */}
+               <CModal visible={modalDelete} onClose={() => { setModalDelete(false); setEditPerdida(null); }} backdrop="static" keyboard={false}>
+                 <CModalHeader closeButton>Eliminar Pérdida</CModalHeader>
+                 <CModalBody>
+                   ¿Seguro que desea eliminar esta pérdida?
+                 </CModalBody>
+                 <CModalFooter>
+                   <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={handleDelete}>Eliminar</CButton>
+                   <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => setModalDelete(false)}>Cancelar</CButton>
+                 </CModalFooter>
+               </CModal>
               {msg.text && (
                 <CAlert color={msg.type} className="mt-3">{msg.text}</CAlert>
               )}

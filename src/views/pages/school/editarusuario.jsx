@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CContainer, CCard, CCardHeader, CCardBody, CFormInput, CButton, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter } from '@coreui/react';
 
 const API = 'https://sistema-de-gestion-backend.onrender.com';
+/*const API = 'http://localhost:4000';*/
 
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -17,6 +18,11 @@ const Usuarios = () => {
     nombres: '', apellidos: '', direccion: '', telefono: '', correo: '', usuario: '', rol: ''
   });
   const [editMsg, setEditMsg] = useState('');
+  const [errors, setErrors] = useState({});
+
+  // Modal de confirmación de eliminación
+  const [modalEliminar, setModalEliminar] = useState(false);
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState(null);
 
   // Cargar usuarios
   const fetchUsuarios = async () => {
@@ -26,7 +32,7 @@ const Usuarios = () => {
       const data = await res.json();
       setUsuarios(data);
     } catch (error) {
-      alert('Error al cargar usuarios');
+      setEditMsg('Error al cargar usuarios');
     }
     setLoading(false);
   };
@@ -52,23 +58,42 @@ const Usuarios = () => {
     setPagina(1);
   }, [busqueda]);
 
+  // Validación de campos
+  const validateFields = () => {
+    const newErrors = {};
+    if (!formEdit.nombres) newErrors.nombres = 'Nombres son obligatorios';
+    if (!formEdit.apellidos) newErrors.apellidos = 'Apellidos son obligatorios';
+    if (!formEdit.telefono || formEdit.telefono.length !== 11) newErrors.telefono = 'Teléfono debe tener 11 dígitos';
+    if (!formEdit.correo) newErrors.correo = 'Correo es obligatorio';
+    if (!formEdit.usuario) newErrors.usuario = 'Usuario es obligatorio';
+    if (!formEdit.rol) newErrors.rol = 'Rol es obligatorio';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // Eliminar usuario
-  const handleEliminar = async (cedula) => {
-    if (window.confirm('¿Seguro que deseas eliminar este usuario?')) {
+  const handleEliminar = (cedula) => {
+    setUsuarioAEliminar(cedula);
+    setModalEliminar(true);
+  };
+
+  const confirmarEliminar = async () => {
+    if (usuarioAEliminar) {
       try {
-        const res = await fetch(`${API}/usuarios/${cedula}`, {
+        const res = await fetch(`${API}/usuarios/${usuarioAEliminar}`, {
           method: 'DELETE'
         });
         const data = await res.json();
         if (res.ok) {
           fetchUsuarios();
         } else {
-          alert(data.mensaje || 'Error al eliminar usuario');
+          setEditMsg(data.mensaje || 'Error al eliminar usuario');
         }
       } catch (error) {
-        alert('Error al eliminar usuario');
+        setEditMsg('Error al eliminar usuario');
       }
     }
+    setModalEliminar(false);
   };
 
   // Editar usuario
@@ -84,16 +109,19 @@ const Usuarios = () => {
       rol: usuario.rol || ''
     });
     setEditMsg('');
+    setErrors({});
     setModalEditar(true);
   };
 
   const handleEditChange = e => {
     const { name, value } = e.target;
     setFormEdit(prev => ({ ...prev, [name]: value }));
+    validateFields(); // Validar en tiempo real
   };
 
   const handleEditSubmit = async e => {
     e.preventDefault();
+    if (!validateFields()) return; // Validar antes de enviar
     setEditMsg('');
     try {
       const res = await fetch(`${API}/usuarios/${usuarioEditar.cedula}`, {
@@ -167,11 +195,11 @@ const Usuarios = () => {
                     <td>{u.rol}</td>
                     <td>
                       <div className="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
-                        <CButton style={{ color:'white', borderColor:'#ff7043', backgroundColor:'#ff7043' }} size="sm" onClick={() => handleEditar(u)}>
+                        <CButton style={{ color:'#ff7043', borderColor:'#ff7043', backgroundColor:'white' }} size="sm" onClick={() => handleEditar(u)}>
                           Editar
                         </CButton>
                         <CButton
-                          color="danger text-white"
+                          style={{ color:'red', borderColor:'red', backgroundColor:'white' }}
                           size="sm"
                           onClick={() => handleEliminar(u.cedula)}
                         >
@@ -220,7 +248,7 @@ const Usuarios = () => {
           )}
 
           {/* Modal editar */}
-          <CModal visible={modalEditar} onClose={() => setModalEditar(false)}>
+          <CModal visible={modalEditar} onClose={() => setModalEditar(false)} backdrop="static" keyboard={false}>
             <CModalHeader>
               <CModalTitle>Editar Usuario</CModalTitle>
             </CModalHeader>
@@ -234,6 +262,7 @@ const Usuarios = () => {
                   className="mb-2"
                   required
                 />
+                {errors.nombres && <div className="text-danger">{errors.nombres}</div>}
                 <CFormInput
                   label="Apellidos"
                   name="apellidos"
@@ -242,6 +271,7 @@ const Usuarios = () => {
                   className="mb-2"
                   required
                 />
+                {errors.apellidos && <div className="text-danger">{errors.apellidos}</div>}
                 <CFormInput
                   label="Dirección"
                   name="direccion"
@@ -258,6 +288,7 @@ const Usuarios = () => {
                   maxLength={11}
                   minLength={11}
                 />
+                {errors.telefono && <div className="text-danger">{errors.telefono}</div>}
                 <CFormInput
                   label="Correo"
                   name="correo"
@@ -265,6 +296,7 @@ const Usuarios = () => {
                   onChange={handleEditChange}
                   className="mb-2"
                 />
+                {errors.correo && <div className="text-danger">{errors.correo}</div>}
                 <CFormInput
                   label="Usuario"
                   name="usuario"
@@ -273,6 +305,7 @@ const Usuarios = () => {
                   className="mb-2"
                   required
                 />
+                {errors.usuario && <div className="text-danger">{errors.usuario}</div>}
                 <CFormInput
                   label="Rol"
                   name="rol"
@@ -281,17 +314,32 @@ const Usuarios = () => {
                   className="mb-2"
                   required
                 />
+                {errors.rol && <div className="text-danger">{errors.rol}</div>}
                 {editMsg && <div className="text-danger mt-2">{editMsg}</div>}
               </CModalBody>
               <CModalFooter>
-                <CButton color="danger text-white" onClick={() => setModalEditar(false)}>
+                <CButton  style={{ color:'red', borderColor:'red', backgroundColor:'white' }} onClick={() => setModalEditar(false)}>
                   Cancelar
                 </CButton>
-                <CButton style={{ color:'white', borderColor:'#ff7043', backgroundColor:'#ff7043' }} type="submit">
+                <CButton style={{ color:'#ff7043', borderColor:'#ff7043', backgroundColor:'white' }} type="submit">
                   Guardar
                 </CButton>
               </CModalFooter>
             </form>
+          </CModal>
+
+          {/* Modal de confirmación de eliminación */}
+          <CModal visible={modalEliminar} onClose={() => setModalEliminar(false)} backdrop="static" keyboard={false}>
+            <CModalHeader>
+              <CModalTitle>Confirmar Eliminación</CModalTitle>
+            </CModalHeader>
+            <CModalBody>
+              ¿Seguro que deseas eliminar este usuario?
+            </CModalBody>
+            <CModalFooter>
+              <CButton color="secondary" onClick={() => setModalEliminar(false)}>Cancelar</CButton>
+              <CButton color="danger" onClick={confirmarEliminar}>Eliminar</CButton>
+            </CModalFooter>
           </CModal>
         </CCardBody>
       </CCard>

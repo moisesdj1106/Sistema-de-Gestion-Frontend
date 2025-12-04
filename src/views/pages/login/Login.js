@@ -17,7 +17,7 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("https://sistema-de-gestion-backend.onrender.com/login", {
+      const response = await fetch("http://localhost:4000/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usuario, contraseña }),
@@ -97,7 +97,7 @@ const Login = () => {
                       </CCol>
                     </CRow>
                   </CForm>
-                  {/* Botón registro para pantallas pequeñas */}
+                  
                   <div className="d-block d-md-none mt-4 text-center">
                     <Link to="/register">
                       <CButton color="primary" className="fw-bold" style={{ background: "#FF7043", border: "none" }}>
@@ -107,7 +107,7 @@ const Login = () => {
                   </div>
                 </CCardBody>
               </CCard>
-              {/* Pantallas medianas y grandes */}
+         
               <CCard
                 className="text-white py-5 d-none d-md-block"
                 style={{
@@ -134,7 +134,7 @@ const Login = () => {
           </CCol>
         </CRow>
       </CContainer>
-      {/* Modal para mostrar errores */}
+     
       <CModal alignment="center" visible={modal.show} onClose={() => setModal({ show: false, mensaje: '' })}>
         <CModalHeader>
           <CModalTitle>Error de inicio de sesión</CModalTitle>

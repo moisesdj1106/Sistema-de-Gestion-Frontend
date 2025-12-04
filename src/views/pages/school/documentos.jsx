@@ -5,6 +5,8 @@ import {
 } from '@coreui/react';
 
 const API = 'https://sistema-de-gestion-backend.onrender.com';
+/*const API = 'http://localhost:4000';*/
+
 
 const ListarAfectaciones = () => {
   const [afectaciones, setAfectaciones] = useState([]);
@@ -108,7 +110,7 @@ const ListarAfectaciones = () => {
                   </CTableDataCell>
                   <CTableDataCell>
                     <CButton
-                      color="primary"
+                      style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}}
                       size="sm"
                       onClick={() => handleImprimir(a.TTR_COAFEC)}
                     >

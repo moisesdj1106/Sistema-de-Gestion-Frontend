@@ -12,8 +12,8 @@ const Dashboard = () => {
   const [dashboard, setDashboard] = useState(null)
 
   useEffect(() => {
-    fetch('http://localhost:4000/dashboard')
-    /*fetch('https://sistema-de-gestion-backend.onrender.com/dashboard')*/
+    /*fetch('http://localhost:4000/dashboard')*/
+    fetch('https://sistema-de-gestion-backend.onrender.com/dashboard')
       .then(res => res.json())
       .then(setDashboard)
   }, [])

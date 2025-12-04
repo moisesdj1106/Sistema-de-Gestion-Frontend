@@ -6,7 +6,7 @@ import {
 import bg from 'src/assets/images/carro.jpg';
 
 
-const API = 'http://sistema-de-gestion-backend.onrender.com';
+const API = 'https://sistema-de-gestion-backend.onrender.com';
 
 const Formulario = () => {
   const [step, setStep] = useState(1);

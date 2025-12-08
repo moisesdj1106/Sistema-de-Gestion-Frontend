@@ -54,8 +54,23 @@ const Formulario = () => {
   const validPhonePrefixes = ['0424','0426','0414','0416','0412','0422'];
 
   useEffect(() => {
-    fetch(`${API}/documento`).then(r => r.json()).then(setTipoDocumentos).catch(()=>{});
-    fetch(`${API}/paises`).then(r => r.json()).then(setPaises).catch(()=>{});
+    const fetchSafe = async (url, setter) => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.error('Fetch error', url, res.status);
+          setter([]); // asegurar array
+          return;
+        }
+        const data = await res.json();
+        setter(Array.isArray(data) ? data : []); // garantizar array
+      } catch (err) {
+        console.error('Fetch failed', url, err);
+        setter([]);
+      }
+    };
+    fetchSafe(`${API}/documento`, setTipoDocumentos);
+    fetchSafe(`${API}/paises`, setPaises);
   }, []);
 
   useEffect(() => {

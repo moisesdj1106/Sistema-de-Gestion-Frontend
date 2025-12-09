@@ -146,7 +146,7 @@ export default function RestablecerPorIdentidad() {
                 </CCol>
               </CRow>
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'black', color:'black' }}>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'red', color:'red' }}>
                 <CButton color="light" onClick={() => { setCedula(''); setFechaNac(''); setErrors({}); setMsg(null) }}>Limpiar</CButton>
                 <CButton style={{ backgroundColor: 'white', borderColor: '#ff7043', color:'#ff7043' }} type="submit" disabled={loading}>
                   {loading ? 'Verificando...' : 'Verificar identidad'}
@@ -184,7 +184,7 @@ export default function RestablecerPorIdentidad() {
                 </CCol>
               </CRow>
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'black', color:'black' }}>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'red', color:'red' }}>
                 <CButton color="light" onClick={() => { setStep(1); setToken(null); setMsg(null); setErrors({}) }}>Volver</CButton>
                 <CButton style={{ backgroundColor: 'white', borderColor: '#ff7043', color: '#ff7043' }} type="submit" disabled={loading}>
                   {loading ? 'Guardando...' : 'Cambiar contraseña'}
@@ -204,18 +204,12 @@ export default function RestablecerPorIdentidad() {
           )}
         </CCardBody>
 
-        {/* Botón Login en esquina inferior izquierda del formulario */}
         <div style={{ position: 'absolute', left: 14, bottom: 14 }}>
           <Link to="/login">
             <CButton
-              size="sm"
+              
               style={{
-                backgroundColor: 'blue',
-                borderColor: 'white',
-                color: '#fff',
-                boxShadow: 'none',
-                padding: '6px 10px',
-                borderRadius: 8
+               display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'blue', color:'white'
               }}
             >
               Login

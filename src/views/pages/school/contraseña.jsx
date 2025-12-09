@@ -204,12 +204,12 @@ export default function RestablecerPorIdentidad() {
           )}
         </CCardBody>
 
-        <div style={{ position: 'absolute', left: 14, bottom: 14 }}>
+        <div style={{ position: 'absolute', left: 14 }}>
           <Link to="/login">
             <CButton
               
               style={{
-               display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'blue', color:'white'
+               display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'blue', color:'blue'
               }}
             >
               Login

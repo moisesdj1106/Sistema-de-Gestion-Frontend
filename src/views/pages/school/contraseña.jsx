@@ -87,7 +87,7 @@ export default function RestablecerPorIdentidad() {
 
   return (
     
-    <div style={{ display: 'flex', justifyContent: 'center', padding: 20, backgroundImage: `url(${imgBackground})`,
+    <div style={{ backgroundImage: `url(${imgBackground})`,
             backgroundSize: "cover",
             backgroundPosition: "center" }}>
       <CCard style={{ width: 520, borderRadius: 12, boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>

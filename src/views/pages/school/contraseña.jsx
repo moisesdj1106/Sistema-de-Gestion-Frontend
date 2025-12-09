@@ -204,7 +204,7 @@ export default function RestablecerPorIdentidad() {
           )}
         </CCardBody>
 
-        <div style={{ position: 'absolute', left: 14 }}>
+        <div style={{ position: 'absolute', left: 14, bottom: 13 }}>
           <Link to="/login">
             <CButton
               

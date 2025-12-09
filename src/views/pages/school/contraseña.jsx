@@ -146,9 +146,9 @@ export default function RestablecerPorIdentidad() {
                 </CCol>
               </CRow>
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'black', color:'black' }}>
                 <CButton color="light" onClick={() => { setCedula(''); setFechaNac(''); setErrors({}); setMsg(null) }}>Limpiar</CButton>
-                <CButton style={{ backgroundColor: '#ff7043', borderColor: '#ff7043' }} type="submit" disabled={loading}>
+                <CButton style={{ backgroundColor: 'white', borderColor: '#ff7043', color:'#ff7043' }} type="submit" disabled={loading}>
                   {loading ? 'Verificando...' : 'Verificar identidad'}
                 </CButton>
               </div>
@@ -184,9 +184,9 @@ export default function RestablecerPorIdentidad() {
                 </CCol>
               </CRow>
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'black', color:'black' }}>
                 <CButton color="light" onClick={() => { setStep(1); setToken(null); setMsg(null); setErrors({}) }}>Volver</CButton>
-                <CButton style={{ backgroundColor: '#ff7043', borderColor: '#ff7043' }} type="submit" disabled={loading}>
+                <CButton style={{ backgroundColor: 'white', borderColor: '#ff7043', color: '#ff7043' }} type="submit" disabled={loading}>
                   {loading ? 'Guardando...' : 'Cambiar contraseña'}
                 </CButton>
               </div>
@@ -210,8 +210,8 @@ export default function RestablecerPorIdentidad() {
             <CButton
               size="sm"
               style={{
-                backgroundColor: 'transparent',
-                borderColor: 'rgba(255,255,255,0.18)',
+                backgroundColor: 'blue',
+                borderColor: 'white',
                 color: '#fff',
                 boxShadow: 'none',
                 padding: '6px 10px',

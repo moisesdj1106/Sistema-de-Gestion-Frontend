@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   CCard, CCardBody, CCardHeader, CRow, CCol, CForm, CFormInput, CFormLabel, CButton, CAlert, CProgress,
 } from '@coreui/react'
@@ -86,11 +87,26 @@ export default function RestablecerPorIdentidad() {
   }
 
   return (
-    
-    <div style={{ backgroundImage: `url(${imgBackground})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center" }}>
-      <CCard style={{ width: 520, borderRadius: 12, boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
+    // contenedor a pantalla completa con fondo y centrar contenido
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${imgBackground})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+    }}>
+      <CCard style={{
+        width: 520,
+        maxWidth: '95%',
+        borderRadius: 12,
+        boxShadow: '0 12px 30px rgba(0,0,0,0.25)',
+        position: 'relative', // para posicionar el boton login dentro del formulario
+        overflow: 'visible'
+      }}>
         <CCardHeader style={{ background: 'linear-gradient(90deg,#ff8a65,#ff7043)', color: '#fff', fontWeight: 700 }}>
           Restablecer contraseña
           <div style={{ float: 'right', width: 160 }}>
@@ -187,6 +203,25 @@ export default function RestablecerPorIdentidad() {
             </div>
           )}
         </CCardBody>
+
+        {/* Botón Login en esquina inferior izquierda del formulario */}
+        <div style={{ position: 'absolute', left: 14, bottom: 14 }}>
+          <Link to="/login">
+            <CButton
+              size="sm"
+              style={{
+                backgroundColor: 'transparent',
+                borderColor: 'rgba(255,255,255,0.18)',
+                color: '#fff',
+                boxShadow: 'none',
+                padding: '6px 10px',
+                borderRadius: 8
+              }}
+            >
+              Login
+            </CButton>
+          </Link>
+        </div>
       </CCard>
     </div>
   )

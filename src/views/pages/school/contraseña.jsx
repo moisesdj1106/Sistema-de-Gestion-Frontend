@@ -1,73 +1,104 @@
-import  { React, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { CForm, CFormInput, CButton, CAlert, CContainer, CRow, CCol, CCard, CCardBody, CCardTitle } from "@coreui/react";
-  
-import bg from '/src/assets/images/carro.jpg';
-const SolicitarRecuperacion = () => {
-  const [email, setEmail] = useState("");
-  const [mensaje, setMensaje] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+import React, { useState } from 'react';
 
-  useEffect(() => {
-    const original = document.body.style.background;
-    document.body.style.background = `url(${bg}) center center / cover no-repeat fixed`;
-    return () => { document.body.style.background = original; };
-  }, []);
+const API = 'https://sistema-de-gestion-backend.onrender.com';
 
-  const handleSubmit = async e => {
+export default function RestablecerPorIdentidad() {
+  const [step, setStep] = useState(1);
+  const [cedula, setCedula] = useState('');
+  const [fechaNac, setFechaNac] = useState(''); // formato YYYY-MM-DD
+  const [token, setToken] = useState(null);
+  const [nuevaClave, setNuevaClave] = useState('');
+  const [confirmClave, setConfirmClave] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const verificar = async (e) => {
     e.preventDefault();
-    setMensaje(""); setError("");
+    setMsg(null);
+    setLoading(true);
     try {
-      const res = await fetch("https://sistema-de-gestion-backend.onrender.com/solicitar-recuperacion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+      const res = await fetch(`${API}/verificar-identidad`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cedula, fecha_nac: fechaNac })
       });
       const data = await res.json();
-      if (res.ok) setMensaje(data.mensaje);
-      else setError(data.mensaje);
-    } catch {
-      setError("Error en la conexión");
+      if (!res.ok) throw new Error(data.mensaje || 'Error');
+      setToken(data.token);
+      setStep(2);
+      setMsg('Identidad verificada. Introduce la nueva contraseña.');
+    } catch (err) {
+      setMsg(err.message || 'Error de verificación');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cambiarContrasena = async (e) => {
+    e.preventDefault();
+    setMsg(null);
+    if (!nuevaClave || nuevaClave.length < 6) return setMsg('La contraseña debe tener al menos 6 caracteres');
+    if (nuevaClave !== confirmClave) return setMsg('Las contraseñas no coinciden');
+    if (!token) return setMsg('Token no disponible');
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/restablecer/${token}`, {
+        method: 'POST', // coincide con el controlador restablecerContrasena que lee req.params.token
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nuevaContrasena: nuevaClave })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || 'Error al cambiar contraseña');
+      setMsg('Contraseña restablecida correctamente. Puedes iniciar sesión.');
+      setStep(3);
+    } catch (err) {
+      setMsg(err.message || 'Error al cambiar contraseña');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <CContainer className="py-4" style={{marginTop:'170px'}}>
-      <CRow className="justify-content-center">
-        <CCol xs={12} md={6}>
-          <CCard>
-            <CCardBody>
-              <CCardTitle>¿Olvidaste tu usuario o contraseña?</CCardTitle>
-              <CForm onSubmit={handleSubmit}>
-                <CFormInput
-                  type="email"
-                  placeholder="Correo registrado"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  className="mb-3"
-                />
-                <CButton type="submit" style={{backgroundColor:'#ff7043', color:'white'}} className="w-100 mb-2">
-                  Enviar enlace de recuperación
-                </CButton>
-              </CForm>
-              <CButton
-                color="secondary"
-                variant="outline"
-                className="w-100"
-                onClick={() => navigate("/login")}
-              >
-                Volver al Login
-              </CButton>
-              {mensaje && <CAlert color="success" className="mt-3">{mensaje}</CAlert>}
-              {error && <CAlert color="danger" className="mt-3">{error}</CAlert>}
-            </CCardBody>
-          </CCard>
-        </CCol>
-      </CRow>
-    </CContainer>
-  );
-};
+    <div style={{ maxWidth: 520, margin: '0 auto' }}>
+      {step === 1 && (
+        <form onSubmit={verificar}>
+          <h3>Verificar identidad</h3>
+          <div>
+            <label>Cédula / Documento</label>
+            <input value={cedula} onChange={e => setCedula(e.target.value)} required />
+          </div>
+          <div>
+            <label>Fecha de nacimiento</label>
+            <input type="date" value={fechaNac} onChange={e => setFechaNac(e.target.value)} required />
+          </div>
+          <button type="submit" disabled={loading}>{loading ? 'Verificando...' : 'Verificar'}</button>
+        </form>
+      )}
 
-export default SolicitarRecuperacion;
+      {step === 2 && (
+        <form onSubmit={cambiarContrasena}>
+          <h3>Introducir nueva contraseña</h3>
+          <div>
+            <label>Nueva contraseña</label>
+            <input type="password" value={nuevaClave} onChange={e => setNuevaClave(e.target.value)} required />
+          </div>
+          <div>
+            <label>Confirmar contraseña</label>
+            <input type="password" value={confirmClave} onChange={e => setConfirmClave(e.target.value)} required />
+          </div>
+          <button type="submit" disabled={loading}>{loading ? 'Guardando...' : 'Cambiar contraseña'}</button>
+        </form>
+      )}
+
+      {step === 3 && (
+        <div>
+          <h3>Listo</h3>
+          <p>Contraseña cambiada correctamente.</p>
+        </div>
+      )}
+
+      {msg && <p style={{ marginTop: 12 }}>{msg}</p>}
+    </div>
+  );
+}

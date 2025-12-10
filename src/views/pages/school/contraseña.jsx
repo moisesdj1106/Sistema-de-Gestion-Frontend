@@ -146,11 +146,49 @@ export default function RestablecerPorIdentidad() {
                 </CCol>
               </CRow>
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'red', color:'red' }}>
-                <CButton color="light" onClick={() => { setCedula(''); setFechaNac(''); setErrors({}); setMsg(null) }}>Limpiar</CButton>
-                <CButton style={{ backgroundColor: 'white', borderColor: '#ff7043', color:'#ff7043' }} type="submit" disabled={loading}>
-                  {loading ? 'Verificando...' : 'Verificar identidad'}
-                </CButton>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap'
+              }}>
+                <div>
+                  <Link to="/login">
+                    <CButton
+                      size="sm"
+                      style={{
+                        backgroundColor: 'transparent',
+                        borderColor: 'rgba(0,0,0,0.08)',
+                        color: '#333',
+                        minWidth: 110,
+                        height: 38,
+                        borderRadius: 8,
+                        padding: '6px 12px'
+                      }}
+                    >
+                      Login
+                    </CButton>
+                  </Link>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <CButton
+                    size="sm"
+                    color="light"
+                    onClick={() => { setCedula(''); setFechaNac(''); setErrors({}); setMsg(null) }}
+                    style={{ minWidth: 110, height: 38, borderRadius: 8 }}
+                  >
+                    Limpiar
+                  </CButton>
+                  <CButton
+                    size="sm"
+                    type="submit"
+                    disabled={loading}
+                    style={{ backgroundColor: '#ff7043', borderColor: '#ff7043', color: '#fff', minWidth: 140, height: 38, borderRadius: 8 }}
+                  >
+                    {loading ? 'Verificando...' : 'Verificar identidad'}
+                  </CButton>
+                </div>
               </div>
             </CForm>
           )}
@@ -184,11 +222,49 @@ export default function RestablecerPorIdentidad() {
                 </CCol>
               </CRow>
 
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'red', color:'red' }}>
-                <CButton color="light" onClick={() => { setStep(1); setToken(null); setMsg(null); setErrors({}) }}>Volver</CButton>
-                <CButton style={{ backgroundColor: 'white', borderColor: '#ff7043', color: '#ff7043' }} type="submit" disabled={loading}>
-                  {loading ? 'Guardando...' : 'Cambiar contraseña'}
-                </CButton>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap'
+              }}>
+                <div>
+                  <Link to="/login">
+                    <CButton
+                      size="sm"
+                      style={{
+                        backgroundColor: 'transparent',
+                        borderColor: 'rgba(0,0,0,0.08)',
+                        color: '#333',
+                        minWidth: 110,
+                        height: 38,
+                        borderRadius: 8,
+                        padding: '6px 12px'
+                      }}
+                    >
+                      Login
+                    </CButton>
+                  </Link>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <CButton
+                    size="sm"
+                    color="light"
+                    onClick={() => { setStep(1); setToken(null); setMsg(null); setErrors({}) }}
+                    style={{ minWidth: 110, height: 38, borderRadius: 8 }}
+                  >
+                    Volver
+                  </CButton>
+                  <CButton
+                    size="sm"
+                    type="submit"
+                    disabled={loading}
+                    style={{ backgroundColor: 'white', borderColor: '#ff7043', color: '#ff7043', minWidth: 140, height: 38, borderRadius: 8 }}
+                  >
+                    {loading ? 'Guardando...' : 'Cambiar contraseña'}
+                  </CButton>
+                </div>
               </div>
             </CForm>
           )}
@@ -197,25 +273,41 @@ export default function RestablecerPorIdentidad() {
             <div style={{ textAlign: 'center', padding: '20px 10px' }}>
               <h4 style={{ marginBottom: 6 }}>¡Listo!</h4>
               <p className="small text-muted">La contraseña fue actualizada correctamente.</p>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 12 }}>
-                <CButton color="light" onClick={() => { setStep(1); setCedula(''); setFechaNac(''); setToken(null); setMsg(null); setErrors({}) }}>Cerrar</CButton>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 12,
+                marginTop: 12,
+                flexWrap: 'wrap'
+              }}>
+                <div>
+                  <Link to="/login">
+                    <CButton
+                      size="sm"
+                      style={{
+                        backgroundColor: 'white',
+                        borderColor: 'blue',
+                        color: 'blue',
+                        minWidth: 110,
+                        height: 38,
+                        borderRadius: 8,
+                        padding: '6px 12px'
+                      }}
+                    >
+                      Login
+                    </CButton>
+                  </Link>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                  <CButton color="light" onClick={() => { setStep(1); setCedula(''); setFechaNac(''); setToken(null); setMsg(null); setErrors({}) }} style={{ minWidth: 110, height: 38, borderRadius: 8 }}>
+                    Cerrar
+                  </CButton>
+                </div>
               </div>
             </div>
           )}
         </CCardBody>
-
-        <div style={{ position: 'absolute', left: 14, bottom: 13 }}>
-          <Link to="/login">
-            <CButton
-              
-              style={{
-               display: 'flex', gap: 10, justifyContent: 'flex-end',backgroundColor: 'white', borderColor: 'blue', color:'blue'
-              }}
-            >
-              Login
-            </CButton>
-          </Link>
-        </div>
       </CCard>
     </div>
   )

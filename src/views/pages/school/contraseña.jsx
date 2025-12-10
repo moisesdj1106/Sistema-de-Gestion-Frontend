@@ -169,7 +169,7 @@ export default function RestablecerPorIdentidad() {
                     size="sm"
                     type="submit"
                     disabled={loading}
-                    style={{ backgroundColor: 'white', borderColor: '#ff7043', color: '#ff7043', minWidth: 140, height: 38, borderRadius: 8 }}
+                    style={{ backgroundColor: '#ff7043', borderColor: '#ff7043', color: 'white', minWidth: 140, height: 38, borderRadius: 8 }}
                   >
                     {loading ? 'Verificando...' : 'Verificar identidad'}
                   </CButton>

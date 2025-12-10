@@ -23,20 +23,35 @@ const ListaDonantesFull = () => {
 
   const historyHandlerRef = useRef(null)
 
+  // fetch seguro que garantiza array y maneja errores
+  const fetchSafe = async (url, setter) => {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) {
+        console.error('Fetch error', url, res.status)
+        setter([])
+        return
+      }
+      const data = await res.json().catch(() => [])
+      setter(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('Fetch failed', url, err)
+      setter([])
+    }
+  }
+
   useEffect(() => {
-    fetch(`${API}/donantesfull`).then(res => res.json()).then(setDonantes).catch(()=>{})
-    fetch(`${API}/tipos-donante`).then(res => res.json()).then(setTiposDonante).catch(()=>{})
-    fetch(`${API}/documento`).then(res => res.json()).then(setTiposDocumento).catch(()=>{})
+    fetchSafe(`${API}/donantesfull`, setDonantes)
+    fetchSafe(`${API}/tipos-donante`, setTiposDonante)
+    fetchSafe(`${API}/documento`, setTiposDocumento)
   }, [])
 
   // bloqueo del botón atrás mientras modal(s) abiertos
   useEffect(() => {
     const modalOpen = showModal || showDeleteModal
     if (modalOpen) {
-      // empujar un estado extra al history y evitar que al dar atrás se salga
       window.history.pushState({ modalOpen: true }, '')
       const onPop = () => {
-        // volvemos a empujar para mantener el historial y evitar navegación atrás
         window.history.pushState({ modalOpen: true }, '')
       }
       historyHandlerRef.current = onPop
@@ -46,7 +61,6 @@ const ListaDonantesFull = () => {
       if (historyHandlerRef.current) {
         window.removeEventListener('popstate', historyHandlerRef.current)
         historyHandlerRef.current = null
-        // retroceder el history que añadimos (si existe)
         try { window.history.back() } catch (e) {}
       }
     }
@@ -54,7 +68,7 @@ const ListaDonantesFull = () => {
 
   // Helpers validación
   const getDocNameById = (id) =>
-    tiposDocumento && tiposDocumento.length
+    Array.isArray(tiposDocumento)
       ? tiposDocumento.find((t) => String(t.TMA_CODDOC) === String(id))?.TMA_NOMBRE || ''
       : ''
 
@@ -96,8 +110,8 @@ const ListaDonantesFull = () => {
   const handleEdit = donante => {
     setEdit({
       ...donante,
-      TMA_TIPODN: tiposDonante.find(t => t.TTR_NOMBRE === donante.tipo_donante)?.TTR_TIPODN || '',
-      TMA_CODDOC: tiposDocumento.find(t => t.TMA_NOMBRE === donante.tipo_documento)?.TMA_CODDOC || ''
+      TMA_TIPODN: Array.isArray(tiposDonante) ? tiposDonante.find(t => t.TTR_NOMBRE === donante.tipo_donante)?.TTR_TIPODN || '' : '',
+      TMA_CODDOC: Array.isArray(tiposDocumento) ? tiposDocumento.find(t => t.TMA_NOMBRE === donante.tipo_documento)?.TMA_CODDOC || '' : ''
     })
     setFieldErrors({})
     setMsg({ type: '', text: '' })
@@ -106,9 +120,7 @@ const ListaDonantesFull = () => {
 
   const handleEditChange = e => {
     const { name, value } = e.target
-    // actualizar y validar en directo para ciertos campos
     if (name === 'TMA_CEDULA') {
-      // obtener tipo doc actual (preferir select si existe en DOM para evitar race)
       const selectCoddoc = document.querySelector('select[name="TMA_CODDOC"]')?.value
       const coddoc = selectCoddoc || (edit && edit.TMA_CODDOC) || ''
       let v = value
@@ -130,14 +142,12 @@ const ListaDonantesFull = () => {
       return
     }
     if (name === 'TMA_CODDOC') {
-      // al cambiar tipo documento, actualizar y revalidar cédula
       setEdit(prev => ({ ...prev, [name]: value }))
       const ced = edit?.TMA_CEDULA || ''
       const err = validateCedulaField(ced, value)
       setFieldErrors(prev => ({ ...prev, TMA_CODDOC: '', TMA_CEDULA: err }))
       return
     }
-    // defecto
     setEdit(prev => ({ ...prev, [name]: value }))
     setFieldErrors(prev => ({ ...prev, [name]: '' }))
   }
@@ -145,7 +155,6 @@ const ListaDonantesFull = () => {
   const handleEditSubmit = async e => {
     e.preventDefault()
     if (!edit) return
-    // validaciones finales
     const cedErr = validateCedulaField(edit.TMA_CEDULA, edit.TMA_CODDOC)
     const phoneErr = validatePhoneField(edit.TMA_CONTAC)
     const errors = {}
@@ -160,6 +169,9 @@ const ListaDonantesFull = () => {
       return
     }
 
+    // Normalizar payload: si pasaporte enviar string, sino number
+    const cedulaPayload = isPassportType(edit.TMA_CODDOC) ? edit.TMA_CEDULA : Number(String(edit.TMA_CEDULA).replace(/\D/g, ''))
+
     const res = await fetch(`${API}/donantes/${edit.TMA_CODONT}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -167,13 +179,13 @@ const ListaDonantesFull = () => {
         nombre: edit.TMA_NOMBRE,
         contac: edit.TMA_CONTAC,
         tipodn: Number(edit.TMA_TIPODN),
-        cedula: edit.TMA_CEDULA,
+        cedula: cedulaPayload,
         coddoc: Number(edit.TMA_CODDOC)
       })
     })
     const data = await res.json().catch(()=>({}))
     if (res.ok) {
-      fetch(`${API}/donantesfull`).then(res => res.json()).then(setDonantes).catch(()=>{})
+      fetchSafe(`${API}/donantesfull`, setDonantes)
       setShowModal(false)
       setMsg({ type: 'success', text: 'Donante actualizado.' })
     } else {
@@ -181,7 +193,7 @@ const ListaDonantesFull = () => {
     }
   }
 
-  // Delete: abrir modal de confirmación (no window.confirm)
+  // Delete
   const handleDelete = id => {
     setSelectedDeleteId(id)
     setShowDeleteModal(true)
@@ -201,22 +213,26 @@ const ListaDonantesFull = () => {
     setSelectedDeleteId(null)
   }
 
-  // Filtrado seguro
-  const filtered = donantes.filter(d =>
+  // Filtrado y paginación con mobile-friendly rendering
+  const filtered = Array.isArray(donantes) ? donantes.filter(d =>
     (String(d.TMA_NOMBRE || '').toLowerCase().includes(search.toLowerCase()) ||
       String(d.TMA_CONTAC || '').toLowerCase().includes(search.toLowerCase()) ||
       String(d.tipo_donante || '').toLowerCase().includes(search.toLowerCase()) ||
       String(d.TMA_CEDULA || '').toLowerCase().includes(search.toLowerCase()) ||
       String(d.tipo_documento || '').toLowerCase().includes(search.toLowerCase()))
-  )
+  ) : []
 
-  // Paginación
-  const totalPages = Math.ceil(filtered.length / itemsPerPage)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
   const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage)
 
   useEffect(() => {
     if (page > totalPages) setPage(1)
   }, [search, totalPages])
+
+  // estilos responsive y botones uniformes
+  const styles = {
+    actionBtn: { minWidth: 100, height: 36, borderRadius: 6, padding: '6px 10px' },
+  }
 
   return (
     <CRow className="mt-4">
@@ -231,33 +247,98 @@ const ListaDonantesFull = () => {
               className="mb-3"
             />
             {msg.text && <CAlert color={msg.type}>{msg.text}</CAlert>}
-            <CTable striped hover responsive>
-              <CTableHead style={{textAlign: 'center'}}>
-                <CTableRow>
-                  <CTableHeaderCell>Tipo Documento</CTableHeaderCell>
-                  <CTableHeaderCell>Cédula</CTableHeaderCell>
-                  <CTableHeaderCell>Nombre</CTableHeaderCell>
-                  <CTableHeaderCell>Contacto</CTableHeaderCell>
-                  <CTableHeaderCell>Tipo Donante</CTableHeaderCell>
-                  <CTableHeaderCell>Acciones</CTableHeaderCell>
-                </CTableRow>
-              </CTableHead>
-              <CTableBody style={{textAlign: 'center'}}>
-                {paginated.map((d, i) => (
-                  <CTableRow key={d.TMA_CODONT}>
-                    <CTableDataCell>{d.tipo_documento}</CTableDataCell>
-                    <CTableDataCell>{d.TMA_CEDULA}</CTableDataCell>
-                    <CTableDataCell>{d.TMA_NOMBRE}</CTableDataCell>
-                    <CTableDataCell>{d.TMA_CONTAC}</CTableDataCell>
-                    <CTableDataCell>{d.tipo_donante}</CTableDataCell>
-                    <CTableDataCell>
-                      <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} size="sm" onClick={() => handleEdit(d)}>Editar</CButton>{' '}
-                      <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} size="sm" onClick={() => handleDelete(d.TMA_CODONT)}>Eliminar</CButton>
-                    </CTableDataCell>
+
+            <style>{`
+              .actions-flex { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
+              .btn-uniform { min-width:100px; height:36px; border-radius:6px; padding:6px 10px; }
+              @media (max-width: 768px) {
+                .desktop-table { display:none; }
+                .mobile-card { display:block; }
+              }
+              @media (min-width: 769px) {
+                .desktop-table { display:table; }
+                .mobile-card { display:none; }
+              }
+              .mobile-card { border:1px solid rgba(0,0,0,0.06); border-radius:8px; padding:10px; margin-bottom:10px; }
+              .mobile-field { display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.95rem; }
+            `}</style>
+
+            {/* Desktop table */}
+            <div className="desktop-table">
+              <CTable striped hover responsive>
+                <CTableHead style={{textAlign: 'center'}}>
+                  <CTableRow>
+                    <CTableHeaderCell>Tipo Documento</CTableHeaderCell>
+                    <CTableHeaderCell>Cédula</CTableHeaderCell>
+                    <CTableHeaderCell>Nombre</CTableHeaderCell>
+                    <CTableHeaderCell>Contacto</CTableHeaderCell>
+                    <CTableHeaderCell>Tipo Donante</CTableHeaderCell>
+                    <CTableHeaderCell>Acciones</CTableHeaderCell>
                   </CTableRow>
-                ))}
-              </CTableBody>
-            </CTable>
+                </CTableHead>
+                <CTableBody style={{textAlign: 'center'}}>
+                  {paginated.map((d) => (
+                    <CTableRow key={d.TMA_CODONT}>
+                      <CTableDataCell>{d.tipo_documento}</CTableDataCell>
+                      <CTableDataCell>{d.TMA_CEDULA}</CTableDataCell>
+                      <CTableDataCell>{d.TMA_NOMBRE}</CTableDataCell>
+                      <CTableDataCell>{d.TMA_CONTAC}</CTableDataCell>
+                      <CTableDataCell>{d.tipo_donante}</CTableDataCell>
+                      <CTableDataCell>
+                        <div className="actions-flex">
+                          <CButton
+                            size="sm"
+                            className="btn-uniform"
+                            style={{ backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043' , ...styles.actionBtn}}
+                            onClick={() => handleEdit(d)}
+                          >
+                            Editar
+                          </CButton>
+                          <CButton
+                            size="sm"
+                            className="btn-uniform"
+                            style={{ backgroundColor:'white', color:'red', borderColor:'red', ...styles.actionBtn}}
+                            onClick={() => handleDelete(d.TMA_CODONT)}
+                          >
+                            Eliminar
+                          </CButton>
+                        </div>
+                      </CTableDataCell>
+                    </CTableRow>
+                  ))}
+                </CTableBody>
+              </CTable>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="mobile-card">
+              {paginated.map(d => (
+                <div key={d.TMA_CODONT} className="mobile-card" style={{marginBottom:12}}>
+                  <div className="mobile-field"><strong>Documento</strong><span>{d.tipo_documento}</span></div>
+                  <div className="mobile-field"><strong>Cédula</strong><span>{d.TMA_CEDULA}</span></div>
+                  <div className="mobile-field"><strong>Nombre</strong><span>{d.TMA_NOMBRE}</span></div>
+                  <div className="mobile-field"><strong>Contacto</strong><span>{d.TMA_CONTAC}</span></div>
+                  <div className="mobile-field"><strong>Tipo</strong><span>{d.tipo_donante}</span></div>
+                  <div style={{display:'flex', gap:8, marginTop:8}}>
+                    <CButton
+                      size="sm"
+                      style={{ backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043', flex:1 }}
+                      onClick={() => handleEdit(d)}
+                    >
+                      Editar
+                    </CButton>
+                    <CButton
+                      size="sm"
+                      style={{ backgroundColor:'white', color:'red', borderColor:'red', flex:1 }}
+                      onClick={() => handleDelete(d.TMA_CODONT)}
+                    >
+                      Eliminar
+                    </CButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <CPagination align="center" className="mt-3">
               {[...Array(totalPages)].map((_, idx) => (
                 <CPaginationItem
@@ -274,8 +355,8 @@ const ListaDonantesFull = () => {
         </CCard>
       </CCol>
 
-      {/* Modal de edición: no cierra al click fuera ni con ESC */}
-      <CModal visible={showModal} onClose={() => setShowModal(false)} backdrop="static" keyboard={false}>
+      {/* Modal de edición */}
+      <CModal visible={showModal} onClose={() => { setShowModal(false); setFieldErrors({}); }} backdrop="static" keyboard={false}>
         <CModalHeader>Editar Donante</CModalHeader>
         <CModalBody>
           <CForm onSubmit={handleEditSubmit}>
@@ -308,7 +389,7 @@ const ListaDonantesFull = () => {
               required
             >
               <option value="">Seleccione tipo de donante</option>
-              {tiposDonante.map(t => (
+              {Array.isArray(tiposDonante) && tiposDonante.map(t => (
                 <option key={t.TTR_TIPODN} value={t.TTR_TIPODN}>
                   {t.TTR_NOMBRE}
                 </option>
@@ -337,29 +418,28 @@ const ListaDonantesFull = () => {
               required
             >
               <option value="">Seleccione tipo de documento</option>
-              {tiposDocumento.map(t => (
+              {Array.isArray(tiposDocumento) && tiposDocumento.map(t => (
                 <option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>
                   {t.TMA_NOMBRE}
                 </option>
               ))}
             </CFormSelect>
             {fieldErrors.TMA_CODDOC && <div className="text-danger small mb-2">{fieldErrors.TMA_CODDOC}</div>}
-
-            <CModalFooter>
-              <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => { setShowModal(false); setFieldErrors({}); }}>Cancelar</CButton>
-              <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} type="submit">Guardar</CButton>
+            <CModalFooter style={{ display: 'flex', gap: 8 }}>
+              <CButton style={{backgroundColor:'white', color:'red', borderColor:'red', minWidth:100}} onClick={() => { setShowModal(false); setFieldErrors({}); }}>Cancelar</CButton>
+              <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043', minWidth:100}} type="submit">Guardar</CButton>
             </CModalFooter>
           </CForm>
         </CModalBody>
       </CModal>
 
-      {/* Modal de confirmación de eliminación (no cierra al click fuera ni con ESC) */}
+      {/* Modal de confirmación de eliminación */}
       <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)} backdrop="static" keyboard={false}>
         <CModalHeader>Confirmar eliminación</CModalHeader>
         <CModalBody>¿Eliminar este donante?</CModalBody>
-        <CModalFooter>
-          <CButton style={{backgroundColor:'white', color:'#6b6b6b'}} onClick={() => setShowDeleteModal(false)}>Cancelar</CButton>
-          <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={confirmDelete}>Eliminar</CButton>
+        <CModalFooter style={{ display: 'flex', gap: 8 }}>
+          <CButton style={{backgroundColor:'white', color:'#6b6b6b', minWidth:100}} onClick={() => setShowDeleteModal(false)}>Cancelar</CButton>
+          <CButton style={{backgroundColor:'white', color:'red', borderColor:'red', minWidth:100}} onClick={confirmDelete}>Eliminar</CButton>
         </CModalFooter>
       </CModal>
     </CRow>

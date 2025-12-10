@@ -153,33 +153,16 @@ export default function RestablecerPorIdentidad() {
                 gap: 12,
                 flexWrap: 'wrap'
               }}>
-                <div>
-                  <Link to="/login">
-                    <CButton
-                      size="sm"
-                      style={{
-                        backgroundColor: 'transparent',
-                        borderColor: 'rgba(0,0,0,0.08)',
-                        color: '#333',
-                        minWidth: 110,
-                        height: 38,
-                        borderRadius: 8,
-                        padding: '6px 12px'
-                      }}
-                    >
-                      Login
-                    </CButton>
-                  </Link>
-                </div>
+                
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <CButton
+                  <Link to="/login"><CButton
                     size="sm"
                     color="light"
                     onClick={() => { setCedula(''); setFechaNac(''); setErrors({}); setMsg(null) }}
                     style={{ minWidth: 110, height: 38, borderRadius: 8 }}
                   >
-                    Limpiar
-                  </CButton>
+                    Login
+                  </CButton></Link>
                   <CButton
                     size="sm"
                     type="submit"
@@ -229,24 +212,7 @@ export default function RestablecerPorIdentidad() {
                 gap: 12,
                 flexWrap: 'wrap'
               }}>
-                <div>
-                  <Link to="/login">
-                    <CButton
-                      size="sm"
-                      style={{
-                        backgroundColor: 'transparent',
-                        borderColor: 'rgba(0,0,0,0.08)',
-                        color: '#333',
-                        minWidth: 110,
-                        height: 38,
-                        borderRadius: 8,
-                        padding: '6px 12px'
-                      }}
-                    >
-                      Login
-                    </CButton>
-                  </Link>
-                </div>
+              
                 <div style={{ display: 'flex', gap: 10 }}>
                   <CButton
                     size="sm"
@@ -281,28 +247,13 @@ export default function RestablecerPorIdentidad() {
                 marginTop: 12,
                 flexWrap: 'wrap'
               }}>
-                <div>
-                  <Link to="/login">
-                    <CButton
-                      size="sm"
-                      style={{
-                        backgroundColor: 'white',
-                        borderColor: 'blue',
-                        color: 'blue',
-                        minWidth: 110,
-                        height: 38,
-                        borderRadius: 8,
-                        padding: '6px 12px'
-                      }}
-                    >
-                      Login
-                    </CButton>
-                  </Link>
-                </div>
+                
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                  <CButton color="light" onClick={() => { setStep(1); setCedula(''); setFechaNac(''); setToken(null); setMsg(null); setErrors({}) }} style={{ minWidth: 110, height: 38, borderRadius: 8 }}>
-                    Cerrar
+                  <Link to = "/login">
+                  <CButton onClick={() => { setStep(1); setCedula(''); setFechaNac(''); setToken(null); setMsg(null); setErrors({}) }} style={{ minWidth: 110, height: 38, borderRadius: 8, backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043' }}>
+                    Login
                   </CButton>
+                  </Link>
                 </div>
               </div>
             </div>

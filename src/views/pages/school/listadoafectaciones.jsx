@@ -337,7 +337,7 @@ const ListadoAfectaciones = () => {
                         <CTableDataCell>{desastre?.TMA_NOMBRE || afec.TTR_CODESA}</CTableDataCell>
                         <CTableDataCell>{afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : ''}</CTableDataCell>
                         <CTableDataCell>
-                          <div className="d-flex flex-column align-items-center">
+                          <div className="d-flex flex-column align-items-center justify-content-center">
                             <CButton
                               style={{ ...btnBase, backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043', marginBottom: 6 }}
                               size="sm"

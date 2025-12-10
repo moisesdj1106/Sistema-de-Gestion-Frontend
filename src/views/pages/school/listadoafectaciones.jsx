@@ -17,7 +17,6 @@ const ListadoAfectaciones = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ codcom: '', feafec: '', codesa: '' });
   const [showEdit, setShowEdit] = useState(false);
@@ -25,26 +24,22 @@ const ListadoAfectaciones = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', color: 'success' });
 
-
   const [errorsEdit, setErrorsEdit] = useState({});
-  const [isSmall, setIsSmall] = useState(window.innerWidth < 768);
-
+  const [isSmall, setIsSmall] = useState(window.innerWidth < 576);
 
   const codcomRef = useRef(null);
   const codesaRef = useRef(null);
   const feafecRef = useRef(null);
   const saveRef = useRef(null);
 
-
   const historyHandlerRef = useRef(null);
   const historyPushedRef = useRef(false);
 
   useEffect(() => {
-    const onResize = () => setIsSmall(window.innerWidth < 768);
+    const onResize = () => setIsSmall(window.innerWidth < 576);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-
 
   const fetchSafe = async (url, setter) => {
     try {
@@ -71,11 +66,9 @@ const ListadoAfectaciones = () => {
 
   useEffect(() => { fetchAll(); }, []);
 
- 
   const comunidadesMap = Object.fromEntries((Array.isArray(comunidades) ? comunidades : []).map(c => [c.TMA_CODCOM, c]));
   const parroquiasMap = Object.fromEntries((Array.isArray(parroquias) ? parroquias : []).map(p => [p.TMA_COPARR, p]));
   const desastresMap = Object.fromEntries((Array.isArray(desastres) ? desastres : []).map(d => [d.TMA_CODESA, d]));
-
 
   const afectacionesFiltradas = (Array.isArray(afectaciones) ? afectaciones : []).filter(afec => {
     const comunidad = comunidadesMap[afec.TTR_CODCOM]?.TMA_NOMBRE || '';
@@ -86,14 +79,12 @@ const ListadoAfectaciones = () => {
     );
   });
 
- 
   const totalPages = Math.max(1, Math.ceil(afectacionesFiltradas.length / itemsPerPage));
   const afectacionesToShow = afectacionesFiltradas.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Editar
   const handleEditOpen = (afec) => {
     setEditId(afec.TTR_COAFEC);
     setEditForm({
@@ -103,11 +94,9 @@ const ListadoAfectaciones = () => {
     });
     setErrorsEdit({});
     setShowEdit(true);
- 
     setTimeout(() => { if (codcomRef.current) codcomRef.current.focus(); }, 120);
   };
 
-  // helpers: fecha máxima local YYYY-MM-DD para bloquear futuras
   const today = new Date();
   const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
   const maxFechaLocal = localToday.toISOString().split('T')[0];
@@ -135,19 +124,7 @@ const ListadoAfectaciones = () => {
     return msg === '';
   };
 
-  const validateEditAll = () => {
-    const fields = ['codcom', 'codesa', 'feafec'];
-    const newErr = {};
-    fields.forEach(f => {
-      const ok = validateEditField(f, editForm[f]);
-      if (!ok) newErr[f] = true;
-    });
-    // messages already set inside validateEditField
-    return Object.keys(newErr).length === 0;
-  };
-
   const handleEditSave = async () => {
-    // validar
     const fieldsOrder = ['codcom','codesa','feafec'];
     const invalid = fieldsOrder.find(f => !validateEditField(f, editForm[f]));
     if (invalid) {
@@ -157,7 +134,6 @@ const ListadoAfectaciones = () => {
       return;
     }
 
-    // enviar
     try {
       const res = await fetch(`${API}/afectaciones/${editId}`, {
         method: 'PUT',
@@ -182,7 +158,6 @@ const ListadoAfectaciones = () => {
     }
   };
 
-  // Eliminar
   const handleDelete = async () => {
     const res = await fetch(`${API}/afectaciones/${deleteId}`, { method: 'DELETE' });
     if (res.ok) {
@@ -194,7 +169,6 @@ const ListadoAfectaciones = () => {
     }
   };
 
-  // Bloquear boton "atrás" del navegador mientras modales edit/delete estén abiertos
   useEffect(() => {
     const modalOpen = showEdit || showDelete;
     if (modalOpen && !historyPushedRef.current) {
@@ -206,7 +180,6 @@ const ListadoAfectaciones = () => {
       window.addEventListener('popstate', onPop);
     }
     if (!modalOpen && historyPushedRef.current) {
-      // cleanup: remove handler and try to pop the pushed state
       if (historyHandlerRef.current) {
         window.removeEventListener('popstate', historyHandlerRef.current);
         historyHandlerRef.current = null;
@@ -223,22 +196,34 @@ const ListadoAfectaciones = () => {
     };
   }, [showEdit, showDelete]);
 
-  // estilos simples para botones uniformes y responsividad
-  const btnBase = { minWidth: 90, maxWidth: 120, height: 34, borderRadius: 6, padding: '6px 10px' };
+  const btnBase = { minWidth: 90, maxWidth: 140, height: 36, borderRadius: 6, padding: '6px 10px' };
 
   return (
     <CContainer className="py-4">
       <style>{`
-        .card-actions { display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; }
-        .btn-uniform { min-width:90px; height:34px; border-radius:6px; padding:6px 10px; }
-        @media (max-width: 768px) {
-          .table-responsive { display:none; }
-          .card-list { display:block; }
+        /* botones uniformes */
+        .btn-uniform { min-width:90px; height:36px; border-radius:6px; padding:6px 10px; }
+
+        /* Responsive: tarjetas sólo en móviles <576px, tabla intacta en >=576px */
+        @media (max-width: 575px) {
+          .desktop-table { display:none !important; }
+          .mobile-card { display:block; padding: 0 12px; box-sizing: border-box; }
+          .mobile-actions { display:flex; flex-direction:column; gap:8px; }
+          .mobile-actions .CButton { width:100%; }
         }
-        @media (min-width: 769px) {
-          .table-responsive { display:block; }
-          .card-list { display:none; }
+        @media (min-width: 576px) {
+          .desktop-table { display:block; width:100%; }
+          .mobile-card { display:none; }
         }
+
+        /* wrapper para scroll horizontal si la tabla excede ancho */
+        .table-wrapper { width:100%; overflow-x:auto; -webkit-overflow-scrolling: touch; padding: 0 8px; box-sizing: border-box; }
+
+        /* centrar acciones en tabla */
+        .actions-column { display:flex; align-items:center; justify-content:center; }
+
+        .mobile-card { border:1px solid rgba(0,0,0,0.06); border-radius:8px; padding:10px; margin-bottom:10px; background:#fff; }
+        .mobile-field { display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.95rem; }
       `}</style>
 
       <CModal
@@ -270,23 +255,19 @@ const ListadoAfectaciones = () => {
               size="sm"
               placeholder="Comunidad o Parroquia"
               value={busqueda}
-              onChange={e => {
-                setBusqueda(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={e => { setBusqueda(e.target.value); setCurrentPage(1); }}
             />
           </CInputGroup>
         </CCardHeader>
         <CCardBody style={{ padding: 0 }}>
-          {/* Responsive: cards en pantallas pequeñas */}
           {isSmall ? (
-            <div className="p-3 d-flex flex-column gap-3 card-list">
+            <div className="p-3 d-flex flex-column gap-3">
               {afectacionesToShow.map(afec => {
                 const comunidad = comunidadesMap[afec.TTR_CODCOM];
                 const parroquia = parroquiasMap[comunidad?.TMA_COPARR];
                 const desastre = desastresMap[afec.TTR_CODESA];
                 return (
-                  <CCard key={afec.TTR_COAFEC} className="p-2">
+                  <CCard key={afec.TTR_COAFEC} className="p-2 mobile-card">
                     <CCardBody className="p-2">
                       <CCardTitle style={{ fontSize: 16, marginBottom: 4 }}>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</CCardTitle>
                       <CCardText style={{ marginBottom: 6, fontSize: 13 }}>
@@ -294,9 +275,10 @@ const ListadoAfectaciones = () => {
                         <strong>Desastre:</strong> {desastre?.TMA_NOMBRE || '-'} <br />
                         <strong>Fecha:</strong> {afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : '-'}
                       </CCardText>
-                      <div className="d-flex gap-2">
-                        <CButton size="sm" style={{ ...btnBase, backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043' }} onClick={() => handleEditOpen(afec)}>Editar</CButton>
-                        <CButton size="sm" style={{ ...btnBase, backgroundColor: 'white', color: 'red', borderColor: 'red' }} onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}>Eliminar</CButton>
+
+                      <div className="d-flex justify-content-center gap-2 mobile-actions">
+                        <CButton size="sm" style={{ ...btnBase, backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043', width: '48%' }} onClick={() => handleEditOpen(afec)}>Editar</CButton>
+                        <CButton size="sm" style={{ ...btnBase, backgroundColor: 'white', color: 'red', borderColor: 'red', width: '48%' }} onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}>Eliminar</CButton>
                       </div>
                     </CCardBody>
                   </CCard>
@@ -304,7 +286,7 @@ const ListadoAfectaciones = () => {
               })}
             </div>
           ) : (
-            <div className="table-responsive">
+            <div className="table-wrapper desktop-table">
               <CTable
                 align="middle"
                 hover
@@ -318,7 +300,7 @@ const ListadoAfectaciones = () => {
               >
                 <CTableHead color="light">
                   <CTableRow>
-                    <CTableHeaderCell>Comunidad</CTableHeaderCell>
+                    <CTableHeaderCell style={{ textAlign: 'left' }}>Comunidad</CTableHeaderCell>
                     <CTableHeaderCell>Parroquia</CTableHeaderCell>
                     <CTableHeaderCell>Desastre</CTableHeaderCell>
                     <CTableHeaderCell>Fecha</CTableHeaderCell>
@@ -332,12 +314,12 @@ const ListadoAfectaciones = () => {
                     const desastre = desastresMap[afec.TTR_CODESA];
                     return (
                       <CTableRow key={afec.TTR_COAFEC}>
-                        <CTableDataCell>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</CTableDataCell>
+                        <CTableDataCell style={{ textAlign: 'left' }}>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</CTableDataCell>
                         <CTableDataCell>{parroquia?.TMA_NOMBRE || ''}</CTableDataCell>
                         <CTableDataCell>{desastre?.TMA_NOMBRE || afec.TTR_CODESA}</CTableDataCell>
                         <CTableDataCell>{afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : ''}</CTableDataCell>
-                        <CTableDataCell>
-                          <div className="d-flex flex-column align-items-center justify-content-center">
+                        <CTableDataCell className="actions-column">
+                          <div className="d-flex flex-column align-items-center">
                             <CButton
                               style={{ ...btnBase, backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043', marginBottom: 6 }}
                               size="sm"
@@ -347,7 +329,7 @@ const ListadoAfectaciones = () => {
                             </CButton>
                             <CButton
                               size="sm"
-                              style={{ ...btnBase, minWidth: 90, maxWidth: 90, backgroundColor: 'white', color: 'red', borderColor: 'red' }}
+                              style={{ ...btnBase, minWidth: 90, maxWidth: 120, backgroundColor: 'white', color: 'red', borderColor: 'red' }}
                               onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}
                             >
                               Eliminar
@@ -362,7 +344,6 @@ const ListadoAfectaciones = () => {
             </div>
           )}
 
-          {/* Paginación */}
           <div className="d-flex justify-content-center my-3">
             <CPagination align="center" className="mb-0">
               <CPaginationItem
@@ -391,7 +372,6 @@ const ListadoAfectaciones = () => {
         </CCardBody>
       </CCard>
 
-      {/* Modal Editar: backdrop static y keyboard false para que no cierre con click fuera ni ESC */}
       <CModal visible={showEdit} onClose={() => { setShowEdit(false); setErrorsEdit({}); }} backdrop="static" keyboard={false}>
         <CModalHeader>
           <CModalTitle>Editar Afectación</CModalTitle>
@@ -453,7 +433,6 @@ const ListadoAfectaciones = () => {
         </CModalFooter>
       </CModal>
 
-      {/* Modal Eliminar: backdrop static y keyboard false */}
       <CModal visible={showDelete} onClose={() => setShowDelete(false)} backdrop="static" keyboard={false}>
         <CModalHeader>
           <CModalTitle>Eliminar Afectación</CModalTitle>

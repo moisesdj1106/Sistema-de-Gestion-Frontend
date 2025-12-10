@@ -218,24 +218,27 @@ const Donaciones = () => {
             <style>{`
               .actions-flex { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
               .btn-uniform { min-width:100px; height:36px; border-radius:6px; padding:6px 10px; }
-              /* Solo mostrar tarjetas en móviles muy pequeños.
-                 Mantener la tabla completa en pantallas >= 576px */
+
+              /* Wrapper para permitir scroll horizontal en pantallas pequeñas y centrar en contenedor */
+              .table-wrapper { width:100%; overflow-x:auto; -webkit-overflow-scrolling: touch; display:block; padding: 0 8px; box-sizing: border-box; }
+
+              /* Móvil muy pequeño: mostrar tarjetas */
               @media (max-width: 575px) {
                 .desktop-table { display:none; }
                 .mobile-card { display:block; }
               }
+              /* Pantallas >= 576px: mostrar la tabla completa (como antes) y ocultar tarjetas */
               @media (min-width: 576px) {
-                .desktop-table { display:table; }
+                .desktop-table { display:block; width:100%; }
                 .mobile-card { display:none; }
               }
-              /* permitir scroll horizontal si la tabla supera el ancho en pantallas pequeñas */
-              .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
               .mobile-card { border:1px solid rgba(0,0,0,0.06); border-radius:8px; padding:10px; margin-bottom:10px; }
               .mobile-field { display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.95rem; }
             `}</style>
 
             {/* Desktop table */}
-            <div className="desktop-table">
+            <div className="table-wrapper desktop-table">
               <CTable striped hover responsive>
                 <CTableHead style={{textAlign: 'center'}}>
                   <CTableRow>

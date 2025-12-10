@@ -22,6 +22,7 @@ const ListaDonantesFull = () => {
   const itemsPerPage = 10
 
   const historyHandlerRef = useRef(null)
+  const historyPushedRef = useRef(false)
 
   // fetch seguro que garantiza array y maneja errores
   const fetchSafe = async (url, setter) => {
@@ -49,19 +50,28 @@ const ListaDonantesFull = () => {
   // bloqueo del botón atrás mientras modal(s) abiertos
   useEffect(() => {
     const modalOpen = showModal || showDeleteModal
-    if (modalOpen) {
-      window.history.pushState({ modalOpen: true }, '')
+    if (modalOpen && !historyPushedRef.current) {
+      try { window.history.pushState({ modalOpen: true }, '') } catch (e) {}
       const onPop = () => {
-        window.history.pushState({ modalOpen: true }, '')
+        try { window.history.pushState({ modalOpen: true }, '') } catch (e) {}
       }
       historyHandlerRef.current = onPop
       window.addEventListener('popstate', onPop)
+      historyPushedRef.current = true
+    }
+    if (!modalOpen && historyPushedRef.current) {
+      if (historyHandlerRef.current) {
+        window.removeEventListener('popstate', historyHandlerRef.current)
+        historyHandlerRef.current = null
+      }
+      try { window.history.back() } catch (e) {}
+      historyPushedRef.current = false
     }
     return () => {
       if (historyHandlerRef.current) {
         window.removeEventListener('popstate', historyHandlerRef.current)
         historyHandlerRef.current = null
-        try { window.history.back() } catch (e) {}
+        historyPushedRef.current = false
       }
     }
   }, [showModal, showDeleteModal])
@@ -251,20 +261,22 @@ const ListaDonantesFull = () => {
             <style>{`
               .actions-flex { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
               .btn-uniform { min-width:100px; height:36px; border-radius:6px; padding:6px 10px; }
-              @media (max-width: 768px) {
+              /* Mostrar tarjetas sólo en móviles muy pequeños (<576px), tabla completa en >=576px */
+              @media (max-width: 575px) {
                 .desktop-table { display:none; }
                 .mobile-card { display:block; }
               }
-              @media (min-width: 769px) {
-                .desktop-table { display:table; }
+              @media (min-width: 576px) {
+                .desktop-table { display:block; }
                 .mobile-card { display:none; }
               }
+              .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
               .mobile-card { border:1px solid rgba(0,0,0,0.06); border-radius:8px; padding:10px; margin-bottom:10px; }
               .mobile-field { display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.95rem; }
             `}</style>
 
             {/* Desktop table */}
-            <div className="desktop-table">
+            <div className="table-wrapper desktop-table">
               <CTable striped hover responsive>
                 <CTableHead style={{textAlign: 'center'}}>
                   <CTableRow>
@@ -310,7 +322,7 @@ const ListaDonantesFull = () => {
               </CTable>
             </div>
 
-            {/* Mobile cards */}
+            {/* Mobile cards (sólo <576px) */}
             <div className="mobile-card">
               {paginated.map(d => (
                 <div key={d.TMA_CODONT} className="mobile-card" style={{marginBottom:12}}>
@@ -355,7 +367,7 @@ const ListaDonantesFull = () => {
         </CCard>
       </CCol>
 
-      {/* Modal de edición */}
+      {/* Modal de edición (backdrop static, keyboard false): no cierra con click fuera ni ESC */}
       <CModal visible={showModal} onClose={() => { setShowModal(false); setFieldErrors({}); }} backdrop="static" keyboard={false}>
         <CModalHeader>Editar Donante</CModalHeader>
         <CModalBody>
@@ -433,7 +445,7 @@ const ListaDonantesFull = () => {
         </CModalBody>
       </CModal>
 
-      {/* Modal de confirmación de eliminación */}
+      {/* Modal de confirmación de eliminación (backdrop static, keyboard false) */}
       <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)} backdrop="static" keyboard={false}>
         <CModalHeader>Confirmar eliminación</CModalHeader>
         <CModalBody>¿Eliminar este donante?</CModalBody>

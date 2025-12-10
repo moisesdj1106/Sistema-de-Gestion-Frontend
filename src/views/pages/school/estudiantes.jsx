@@ -218,14 +218,18 @@ const Donaciones = () => {
             <style>{`
               .actions-flex { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
               .btn-uniform { min-width:100px; height:36px; border-radius:6px; padding:6px 10px; }
-              @media (max-width: 768px) {
+              /* Solo mostrar tarjetas en móviles muy pequeños.
+                 Mantener la tabla completa en pantallas >= 576px */
+              @media (max-width: 575px) {
                 .desktop-table { display:none; }
                 .mobile-card { display:block; }
               }
-              @media (min-width: 769px) {
+              @media (min-width: 576px) {
                 .desktop-table { display:table; }
                 .mobile-card { display:none; }
               }
+              /* permitir scroll horizontal si la tabla supera el ancho en pantallas pequeñas */
+              .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
               .mobile-card { border:1px solid rgba(0,0,0,0.06); border-radius:8px; padding:10px; margin-bottom:10px; }
               .mobile-field { display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.95rem; }
             `}</style>

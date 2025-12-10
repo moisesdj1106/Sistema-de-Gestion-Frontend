@@ -126,6 +126,8 @@ export default function RestablecerPorIdentidad() {
                     value={cedula}
                     onChange={(e) => setCedula(e.target.value)}
                     placeholder="Ej: 12345678 o AB12345"
+                    minLength={7}
+                    maxLength={9}
                     invalid={!!errors.cedula}
                   />
                   {errors.cedula && <div className="text-danger small mt-1">{errors.cedula}</div>}
@@ -167,7 +169,7 @@ export default function RestablecerPorIdentidad() {
                     size="sm"
                     type="submit"
                     disabled={loading}
-                    style={{ backgroundColor: '#ff7043', borderColor: '#ff7043', color: '#fff', minWidth: 140, height: 38, borderRadius: 8 }}
+                    style={{ backgroundColor: 'white', borderColor: '#ff7043', color: '#ff7043', minWidth: 140, height: 38, borderRadius: 8 }}
                   >
                     {loading ? 'Verificando...' : 'Verificar identidad'}
                   </CButton>
@@ -185,7 +187,9 @@ export default function RestablecerPorIdentidad() {
                     type="password"
                     value={nuevaClave}
                     onChange={(e) => setNuevaClave(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mín 6 caracteres Max 10"
+                    minLength={6}
+                    maxLength={10}
                     invalid={!!errors.nuevaClave}
                   />
                   {errors.nuevaClave && <div className="text-danger small mt-1">{errors.nuevaClave}</div>}
@@ -198,6 +202,8 @@ export default function RestablecerPorIdentidad() {
                   <CFormInput
                     type="password"
                     value={confirmClave}
+                    minLength={6}
+                    maxLength={10}
                     onChange={(e) => setConfirmClave(e.target.value)}
                     invalid={!!errors.confirmClave}
                   />
@@ -226,7 +232,7 @@ export default function RestablecerPorIdentidad() {
                     size="sm"
                     type="submit"
                     disabled={loading}
-                    style={{ backgroundColor: 'white', borderColor: '#ff7043', color: '#ff7043', minWidth: 140, height: 38, borderRadius: 8 }}
+                    style={{ backgroundColor: '#ff7043', borderColor: '#ff7043', color: 'white', minWidth: 140, height: 38, borderRadius: 8 }}
                   >
                     {loading ? 'Guardando...' : 'Cambiar contraseña'}
                   </CButton>
@@ -250,7 +256,7 @@ export default function RestablecerPorIdentidad() {
                 
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                   <Link to = "/login">
-                  <CButton onClick={() => { setStep(1); setCedula(''); setFechaNac(''); setToken(null); setMsg(null); setErrors({}) }} style={{ minWidth: 110, height: 38, borderRadius: 8, backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043' }}>
+                  <CButton onClick={() => { setStep(1); setCedula(''); setFechaNac(''); setToken(null); setMsg(null); setErrors({}) }} style={{ minWidth: 110, height: 38, borderRadius: 8, backgroundColor:'#ff7043', color:'white', borderColor:'#ff7043' }}>
                     Login
                   </CButton>
                   </Link>

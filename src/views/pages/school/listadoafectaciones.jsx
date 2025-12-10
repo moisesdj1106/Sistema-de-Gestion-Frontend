@@ -2,11 +2,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   CContainer, CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow,
   CTableHeaderCell, CTableBody, CTableDataCell, CInputGroup, CInputGroupText, CFormInput,
-  CPagination, CPaginationItem, CButton, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CForm, CFormSelect, CCardTitle, CCardText
+  CPagination, CPaginationItem, CButton, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CForm, CFormSelect, CCardTitle, CCardText, CRow, CCol, CAlert
 } from '@coreui/react';
 
 const API = 'https://sistema-de-gestion-backend.onrender.com';
-/*const API = 'http://localhost:4000';*/
 
 const ListadoAfectaciones = () => {
   const [afectaciones, setAfectaciones] = useState([]);
@@ -23,6 +22,7 @@ const ListadoAfectaciones = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [showDelete, setShowDelete] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', color: 'success' });
+  const [msg, setMsg] = useState({ type: '', text: '' });
 
   const [errorsEdit, setErrorsEdit] = useState({});
   const [isSmall, setIsSmall] = useState(window.innerWidth < 576);
@@ -93,6 +93,7 @@ const ListadoAfectaciones = () => {
       codesa: afec.TTR_CODESA
     });
     setErrorsEdit({});
+    setMsg({ type: '', text: '' });
     setShowEdit(true);
     setTimeout(() => { if (codcomRef.current) codcomRef.current.focus(); }, 120);
   };
@@ -109,19 +110,19 @@ const ListadoAfectaciones = () => {
 
   const validateEditField = (name, value) => {
     const v = String(value ?? '').trim();
-    let msg = '';
+    let msgErr = '';
     if (name === 'codcom') {
-      if (!v) msg = 'Seleccione comunidad';
+      if (!v) msgErr = 'Seleccione comunidad';
     }
     if (name === 'codesa') {
-      if (!v) msg = 'Seleccione desastre';
+      if (!v) msgErr = 'Seleccione desastre';
     }
     if (name === 'feafec') {
-      if (!v) msg = 'Fecha obligatoria';
-      else if (v > maxFechaLocal) msg = 'La fecha no puede ser futura';
+      if (!v) msgErr = 'Fecha obligatoria';
+      else if (v > maxFechaLocal) msgErr = 'La fecha no puede ser futura';
     }
-    setErrorsEdit(prev => ({ ...prev, [name]: msg }));
-    return msg === '';
+    setErrorsEdit(prev => ({ ...prev, [name]: msgErr }));
+    return msgErr === '';
   };
 
   const handleEditSave = async () => {
@@ -159,23 +160,29 @@ const ListadoAfectaciones = () => {
   };
 
   const handleDelete = async () => {
-    const res = await fetch(`${API}/afectaciones/${deleteId}`, { method: 'DELETE' });
-    if (res.ok) {
-      setToast({ show: true, message: 'Afectación eliminada', color: 'warning' });
-      setShowDelete(false);
-      fetchAll();
-    } else {
-      setToast({ show: true, message: 'Error al eliminar', color: 'danger' });
+    if (!deleteId) return;
+    try {
+      const res = await fetch(`${API}/afectaciones/${deleteId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setToast({ show: true, message: 'Afectación eliminada', color: 'warning' });
+        setShowDelete(false);
+        fetchAll();
+      } else {
+        setToast({ show: true, message: 'Error al eliminar', color: 'danger' });
+      }
+    } catch (err) {
+      setToast({ show: true, message: 'Error de conexión', color: 'danger' });
+    } finally {
+      setDeleteId(null);
     }
   };
 
+  // bloqueo botón Atrás mientras modales abiertos
   useEffect(() => {
     const modalOpen = showEdit || showDelete;
     if (modalOpen && !historyPushedRef.current) {
       try { window.history.pushState({ modalOpen: true }, ''); historyPushedRef.current = true; } catch (e) {}
-      const onPop = () => {
-        try { window.history.pushState({ modalOpen: true }, ''); } catch (e) {}
-      };
+      const onPop = () => { try { window.history.pushState({ modalOpen: true }, ''); } catch (e) {} };
       historyHandlerRef.current = onPop;
       window.addEventListener('popstate', onPop);
     }
@@ -196,186 +203,139 @@ const ListadoAfectaciones = () => {
     };
   }, [showEdit, showDelete]);
 
-  const btnBase = { minWidth: 90, maxWidth: 140, height: 36, borderRadius: 6, padding: '6px 10px' };
+  const btnBase = { minWidth: 100, height: 36, borderRadius: 6, padding: '6px 10px' };
 
   return (
     <CContainer className="py-4">
       <style>{`
-        /* botones uniformes */
-        .btn-uniform { min-width:90px; height:36px; border-radius:6px; padding:6px 10px; }
+        .actions-flex { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
+        .btn-uniform { min-width:100px; height:36px; border-radius:6px; padding:6px 10px; }
 
-        /* Responsive: tarjetas sólo en móviles <576px, tabla intacta en >=576px */
+        /* Solo mostrar tarjetas en móviles muy pequeños (<576px). Tabla completa en >=576px */
         @media (max-width: 575px) {
           .desktop-table { display:none !important; }
-          .mobile-card { display:block; padding: 0 12px; box-sizing: border-box; }
-          .mobile-actions { display:flex; flex-direction:column; gap:8px; }
-          .mobile-actions .CButton { width:100%; }
+          .mobile-card { display:block; }
         }
         @media (min-width: 576px) {
           .desktop-table { display:block; width:100%; }
           .mobile-card { display:none; }
         }
 
-        /* wrapper para scroll horizontal si la tabla excede ancho */
         .table-wrapper { width:100%; overflow-x:auto; -webkit-overflow-scrolling: touch; padding: 0 8px; box-sizing: border-box; }
-
-        /* centrar acciones en tabla */
-        .actions-column { display:flex; align-items:center; justify-content:center; }
-
         .mobile-card { border:1px solid rgba(0,0,0,0.06); border-radius:8px; padding:10px; margin-bottom:10px; background:#fff; }
         .mobile-field { display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.95rem; }
       `}</style>
 
-      <CModal
-        alignment="center"
-        visible={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-      >
-        <CModalHeader>
-          <CModalTitle>{toast.color === 'danger' ? 'Error' : 'Mensaje'}</CModalTitle>
-        </CModalHeader>
-        <CModalBody className="text-center">
-          <span style={{ color: toast.color === 'danger' ? 'red' : (toast.color === 'warning' ? '#ff7043' : 'green') }}>
-            {toast.message}
-          </span>
-        </CModalBody>
-        <CModalFooter>
-          <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={() => setToast({ ...toast, show: false })}>
-            Aceptar
-          </CButton>
-        </CModalFooter>
-      </CModal>
-
       <CCard>
-        <CCardHeader className="d-flex justify-content-between align-items-center">
-          <strong>Afectaciones Registradas</strong>
-          <CInputGroup style={{ width: isSmall ? '100%' : 300 }}>
-            <CInputGroupText>Buscar</CInputGroupText>
-            <CFormInput
-              size="sm"
-              placeholder="Comunidad o Parroquia"
-              value={busqueda}
-              onChange={e => { setBusqueda(e.target.value); setCurrentPage(1); }}
-            />
-          </CInputGroup>
-        </CCardHeader>
-        <CCardBody style={{ padding: 0 }}>
-          {isSmall ? (
-            <div className="p-3 d-flex flex-column gap-3">
-              {afectacionesToShow.map(afec => {
-                const comunidad = comunidadesMap[afec.TTR_CODCOM];
-                const parroquia = parroquiasMap[comunidad?.TMA_COPARR];
-                const desastre = desastresMap[afec.TTR_CODESA];
-                return (
-                  <CCard key={afec.TTR_COAFEC} className="p-2 mobile-card">
-                    <CCardBody className="p-2">
-                      <CCardTitle style={{ fontSize: 16, marginBottom: 4 }}>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</CCardTitle>
-                      <CCardText style={{ marginBottom: 6, fontSize: 13 }}>
-                        <strong>Parroquia:</strong> {parroquia?.TMA_NOMBRE || '-'} <br />
-                        <strong>Desastre:</strong> {desastre?.TMA_NOMBRE || '-'} <br />
-                        <strong>Fecha:</strong> {afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : '-'}
-                      </CCardText>
+        <CCardBody>
+          <CRow className="mb-3">
+            <CCol xs={12} className="d-flex justify-content-between align-items-center">
+              <h4 className="mb-0">Afectaciones Registradas</h4>
+              <div style={{ width: isSmall ? '100%' : 300, marginTop: isSmall ? 10 : 0 }}>
+                <CInputGroup>
+                  <CInputGroupText>Buscar</CInputGroupText>
+                  <CFormInput
+                    size="sm"
+                    placeholder="Comunidad o Parroquia"
+                    value={busqueda}
+                    onChange={e => { setBusqueda(e.target.value); setCurrentPage(1); }}
+                  />
+                </CInputGroup>
+              </div>
+            </CCol>
+          </CRow>
 
-                      <div className="d-flex justify-content-center gap-2 mobile-actions">
-                        <CButton size="sm" style={{ ...btnBase, backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043', width: '48%' }} onClick={() => handleEditOpen(afec)}>Editar</CButton>
-                        <CButton size="sm" style={{ ...btnBase, backgroundColor: 'white', color: 'red', borderColor: 'red', width: '48%' }} onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}>Eliminar</CButton>
-                      </div>
-                    </CCardBody>
-                  </CCard>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="table-wrapper desktop-table">
-              <CTable
-                align="middle"
-                hover
-                className="mb-0"
-                style={{
-                  tableLayout: 'auto',
-                  fontSize: '0.93rem',
-                  textAlign: 'center',
-                  width: '100%',
-                }}
-              >
-                <CTableHead color="light">
-                  <CTableRow>
-                    <CTableHeaderCell style={{ textAlign: 'left' }}>Comunidad</CTableHeaderCell>
-                    <CTableHeaderCell>Parroquia</CTableHeaderCell>
-                    <CTableHeaderCell>Desastre</CTableHeaderCell>
-                    <CTableHeaderCell>Fecha</CTableHeaderCell>
-                    <CTableHeaderCell>Acciones</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  {afectacionesToShow.map(afec => {
-                    const comunidad = comunidadesMap[afec.TTR_CODCOM];
-                    const parroquia = parroquiasMap[comunidad?.TMA_COPARR];
-                    const desastre = desastresMap[afec.TTR_CODESA];
-                    return (
-                      <CTableRow key={afec.TTR_COAFEC}>
-                        <CTableDataCell style={{ textAlign: 'left' }}>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</CTableDataCell>
-                        <CTableDataCell>{parroquia?.TMA_NOMBRE || ''}</CTableDataCell>
-                        <CTableDataCell>{desastre?.TMA_NOMBRE || afec.TTR_CODESA}</CTableDataCell>
-                        <CTableDataCell>{afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : ''}</CTableDataCell>
-                        <CTableDataCell className="actions-column">
-                          <div className="d-flex flex-column align-items-center">
-                            <CButton
-                              style={{ ...btnBase, backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043', marginBottom: 6 }}
-                              size="sm"
-                              onClick={() => handleEditOpen(afec)}
-                            >
-                              Editar
-                            </CButton>
-                            <CButton
-                              size="sm"
-                              style={{ ...btnBase, minWidth: 90, maxWidth: 120, backgroundColor: 'white', color: 'red', borderColor: 'red' }}
-                              onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}
-                            >
-                              Eliminar
-                            </CButton>
-                          </div>
-                        </CTableDataCell>
-                      </CTableRow>
-                    );
-                  })}
-                </CTableBody>
-              </CTable>
-            </div>
-          )}
+          {msg.text && <CAlert color={msg.type} className="mb-3">{msg.text}</CAlert>}
 
-          <div className="d-flex justify-content-center my-3">
-            <CPagination align="center" className="mb-0">
-              <CPaginationItem
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-              >
-                &laquo;
-              </CPaginationItem>
-              {[...Array(totalPages)].map((_, idx) => (
-                <CPaginationItem
-                  key={idx + 1}
-                  active={currentPage === idx + 1}
-                  onClick={() => setCurrentPage(idx + 1)}
-                >
-                  {idx + 1}
-                </CPaginationItem>
-              ))}
-              <CPaginationItem
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(currentPage + 1)}
-              >
-                &raquo;
-              </CPaginationItem>
-            </CPagination>
+          {/* Desktop table */}
+          <div className="table-wrapper desktop-table">
+            <CTable striped hover responsive>
+              <CTableHead style={{ textAlign: 'center' }}>
+                <CTableRow>
+                  <CTableHeaderCell style={{ textAlign: 'left' }}>Comunidad</CTableHeaderCell>
+                  <CTableHeaderCell>Parroquia</CTableHeaderCell>
+                  <CTableHeaderCell>Desastre</CTableHeaderCell>
+                  <CTableHeaderCell>Fecha</CTableHeaderCell>
+                  <CTableHeaderCell style={{ textAlign: 'center' }}>Acciones</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody style={{ textAlign: 'center' }}>
+                {afectacionesToShow.map(afec => {
+                  const comunidad = comunidadesMap[afec.TTR_CODCOM];
+                  const parroquia = parroquiasMap[comunidad?.TMA_COPARR];
+                  const desastre = desastresMap[afec.TTR_CODESA];
+                  return (
+                    <CTableRow key={afec.TTR_COAFEC}>
+                      <CTableDataCell style={{ textAlign: 'left' }}>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</CTableDataCell>
+                      <CTableDataCell>{parroquia?.TMA_NOMBRE || ''}</CTableDataCell>
+                      <CTableDataCell>{desastre?.TMA_NOMBRE || afec.TTR_CODESA}</CTableDataCell>
+                      <CTableDataCell>{afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : ''}</CTableDataCell>
+                      <CTableDataCell>
+                        <div className="actions-flex" style={{ justifyContent: 'center' }}>
+                          <CButton
+                            size="sm"
+                            className="btn-uniform"
+                            style={{ backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043', ...btnBase }}
+                            onClick={() => handleEditOpen(afec)}
+                          >
+                            Editar
+                          </CButton>
+                          <CButton
+                            size="sm"
+                            className="btn-uniform"
+                            style={{ backgroundColor:'white', color:'red', borderColor:'red', ...btnBase }}
+                            onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}
+                          >
+                            Eliminar
+                          </CButton>
+                        </div>
+                      </CTableDataCell>
+                    </CTableRow>
+                  );
+                })}
+              </CTableBody>
+            </CTable>
           </div>
+
+          {/* Mobile cards */}
+          <div className="mobile-card">
+            {afectacionesToShow.map(afec => {
+              const comunidad = comunidadesMap[afec.TTR_CODCOM];
+              const parroquia = parroquiasMap[comunidad?.TMA_COPARR];
+              const desastre = desastresMap[afec.TTR_CODESA];
+              return (
+                <div key={afec.TTR_COAFEC} className="mobile-card" style={{ marginBottom: 12 }}>
+                  <div className="mobile-field"><strong>Comunidad</strong><span>{comunidad?.TMA_NOMBRE || afec.TTR_CODCOM}</span></div>
+                  <div className="mobile-field"><strong>Parroquia</strong><span>{parroquia?.TMA_NOMBRE || '-'}</span></div>
+                  <div className="mobile-field"><strong>Desastre</strong><span>{desastre?.TMA_NOMBRE || '-'}</span></div>
+                  <div className="mobile-field"><strong>Fecha</strong><span>{afec.TTR_FEAFEC ? afec.TTR_FEAFEC.split('T')[0] : '-'}</span></div>
+                  <div className="d-flex justify-content-center gap-2 mt-2">
+                    <CButton size="sm" style={{ ...btnBase, backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043', flex:1 }} onClick={() => handleEditOpen(afec)}>Editar</CButton>
+                    <CButton size="sm" style={{ ...btnBase, backgroundColor:'white', color:'red', borderColor:'red', flex:1 }} onClick={() => { setDeleteId(afec.TTR_COAFEC); setShowDelete(true); }}>Eliminar</CButton>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <CPagination align="center" className="mt-3">
+            {[...Array(totalPages)].map((_, idx) => (
+              <CPaginationItem
+                key={idx + 1}
+                active={currentPage === idx + 1}
+                onClick={() => setCurrentPage(idx + 1)}
+                style={{ cursor: 'pointer' }}
+              >
+                {idx + 1}
+              </CPaginationItem>
+            ))}
+          </CPagination>
         </CCardBody>
       </CCard>
 
+      {/* Modal editar (no cerrar con click fuera ni ESC) */}
       <CModal visible={showEdit} onClose={() => { setShowEdit(false); setErrorsEdit({}); }} backdrop="static" keyboard={false}>
-        <CModalHeader>
-          <CModalTitle>Editar Afectación</CModalTitle>
-        </CModalHeader>
+        <CModalHeader><CModalTitle>Editar Afectación</CModalTitle></CModalHeader>
         <CModalBody>
           <CForm>
             <CFormSelect
@@ -384,9 +344,8 @@ const ListadoAfectaciones = () => {
               value={editForm.codcom}
               onChange={handleEditChange}
               required
-              className="mb-3"
+              className="mb-2"
               ref={codcomRef}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (codesaRef.current) codesaRef.current.focus(); } }}
             >
               <option value="">Seleccione comunidad</option>
               {Array.isArray(comunidades) && comunidades.map(c => (
@@ -401,9 +360,8 @@ const ListadoAfectaciones = () => {
               value={editForm.codesa}
               onChange={handleEditChange}
               required
-              className="mb-3"
+              className="mb-2"
               ref={codesaRef}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (feafecRef.current) feafecRef.current.focus(); } }}
             >
               <option value="">Seleccione desastre</option>
               {Array.isArray(desastres) && desastres.map(d => (
@@ -419,30 +377,26 @@ const ListadoAfectaciones = () => {
               value={editForm.feafec}
               onChange={handleEditChange}
               required
-              className="mb-3"
+              className="mb-2"
               max={maxFechaLocal}
               ref={feafecRef}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (saveRef.current) saveRef.current.focus(); } }}
             />
             {errorsEdit.feafec && <div className="text-danger small mb-2">{errorsEdit.feafec}</div>}
           </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton style={{...btnBase, backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={handleEditSave} ref={saveRef}>Guardar</CButton>
-          <CButton style={{...btnBase, backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => setShowEdit(false)}>Cancelar</CButton>
+          <CButton style={{ ...btnBase, backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043' }} onClick={handleEditSave} ref={saveRef}>Guardar</CButton>
+          <CButton style={{ ...btnBase, backgroundColor:'white', color:'red', borderColor:'red' }} onClick={() => setShowEdit(false)}>Cancelar</CButton>
         </CModalFooter>
       </CModal>
 
+      {/* Modal eliminar (no cerrar con click fuera ni ESC) */}
       <CModal visible={showDelete} onClose={() => setShowDelete(false)} backdrop="static" keyboard={false}>
-        <CModalHeader>
-          <CModalTitle>Eliminar Afectación</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          ¿Seguro que deseas eliminar esta afectación?
-        </CModalBody>
+        <CModalHeader><CModalTitle>Eliminar Afectación</CModalTitle></CModalHeader>
+        <CModalBody>¿Seguro que deseas eliminar esta afectación?</CModalBody>
         <CModalFooter>
-          <CButton style={{...btnBase, backgroundColor:'white', color:'red', borderColor:'red'}} onClick={handleDelete}>Eliminar</CButton>
-          <CButton style={{...btnBase, backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={() => setShowDelete(false)}>Cancelar</CButton>
+          <CButton style={{ ...btnBase, backgroundColor:'white', color:'red', borderColor:'red' }} onClick={handleDelete}>Eliminar</CButton>
+          <CButton style={{ ...btnBase, backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043' }} onClick={() => setShowDelete(false)}>Cancelar</CButton>
         </CModalFooter>
       </CModal>
     </CContainer>

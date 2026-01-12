@@ -155,7 +155,7 @@ const AppHeader = () => {
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
         <div className="text-secondary " style={{ fontStyle: 'italic', fontSize: 15 }}>
-          <span>"Plataforma para la gestion de Desastres Naturales"</span>
+          <span>"Plataforma para la gestion de Afectaciones Naturales"</span>
         </div>
         <CHeaderNav className="ms-auto" style={{ gap: 12 }}>
           <CNavItem>

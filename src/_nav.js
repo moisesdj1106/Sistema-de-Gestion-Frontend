@@ -192,12 +192,7 @@ export default function getNav() {
           to: '/docents',
           icon: <CIcon icon={cilHome} customClassName="nav-icon" />,
         },
-        {
-          component: CNavItem,
-          name: 'Noticias',
-          to: '/noticias',
-          icon: <CIcon icon={cilBullhorn} customClassName="nav-icon" />,
-        },
+      
         {
           component: CNavItem,
           name: 'Movimientos de tierra',
@@ -209,6 +204,12 @@ export default function getNav() {
           name: 'Desbordamientos de Rios',
           to: '/desbordes',
           icon: <CIcon icon={cilRain} customClassName="nav-icon" />,
+        },
+          {
+          component: CNavItem,
+          name: 'Noticias',
+          to: '/noticias',
+          icon: <CIcon icon={cilBullhorn} customClassName="nav-icon" />,
         },
         /*{
           component: CNavItem,

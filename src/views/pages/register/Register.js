@@ -39,7 +39,13 @@ const HelpButton = ({ videoUrl }) => {
         <CModal
           visible={showHelp}
           onClose={() => setShowHelp(false)}
-          style={{ position: 'absolute', top: '20%', left: '30%' }}
+          style={{
+            position: 'absolute',
+            top: '20%',
+            left: '30%',
+            zIndex: 1050,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          }}
           ref={modalRef}
           onMouseDown={handleDragStart}
           onMouseMove={handleDrag}
@@ -49,12 +55,12 @@ const HelpButton = ({ videoUrl }) => {
             <div style={{ display: 'flex', gap: '8px' }}>
               <CButton size="sm" color="light" onClick={() => setIsMinimized(true)}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-dash" viewBox="0 0 16 16">
-                  <path d="M3.5 8a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 0 1h-8a.5.5 0 0 1-.5-.5z"/>
+                  <path d="M3.5 8a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 0 1h-8a.5.5 0 0 1-.5-.5z" />
                 </svg>
               </CButton>
               <CButton size="sm" color="light" onClick={() => setShowHelp(false)}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x" viewBox="0 0 16 16">
-                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
                 </svg>
               </CButton>
             </div>
@@ -69,28 +75,70 @@ const HelpButton = ({ videoUrl }) => {
       )}
 
       {isMinimized && (
-        <div style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          width: '300px',
-          backgroundColor: '#fff',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-          borderRadius: '8px',
-          overflow: 'hidden',
-          zIndex: 1050
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: '#f7f7f7', borderBottom: '1px solid #ddd' }}>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            width: '300px',
+            backgroundColor: '#fff',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            zIndex: 1050,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '8px',
+              backgroundColor: '#f7f7f7',
+              borderBottom: '1px solid #ddd',
+            }}
+          >
             <span style={{ fontWeight: 'bold' }}>Ayuda</span>
             <div>
-              <CButton size="sm" color="light" onClick={() => { setShowHelp(true); setIsMinimized(false); }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrows-fullscreen" viewBox="0 0 16 16">
-                  <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8z"/>
+              <CButton
+                size="sm"
+                color="light"
+                onClick={() => {
+                  setShowHelp(true);
+                  setIsMinimized(false);
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  className="bi bi-arrows-fullscreen"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8z"
+                  />
                 </svg>
               </CButton>
-              <CButton size="sm" color="light" onClick={() => { setShowHelp(false); setIsMinimized(false); }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x" viewBox="0 0 16 16">
-                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+              <CButton
+                size="sm"
+                color="light"
+                onClick={() => {
+                  setShowHelp(false);
+                  setIsMinimized(false);
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  className="bi bi-x"
+                  viewBox="0 0 16 16"
+                >
+                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
                 </svg>
               </CButton>
             </div>

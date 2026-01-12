@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -10,6 +10,11 @@ import {
   CNavItem,
   useColorModes,
   CButton,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import {
@@ -17,10 +22,101 @@ import {
   cilMoon,
   cilSun,
   cilAccountLogout,
+  cilHelp,
 } from '@coreui/icons'
 
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
+
+const HelpButton = () => {
+  const [showHelp, setShowHelp] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
+
+  // Obtener el rol desde el localStorage
+  const role = localStorage.getItem('rol')
+
+  // Seleccionar el video según el rol
+  const videoUrl = role === 'admin' ? '/videos/admin-tutorial.mp4' : '/videos/video.mp4'
+
+  return (
+    <>
+      {showHelp && !isMinimized && (
+        <CModal visible={showHelp} onClose={() => setShowHelp(false)}>
+          <CModalHeader>
+            <CModalTitle>Ayuda</CModalTitle>
+          </CModalHeader>
+          <CModalBody>
+            <video controls width="100%" style={{ borderRadius: '8px' }}>
+              <source src={videoUrl} type="video/mp4" />
+              Tu navegador no soporta la reproducción de video.
+            </video>
+          </CModalBody>
+          <CModalFooter>
+            <CButton style={{ backgroundColor: 'white', color: 'blue', borderColor: 'blue' }} onClick={() => setIsMinimized(true)}>
+              Minimizar
+            </CButton>
+          </CModalFooter>
+        </CModal>
+      )}
+
+      {isMinimized && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            width: '300px',
+            backgroundColor: '#fff',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            zIndex: 1050,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '8px',
+              backgroundColor: '#f7f7f7',
+              borderBottom: '1px solid #ddd',
+            }}
+          >
+            <span style={{ fontWeight: 'bold' }}>Ayuda</span>
+            <div>
+              <CButton
+                size="sm"
+                style={{ backgroundColor: 'white', color: 'red', borderColor: 'red' }}
+                onClick={() => {
+                  setShowHelp(false)
+                  setIsMinimized(false)
+                }}
+              >
+                Cerrar
+              </CButton>
+            </div>
+          </div>
+          <video controls width="100%" style={{ borderRadius: '0 0 8px 8px' }}>
+            <source src={videoUrl} type="video/mp4" />
+            Tu navegador no soporta la reproducción de video.
+          </video>
+        </div>
+      )}
+
+      <CNavItem>
+        <CNavLink
+          href="#"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setShowHelp(true)}
+          title="Ayuda del sistema"
+        >
+          <CIcon icon={cilHelp} size="lg" style={{ color: 'blue' }} />
+        </CNavLink>
+      </CNavItem>
+    </>
+  )
+}
 
 const AppHeader = () => {
   const headerRef = useRef()
@@ -72,21 +168,19 @@ const AppHeader = () => {
               <CIcon icon={colorMode === 'dark' ? cilSun : cilMoon} size="lg" />
             </CNavLink>
           </CNavItem>
+          <HelpButton />
           <CNavItem>
             {usuario ? (
-                      <CButton color="danger" variant="outline" onClick={handleLogout}>
-                        <CIcon icon={cilAccountLogout} className="me-2" />
-                        Cerrar sesión
-                      </CButton>
-            
-                      
-                    ) : (
-                      <CButton color="primary" variant="outline" onClick={handleLogin}>
-                        <CIcon icon={cilAccountLogout} className="me-2" />
-                        Iniciar sesión
-                      </CButton>
-                     )}
-           
+              <CButton color="danger" variant="outline" onClick={handleLogout}>
+                <CIcon icon={cilAccountLogout} className="me-2" />
+                Cerrar sesión
+              </CButton>
+            ) : (
+              <CButton color="primary" variant="outline" onClick={handleLogin}>
+                <CIcon icon={cilAccountLogout} className="me-2" />
+                Iniciar sesión
+              </CButton>
+            )}
           </CNavItem>
         </CHeaderNav>
       </CContainer>

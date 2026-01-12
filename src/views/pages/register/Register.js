@@ -11,6 +11,7 @@ const API = 'https://sistema-de-gestion-backend.onrender.com';
 
 const HelpButton = ({ videoUrl }) => {
   const [showHelp, setShowHelp] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   return (
     <>
@@ -18,22 +19,57 @@ const HelpButton = ({ videoUrl }) => {
         Ayuda
       </CButton>
 
-      <CModal visible={showHelp} onClose={() => setShowHelp(false)}>
-        <CModalHeader>
-          <CModalTitle>Ayuda</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <video controls width="100%" style={{ borderRadius: '8px' }}>
+      {showHelp && !isMinimized && (
+        <CModal visible={showHelp} onClose={() => setShowHelp(false)}>
+          <CModalHeader>
+            <CModalTitle>Ayuda</CModalTitle>
+          </CModalHeader>
+          <CModalBody>
+            <video controls width="100%" style={{ borderRadius: '8px' }}>
+              <source src={videoUrl} type="video/mp4" />
+              Tu navegador no soporta la reproducción de video.
+            </video>
+          </CModalBody>
+          <CModalFooter>
+            <CButton color="secondary" onClick={() => setShowHelp(false)}>
+              Cerrar
+            </CButton>
+            <CButton color="warning" onClick={() => setIsMinimized(true)}>
+              Minimizar
+            </CButton>
+          </CModalFooter>
+        </CModal>
+      )}
+
+      {isMinimized && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          width: '300px',
+          backgroundColor: '#fff',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          zIndex: 1050
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: '#f7f7f7', borderBottom: '1px solid #ddd' }}>
+            <span style={{ fontWeight: 'bold' }}>Ayuda</span>
+            <div>
+              <CButton size="sm" color="info" onClick={() => setShowHelp(true)} style={{ marginRight: '8px' }}>
+                Maximizar
+              </CButton>
+              <CButton size="sm" color="danger" onClick={() => { setShowHelp(false); setIsMinimized(false); }}>
+                Cerrar
+              </CButton>
+            </div>
+          </div>
+          <video controls width="100%" style={{ borderRadius: '0 0 8px 8px' }}>
             <source src={videoUrl} type="video/mp4" />
             Tu navegador no soporta la reproducción de video.
           </video>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setShowHelp(false)}>
-            Cerrar
-          </CButton>
-        </CModalFooter>
-      </CModal>
+        </div>
+      )}
     </>
   );
 };

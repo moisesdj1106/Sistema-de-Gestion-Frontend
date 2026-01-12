@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   CRow, CCol, CFormInput, CFormSelect, CButton, CCard, CCardBody, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CProgress
 } from '@coreui/react';
+import { CIcon } from '@coreui/icons-react';
+import { cilWindowMinimize, cilWindowMaximize, cilX } from '@coreui/icons';
 import bg from 'src/assets/images/carro.jpg';
 
 
@@ -12,17 +14,48 @@ const API = 'https://sistema-de-gestion-backend.onrender.com';
 const HelpButton = ({ videoUrl }) => {
   const [showHelp, setShowHelp] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const modalRef = useRef(null);
+
+  const handleDragStart = (e) => {
+    const rect = modalRef.current.getBoundingClientRect();
+    setDragPosition({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  const handleDrag = (e) => {
+    if (!modalRef.current || e.clientX === 0 || e.clientY === 0) return;
+    modalRef.current.style.left = `${e.clientX - dragPosition.x}px`;
+    modalRef.current.style.top = `${e.clientY - dragPosition.y}px`;
+  };
 
   return (
     <>
-      <CButton style={{backgroundColor:'blue', color:'white'}} onClick={() => setShowHelp(true)}>
+      <CButton color="info" onClick={() => setShowHelp(true)}>
         Ayuda
       </CButton>
 
       {showHelp && !isMinimized && (
-        <CModal visible={showHelp} onClose={() => setShowHelp(false)}>
+        <CModal
+          visible={showHelp}
+          onClose={() => setShowHelp(false)}
+          style={{ position: 'absolute', top: '20%', left: '30%' }}
+          ref={modalRef}
+          onMouseDown={handleDragStart}
+          onMouseMove={handleDrag}
+        >
           <CModalHeader>
             <CModalTitle>Ayuda</CModalTitle>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <CButton size="sm" color="light" onClick={() => setIsMinimized(true)}>
+                <CIcon content={cilWindowMinimize} />
+              </CButton>
+              <CButton size="sm" color="light" onClick={() => setShowHelp(false)}>
+                <CIcon content={cilX} />
+              </CButton>
+            </div>
           </CModalHeader>
           <CModalBody>
             <video controls width="100%" style={{ borderRadius: '8px' }}>
@@ -30,14 +63,6 @@ const HelpButton = ({ videoUrl }) => {
               Tu navegador no soporta la reproducción de video.
             </video>
           </CModalBody>
-          <CModalFooter>
-            <CButton color="secondary" onClick={() => setShowHelp(false)}>
-              Cerrar
-            </CButton>
-            <CButton color="warning" onClick={() => setIsMinimized(true)}>
-              Minimizar
-            </CButton>
-          </CModalFooter>
         </CModal>
       )}
 
@@ -56,11 +81,11 @@ const HelpButton = ({ videoUrl }) => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: '#f7f7f7', borderBottom: '1px solid #ddd' }}>
             <span style={{ fontWeight: 'bold' }}>Ayuda</span>
             <div>
-              <CButton size="sm" color="info" onClick={() => setShowHelp(true)} style={{ marginRight: '8px' }}>
-                Maximizar
+              <CButton size="sm" color="light" onClick={() => { setShowHelp(true); setIsMinimized(false); }}>
+                <CIcon content={cilWindowMaximize} />
               </CButton>
-              <CButton size="sm" color="danger" onClick={() => { setShowHelp(false); setIsMinimized(false); }}>
-                Cerrar
+              <CButton size="sm" color="light" onClick={() => { setShowHelp(false); setIsMinimized(false); }}>
+                <CIcon content={cilX} />
               </CButton>
             </div>
           </div>

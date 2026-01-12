@@ -3,8 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   CRow, CCol, CFormInput, CFormSelect, CButton, CCard, CCardBody, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CProgress
 } from '@coreui/react';
-import { CIcon } from '@coreui/icons-react';
-import { cilWindowMinimize, cilWindowMaximize, cilX } from '@coreui/icons';
 import bg from 'src/assets/images/carro.jpg';
 
 
@@ -50,10 +48,14 @@ const HelpButton = ({ videoUrl }) => {
             <CModalTitle>Ayuda</CModalTitle>
             <div style={{ display: 'flex', gap: '8px' }}>
               <CButton size="sm" color="light" onClick={() => setIsMinimized(true)}>
-                <CIcon content={cilWindowMinimize} />
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-dash" viewBox="0 0 16 16">
+                  <path d="M3.5 8a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 0 1h-8a.5.5 0 0 1-.5-.5z"/>
+                </svg>
               </CButton>
               <CButton size="sm" color="light" onClick={() => setShowHelp(false)}>
-                <CIcon content={cilX} />
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x" viewBox="0 0 16 16">
+                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
               </CButton>
             </div>
           </CModalHeader>
@@ -82,10 +84,14 @@ const HelpButton = ({ videoUrl }) => {
             <span style={{ fontWeight: 'bold' }}>Ayuda</span>
             <div>
               <CButton size="sm" color="light" onClick={() => { setShowHelp(true); setIsMinimized(false); }}>
-                <CIcon content={cilWindowMaximize} />
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrows-fullscreen" viewBox="0 0 16 16">
+                  <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8z"/>
+                </svg>
               </CButton>
               <CButton size="sm" color="light" onClick={() => { setShowHelp(false); setIsMinimized(false); }}>
-                <CIcon content={cilX} />
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x" viewBox="0 0 16 16">
+                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
               </CButton>
             </div>
           </div>

@@ -616,7 +616,7 @@ const Formulario = () => {
                   </CButton>
                 )}
                 <Link to="/login"><CButton style={{ backgroundColor: 'transparent', color: '#6b6b6b' }}>Login</CButton></Link>
-                <HelpButton videoUrl="/public/videos/video.mp4" />
+                <HelpButton videoUrl="/videos/video.mp4" />
               </div>
             </div>
           </form>

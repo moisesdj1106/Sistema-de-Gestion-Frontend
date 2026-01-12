@@ -31,9 +31,7 @@ const HelpButton = ({ videoUrl }) => {
             </video>
           </CModalBody>
           <CModalFooter>
-            <CButton style={{backgroundColor:'blue', color:'white'}} onClick={() => setShowHelp(false)}>
-              Cerrar
-            </CButton>
+
             <CButton style={{backgroundColor:'red', color:'white'}} onClick={() => setIsMinimized(true)}>
               Minimizar
             </CButton>

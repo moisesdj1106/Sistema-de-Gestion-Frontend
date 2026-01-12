@@ -36,7 +36,7 @@ const HelpButton = () => {
   const role = localStorage.getItem('rol')
 
   // Seleccionar el video según el rol
-  const videoUrl = role === 'admin' ? '/videos/admin-tutorial.mp4' : '/videos/user-tutorial.mp4'
+  const videoUrl = role === 'admin' ? '/videos/admin-tutorial.mp4' : '/videos/video.mp4'
 
   return (
     <>

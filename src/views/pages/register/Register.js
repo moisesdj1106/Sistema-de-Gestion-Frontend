@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   CRow, CCol, CFormInput, CFormSelect, CButton, CCard, CCardBody, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CProgress
 } from '@coreui/react';
-import ReactPlayer from 'react-player';
 import bg from 'src/assets/images/carro.jpg';
 
 
@@ -24,7 +23,10 @@ const HelpButton = ({ videoUrl }) => {
           <CModalTitle>Ayuda</CModalTitle>
         </CModalHeader>
         <CModalBody>
-          <ReactPlayer url={videoUrl} controls width="100%" />
+          <video controls width="100%" style={{ borderRadius: '8px' }}>
+            <source src={videoUrl} type="video/mp4" />
+            Tu navegador no soporta la reproducción de video.
+          </video>
         </CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setShowHelp(false)}>
@@ -614,7 +616,7 @@ const Formulario = () => {
                   </CButton>
                 )}
                 <Link to="/login"><CButton style={{ backgroundColor: 'transparent', color: '#6b6b6b' }}>Login</CButton></Link>
-                <HelpButton videoUrl="src/assets/videos/Video cortado.mp4" />
+                <HelpButton videoUrl="/public/videos/video.mp4" />
               </div>
             </div>
           </form>

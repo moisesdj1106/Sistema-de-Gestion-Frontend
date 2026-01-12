@@ -59,10 +59,12 @@ const RegistrarAfectacion = () => {
   const [msgAfectacion, setMsgAfectacion] = useState({ type: '', text: '' });
   const [msgDamnificado, setMsgDamnificado] = useState({ type: '', text: '' });
   const [msgVictima, setMsgVictima] = useState({ type: '', text: '' });
+  const [msgAfectado, setMsgAfectado] = useState({ type: '', text: '' });
 
   // Modales
   const [modalDamnificado, setModalDamnificado] = useState(false);
   const [modalVictima, setModalVictima] = useState(false);
+  const [modalAfectado, setModalAfectado] = useState(false);
 
   // Buscador de comunidades
   const [comunidadSearch, setComunidadSearch] = useState('');
@@ -161,8 +163,10 @@ const RegistrarAfectacion = () => {
     return '';
   };
   const validatePhone = (value) => {
-    if (!value) return 'Contacto obligatorio';
-    if (!/^(0414|0424|0422|0412|0416|0426)\d{7}$/.test(String(value).trim())) return 'Número inválido. Prefijo válido: 0414,0424,0422,0412,0416,0426 y 11 dígitos';
+    if (!value) return 'Teléfono obligatorio';
+    if (!/^(0414|0424|0416|0426|0412|0422)\d{7}$/.test(value)) {
+      return 'Teléfono inválido. Use prefijos válidos: 0414, 0424, 0416, 0426, 0412, 0422';
+    }
     return '';
   };
   const validateCertif = (v) => {
@@ -420,6 +424,86 @@ const RegistrarAfectacion = () => {
   };
 
 
+  // ---------- AFECTADO: handlers y validación ----------
+  const [formAfectado, setFormAfectado] = useState({
+    tipodo: '',
+    cedula: '',
+    nombre: '',
+    apelli: '',
+    telefono: ''
+  });
+  const [errorsAfectado, setErrorsAfectado] = useState({});
+
+  const handleChangeAfectado = (e) => {
+    const { name, value } = e.target;
+    let val = value;
+
+    if (name === 'cedula') {
+      const isPassport = isPassportId(formAfectado.coddoc);
+      val = isPassport ? val.replace(/[^A-Za-z0-9-]/g, '').toUpperCase() : val.replace(/\D/g, '');
+    }
+
+    if (name === 'telefono') {
+      val = val.replace(/\D/g, '');
+    }
+
+    setFormAfectado((prev) => ({ ...prev, [name]: val }));
+
+    // Validaciones en tiempo real
+    if (name === 'cedula') {
+      setErrorsAfectado((prev) => ({ ...prev, cedula: validateIdByDocType(val, formAfectado.coddoc) }));
+    } else if (name === 'telefono') {
+      setErrorsAfectado((prev) => ({ ...prev, telefono: validatePhone(val) }));
+    } else if (name === 'nombre') {
+      setErrorsAfectado((prev) => ({ ...prev, nombre: val.trim() ? '' : 'Nombre obligatorio' }));
+    } else if (name === 'apelli') {
+      setErrorsAfectado((prev) => ({ ...prev, apelli: val.trim() ? '' : 'Apellido obligatorio' }));
+    }
+  };
+
+  const validateAfectado = () => {
+    const errs = {};
+    if (!formAfectado.coddoc) errs.coddoc = 'Seleccione tipo de documento';
+    if (!formAfectado.cedula) errs.cedula = 'Documento obligatorio';
+    if (!formAfectado.nombre) errs.nombre = 'Nombre obligatorio';
+    if (!formAfectado.apelli) errs.apelli = 'Apellido obligatorio';
+    if (!formAfectado.telefono) errs.telefono = 'Teléfono obligatorio';
+    setErrorsAfectado(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmitAfectado = async (e) => {
+    e.preventDefault();
+    if (!validateAfectado()) return;
+
+    const payload = {
+      TTR_TIPODO: formAfectado.coddoc,
+      TTR_CEDULA: formAfectado.cedula,
+      TTR_NOMBRE: formAfectado.nombre,
+      TTR_APELLI: formAfectado.apelli,
+      TTR_TELEFO: formAfectado.telefono,
+      TTR_COAFEC: formAfectado.coafec,
+    };
+
+    try {
+      const res = await fetch(`${API}/personas-afectadas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMsgAfectado({ type: 'success', text: 'Afectado registrado correctamente.' });
+        setFormAfectado({ coddoc: '', cedula: '', nombre: '', apelli: '', telefono: '' });
+        setModalAfectado(false);
+      } else {
+        setMsgAfectado({ type: 'danger', text: data.message || 'Error al registrar afectado.' });
+      }
+    } catch (error) {
+      setMsgAfectado({ type: 'danger', text: 'Error de conexión al registrar afectado.' });
+    }
+  };
+
   // VALIDACIÓN EN TIEMPO REAL PARA PÉRDIDAS
   const validatePerdidaField = (name, value, extra) => {
     // name puede ser: coafec, coddoc, cedula, nombre, apelli
@@ -636,10 +720,6 @@ const RegistrarAfectacion = () => {
 
   return (
     <CContainer className="py-4">
-      <style>{`
-        .btn-hover-white { color: #212529 !important; transition: color 0.2s; }
-        .btn-hover-white:hover, .btn-hover-white:focus { color: #fff !important; }
-      `}</style>
       <CRow className="g-4 justify-content-center align-items-start">
         <CCol xs={12} md={10} lg={8} className="mx-auto">
           <CCard className="shadow-sm flex-fill d-flex flex-column" style={{ minHeight: 320 }}>
@@ -690,14 +770,14 @@ const RegistrarAfectacion = () => {
                   className="mb-2"
                 />
                 <CFormSelect
-                  label="Desastre"
+                  label="Afectacion natural"
                   name="codesa"
                   value={formAfectacion.codesa}
                   onChange={handleChange(setFormAfectacion, formAfectacion)}
                   required
                   className="mb-3"
                 >
-                  <option value="">Seleccione desastre</option>
+                  <option value="">Seleccione afectacion</option>
                   {desastres.map(d => (
                     <option key={d.TMA_CODESA} value={d.TMA_CODESA}>{d.TMA_NOMBRE}</option>
                   ))}
@@ -724,6 +804,9 @@ const RegistrarAfectacion = () => {
                 <CButton variant="outline" style={{ minWidth: 180 , marginLeft:'10px',backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={() => setModalPerdida(true)}>
                   Registrar Pérdida
                 </CButton>
+                <CButton variant="outline" style={{ minWidth: 180, marginLeft: '10px', backgroundColor: 'white', color: 'blue', borderColor: 'blue' }} onClick={() => setModalAfectado(true)}>
+                  Registrar Afectado
+                </CButton>
               </div>
             </CCardBody>
           </CCard>
@@ -744,7 +827,7 @@ const RegistrarAfectacion = () => {
               <div className="mb-3 text-secondary">
                 <strong>¿Quién es un damnificado?</strong>
                 <ul className="text-start" style={{ paddingLeft: 18, marginBottom: 0, marginTop: 8 }}>
-                  <li>Persona afectada directamente por el suceso.</li>
+                  <li>Persona afectada directamente por el suceso y que lo ha perdido prácticamente todo a causa de la afectación.</li>
                   <li>Debe tener sus datos personales y de contacto completos.</li>
                   <li>Recuerda registrar el tipo y número de documento correctamente.</li>
                 </ul>
@@ -1006,11 +1089,125 @@ const RegistrarAfectacion = () => {
         </CModalBody>
       </CModal>
 
- 
+      {/* Modal Afectado */}
+      <CModal visible={modalAfectado} onClose={() => {
+        setModalAfectado(false);
+        setErrorsAfectado({});
+        setFormAfectado({ coddoc: '', cedula: '', nombre: '', apelli: '', telefono: '' });
+      }} size="lg" backdrop="static" keyboard={false}>
+        <CModalHeader closeButton><strong>Registrar Afectado</strong></CModalHeader>
+        <CModalBody>
+          <CRow>
+            <CCol md={5} className="border-end">
+              <div className="mb-3 text-secondary">
+                <strong>¿Cómo registrar un afectado?</strong>
+                <ul className="text-start" style={{ paddingLeft: 18, marginBottom: 0, marginTop: 8 }}>
+                  <li>Seleccione el tipo de documento y complete el número correspondiente.</li>
+                  <li>Ingrese los datos personales del afectado, como nombres, apellidos, teléfono y dirección.</li>
+                  <li>Verifique que todos los campos estén completos antes de registrar.</li>
+                  <li>Afectado nos referimos a esa persona que se ha visto involucrada directamente o indirectamente en la afectación perdiendo algun tipo de bien de sus pertenencias.</li>
+                </ul>
+              </div>
+            </CCol>
+            <CCol md={7}>
+              <CForm onSubmit={handleSubmitAfectado}>
+                <CFormSelect
+                  label="Tipo de documento"
+                  name="coddoc"
+                  value={formAfectado.coddoc}
+                  onChange={handleChangeAfectado}
+                  className="mb-2"
+                  required
+                >
+                  <option value="">Seleccione tipo de documento</option>
+                  {tiposDoc.map(t => (<option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>{t.TMA_NOMBRE}</option>))}
+                </CFormSelect>
+                {errorsAfectado.coddoc && <div className="text-danger small mb-2">{errorsAfectado.coddoc}</div>}
+
+                <CFormInput
+                  label="Documento"
+                  name="cedula"
+                  placeholder='Ejm 1234567 o BF-905'
+                  value={formAfectado.cedula}
+                  onChange={handleChangeAfectado}
+                  className="mb-2"
+                  required
+                  maxLength={10}
+                  minLength={7}
+                />
+                {errorsAfectado.cedula && <div className="text-danger small mb-2">{errorsAfectado.cedula}</div>}
+
+                <CFormInput
+                  label="Nombres"
+                  name="nombre"
+                  placeholder=''
+                  value={formAfectado.nombre}
+                  onChange={handleChangeAfectado}
+                  className="mb-2"
+                  required
+                  maxLength={20}
+                  minLength={4}
+                />
+                {errorsAfectado.nombre && <div className="text-danger small mb-2">{errorsAfectado.nombre}</div>}
+
+                <CFormInput
+                  label="Apellidos"
+                  name="apelli"
+                  placeholder=''
+                  value={formAfectado.apelli}
+                  onChange={handleChangeAfectado}
+                  className="mb-2"
+                  required
+                  maxLength={20}
+                  minLength={3}
+                />
+                {errorsAfectado.apelli && <div className="text-danger small mb-2">{errorsAfectado.apelli}</div>}
+
+                <CFormInput
+                  label="Teléfono"
+                  name="telefono"
+                  placeholder='Ejm 04141234567'
+                  value={formAfectado.telefono}
+                  onChange={handleChangeAfectado}
+                  className="mb-2"
+                  required
+                  maxLength={11}
+                  minLength={11}
+                />
+                {errorsAfectado.telefono && <div className="text-danger small mb-2">{errorsAfectado.telefono}</div>}
+
+                <CFormSelect
+                  label="Afectación más reciente"
+                  name="coafec"
+                  value={formAfectado.coafec}
+                  onChange={handleChangeAfectado}
+                  className="mb-2"
+                  required
+                >
+                  <option value="">Seleccione afectación</option>
+                  {ultimaAfectacion && (
+                    <option value={ultimaAfectacion.TTR_COAFEC}>
+                      {(comunidadUltima?.TMA_NOMBRE || ultimaAfectacion.TTR_CODCOM) + ' - ' +
+                        (ultimaAfectacion.TTR_FEAFEC ? new Date(ultimaAfectacion.TTR_FEAFEC).toLocaleDateString('es-VE') : '')}
+                    </option>
+                  )}
+                </CFormSelect>
+                {errorsAfectado.coafec && <div className="text-danger small mb-2">{errorsAfectado.coafec}</div>}
+
+                {msgAfectado.text && <CAlert color={msgAfectado.type} className="mt-2 mb-1 py-2 text-center">{msgAfectado.text}</CAlert>}
+                <CModalFooter>
+                  <CButton style={{ backgroundColor: 'blue', color: 'white' }} type="submit">Registrar afectado</CButton>
+                </CModalFooter>
+              </CForm>
+            </CCol>
+          </CRow>
+        </CModalBody>
+      </CModal>
+
+      {/* Modal Pérdida */}
       <CModal visible={modalPerdida} onClose={() => {
         setModalPerdida(false);
         setErrorsPerdida({});
-
         setFormPerdida({ coafec: '', coddoc: '', cedula: '', nombre: '', apelli: '', perdidas: [] });
       }} size="lg" backdrop="static" keyboard={false}>
         <CModalHeader closeButton><strong>Registrar Pérdidas</strong></CModalHeader>
@@ -1028,8 +1225,6 @@ const RegistrarAfectacion = () => {
             </CCol>
             <CCol md={7}>
               <CForm onSubmit={handleSubmitPerdida}>
-                
-
                 <CFormSelect
                   label="Tipo de documento"
                   name="coddoc"

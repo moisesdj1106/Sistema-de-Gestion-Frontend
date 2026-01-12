@@ -131,6 +131,7 @@ const ResumenAfectacionesPorFecha = () => {
                   <CTableHeaderCell>¿Damnificados?</CTableHeaderCell>
                   <CTableHeaderCell>¿Víctimas?</CTableHeaderCell>
                   <CTableHeaderCell>¿Pérdidas?</CTableHeaderCell>
+                  <CTableHeaderCell>¿Afectados?</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
@@ -145,6 +146,7 @@ const ResumenAfectacionesPorFecha = () => {
                     <CTableDataCell>{a.tiene_damnificados ? 'Sí' : 'No'}</CTableDataCell>
                     <CTableDataCell>{a.tiene_victimas ? 'Sí' : 'No'}</CTableDataCell>
                     <CTableDataCell>{a.tiene_perdidas ? 'Sí' : 'No'}</CTableDataCell>
+                    <CTableDataCell>{a.tiene_afectados ? 'Sí' : 'No'}</CTableDataCell>
                   </CTableRow>
                 ))}
               </CTableBody>

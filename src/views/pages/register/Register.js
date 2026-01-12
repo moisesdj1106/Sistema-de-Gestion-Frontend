@@ -3,10 +3,38 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   CRow, CCol, CFormInput, CFormSelect, CButton, CCard, CCardBody, CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CProgress
 } from '@coreui/react';
+import ReactPlayer from 'react-player';
 import bg from 'src/assets/images/carro.jpg';
 
 
+/*const API = 'http://localhost:4000';*/
 const API = 'https://sistema-de-gestion-backend.onrender.com';
+
+const HelpButton = ({ videoUrl }) => {
+  const [showHelp, setShowHelp] = useState(false);
+
+  return (
+    <>
+      <CButton color="info" onClick={() => setShowHelp(true)}>
+        Ayuda
+      </CButton>
+
+      <CModal visible={showHelp} onClose={() => setShowHelp(false)}>
+        <CModalHeader>
+          <CModalTitle>Ayuda</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <ReactPlayer url={videoUrl} controls width="100%" />
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setShowHelp(false)}>
+            Cerrar
+          </CButton>
+        </CModalFooter>
+      </CModal>
+    </>
+  );
+};
 
 const Formulario = () => {
   const [step, setStep] = useState(1);
@@ -279,7 +307,7 @@ const Formulario = () => {
   const handleFechaChange = e => { setFechaNacimiento(e.target.value); validateField('fecha_nac', e.target.value); };
 
   const handleCodpais = e => { setCodpais(e.target.value); validateField('codpais', e.target.value); };
-  const handleCoesta = e => { setCoesta(e.target.value); validateField('coesta', e.target.value); };
+  const handleCoesta = e => { setCoEsta(e.target.value); validateField('coesta', e.target.value); };
   const handleComuni = e => { setComuni(e.target.value); validateField('comuni', e.target.value); };
   const handleCoparr = e => { setCoparr(e.target.value); validateField('coparr', e.target.value); };
   const handleCodcom = e => { setCodcom(e.target.value); validateField('codcom', e.target.value); };
@@ -586,6 +614,7 @@ const Formulario = () => {
                   </CButton>
                 )}
                 <Link to="/login"><CButton style={{ backgroundColor: 'transparent', color: '#6b6b6b' }}>Login</CButton></Link>
+                <HelpButton videoUrl="https://www.youtube.com/watch?v=ejemplo_video" />
               </div>
             </div>
           </form>
@@ -597,6 +626,8 @@ const Formulario = () => {
         <CModalBody className="text-center" style={{ whiteSpace: 'pre-wrap' }}>{modal.mensaje}</CModalBody>
         <CModalFooter><CButton style={{backgroundColor:'white', color:'#ff7043'}} onClick={handleCloseModal}>Aceptar</CButton></CModalFooter>
       </CModal>
+
+      
     </div>
   );
 };

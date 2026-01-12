@@ -240,7 +240,7 @@ const NoticiasBlog = () => {
           next.fuente = v ? null : 'La fuente es obligatoria.'
           break
         case 'codesa':
-          next.codesa = v ? null : 'Seleccione un desastre.'
+          next.codesa = v ? null : 'Seleccione una afectación.'
           break
         case 'telefono':
           if (!v) next.telefono = null
@@ -272,7 +272,7 @@ const NoticiasBlog = () => {
     if (!form.descripcion || form.descripcion.length !== 350) newErrors.descripcion = 'La descripción debe tener exactamente 350 caracteres.'
 
     if (!form.fuente || !form.fuente.trim()) newErrors.fuente = 'La fuente es obligatoria.'
-    if (!form.codesa) newErrors.codesa = 'Seleccione un desastre.'
+    if (!form.codesa) newErrors.codesa = 'Seleccione una afectación.'
 
     setErrors(newErrors)
     if (Object.keys(newErrors).length) {
@@ -391,12 +391,12 @@ const NoticiasBlog = () => {
 
             <CFormSelect
               name="codesa"
-              label="Desastre"
+              label="Afectación"
               value={form.codesa}
               onChange={handleChange}
               className="mb-1"
             >
-              <option value="">Seleccione un desastre</option>
+              <option value="">Seleccione una afectación</option>
               {desastres.map(d => (
                 <option key={d.TMA_CODESA} value={d.TMA_CODESA}>{d.TMA_NOMBRE}</option>
               ))}

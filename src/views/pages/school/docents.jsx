@@ -18,10 +18,10 @@ const DisasterInfo = () => {
           <CCard className="p-3 shadow-lg border-0">
             <CCardBody>
               <CCardTitle className="fs-2 fw-bold text-center mb-3" style={{ color: '#FF7043' }}>
-                ¿Qué es un Desastre Natural?
+                ¿Qué es una afectación natural?
               </CCardTitle>
               <CCardText style={{ textAlign: 'justify', fontSize: 17 }}>
-                Un <b>desastre natural</b> es un evento provocado por fuerzas de la naturaleza que causa daños significativos a personas, bienes y al entorno. Estos eventos pueden ser repentinos o desarrollarse con el tiempo, y suelen estar fuera del control humano. Ejemplos incluyen terremotos, inundaciones, huracanes, deslizamientos de tierra, tsunamis y erupciones volcánicas.
+                Es un evento provocado por fuerzas de la naturaleza que causa daños significativos a personas, bienes y al entorno. Estos eventos pueden ser repentinos o desarrollarse con el tiempo, y suelen estar fuera del control humano. Ejemplos incluyen terremotos, inundaciones, huracanes, deslizamientos de tierra, tsunamis y erupciones volcánicas.
               </CCardText>
               <CCardText className="mt-3" style={{ textAlign: 'justify', fontSize: 16 }}>
                 <b>Puntos resaltantes:</b>

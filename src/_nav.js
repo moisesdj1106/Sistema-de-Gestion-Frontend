@@ -79,18 +79,7 @@ export default function getNav() {
               to: '/noticias',
               icon: <CIcon icon={cilBullhorn} customClassName="nav-icon" />,
             },
-            {
-              component: CNavItem,
-              name: 'Donante',
-              to: '/donantes',
-              icon: <CIcon icon={cilHeart} customClassName="nav-icon" />,
-            },
-            {
-              component: CNavItem,
-              name: 'Donación',
-              to: '/donaciones',
-              icon: <CIcon icon={cilGift} customClassName="nav-icon" />,
-            },
+           
             
           ],
         },
@@ -118,6 +107,12 @@ export default function getNav() {
           icon: <CIcon icon={cilMedicalCross} customClassName="nav-icon" />,
         },
         {
+              component: CNavItem,
+              name: 'Afectados',
+              to: '/afectados',
+              icon: <CIcon icon={cilGift} customClassName="nav-icon" />,
+        },
+        {
           component: CNavItem,
           name: 'Perdidas Materiales',
           to: '/perdidas',
@@ -132,18 +127,7 @@ export default function getNav() {
           name: 'Listados',
           icon: <CIcon icon={cilChevronBottom} customClassName="nav-icon" />,
           items: [
-            {
-          component: CNavItem,
-          name: 'Listado Donaciones',
-          to: '/estudiantes',
-          icon: <CIcon icon={cilList} customClassName="nav-icon" />,
-        },
-        {
-          component: CNavItem,
-          name: 'Listado Donantes',
-          to: '/lista',
-          icon: <CIcon icon={cilList} customClassName="nav-icon" />,
-        },
+           
         {
           component: CNavItem,
           name: 'Listado Afectaciones',
@@ -226,12 +210,12 @@ export default function getNav() {
           to: '/desbordes',
           icon: <CIcon icon={cilRain} customClassName="nav-icon" />,
         },
-        {
+        /*{
           component: CNavItem,
           name: 'Registrar Comunidad',
           to: '/comunidad',
           icon: <CIcon icon={cilGlobeAlt} customClassName="nav-icon" />,
-        },
+        },*/
         {
           component: CNavItem,
           name: 'afectaciones',
@@ -239,7 +223,7 @@ export default function getNav() {
           icon: <CIcon icon={cilHospital} customClassName="nav-icon" />,
         },
        
-         {
+         /*{
           component: CNavItem,
           name: 'Donantes',
           to: '/donantes',
@@ -250,7 +234,7 @@ export default function getNav() {
           name: 'Donaciones',
           to: '/donaciones',
           icon: <CIcon icon={cilGift} customClassName="nav-icon" />,
-        },
+        },*/
        
         {
           component: CNavItem,

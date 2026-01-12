@@ -6,8 +6,8 @@ import {
 import bg from 'src/assets/images/carro.jpg';
 
 
-/*const API = 'http://localhost:4000';*/
-const API = 'https://sistema-de-gestion-backend.onrender.com';
+const API = 'http://localhost:4000';
+/*const API = 'https://sistema-de-gestion-backend.onrender.com';*/
 
 const HelpButton = ({ videoUrl }) => {
   const [showHelp, setShowHelp] = useState(false);
@@ -15,7 +15,17 @@ const HelpButton = ({ videoUrl }) => {
 
   return (
     <>
-      <CButton style={{backgroundColor:'blue', color:'white'}} onClick={() => setShowHelp(true)}>
+      <CButton 
+        style={{ 
+          backgroundColor: 'blue', 
+          color: 'white', 
+          width: '100%', // Ajuste para ocupar todo el ancho en dispositivos pequeños
+          maxWidth: '200px', // Ancho máximo para pantallas grandes
+          margin: '0 auto', // Centrado
+          display: 'block' // Asegura que el botón esté en su propia línea
+        }} 
+        onClick={() => setShowHelp(true)}
+      >
         Ayuda
       </CButton>
 
@@ -341,7 +351,7 @@ const Formulario = () => {
   const handleFechaChange = e => { setFechaNacimiento(e.target.value); validateField('fecha_nac', e.target.value); };
 
   const handleCodpais = e => { setCodpais(e.target.value); validateField('codpais', e.target.value); };
-  const handleCoesta = e => { setCoEsta(e.target.value); validateField('coesta', e.target.value); };
+  const handleCoesta = e => { setCoesta(e.target.value); validateField('coesta', e.target.value); };
   const handleComuni = e => { setComuni(e.target.value); validateField('comuni', e.target.value); };
   const handleCoparr = e => { setCoparr(e.target.value); validateField('coparr', e.target.value); };
   const handleCodcom = e => { setCodcom(e.target.value); validateField('codcom', e.target.value); };

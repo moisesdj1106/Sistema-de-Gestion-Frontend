@@ -22,7 +22,7 @@ import {
   cilMoon,
   cilSun,
   cilAccountLogout,
-  cilHelp,
+  cilInfo,
 } from '@coreui/icons'
 
 import { AppBreadcrumb } from './index'
@@ -36,7 +36,7 @@ const HelpButton = () => {
   const role = localStorage.getItem('rol')
 
   // Seleccionar el video según el rol
-  const videoUrl = role === 'admin' ? '/videos/admin-tutorial.mp4' : '/videos/video.mp4'
+  const videoUrl = role === 'admin' ? '/videos/admin-tutorial.mp4' : '/videos/user-tutorial.mp4'
 
   return (
     <>
@@ -111,7 +111,7 @@ const HelpButton = () => {
           onClick={() => setShowHelp(true)}
           title="Ayuda del sistema"
         >
-          <CIcon icon={cilHelp} size="lg" style={{ color: 'blue' }} />
+          <CIcon icon={cilInfo} size="lg" style={{ color: 'blue' }} />
         </CNavLink>
       </CNavItem>
     </>

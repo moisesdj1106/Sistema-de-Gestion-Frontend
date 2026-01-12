@@ -12,22 +12,6 @@ const API = 'https://sistema-de-gestion-backend.onrender.com';
 const HelpButton = ({ videoUrl }) => {
   const [showHelp, setShowHelp] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [dragPosition, setDragPosition] = useState({ x: 20, y: window.innerHeight - 300 });
-  const modalRef = useRef(null);
-
-  const handleDragStart = (e) => {
-    const rect = modalRef.current.getBoundingClientRect();
-    setDragPosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
-  const handleDrag = (e) => {
-    if (!modalRef.current || e.clientX === 0 || e.clientY === 0) return;
-    modalRef.current.style.left = `${e.clientX - dragPosition.x}px`;
-    modalRef.current.style.top = `${e.clientY - dragPosition.y}px`;
-  };
 
   return (
     <>
@@ -36,35 +20,9 @@ const HelpButton = ({ videoUrl }) => {
       </CButton>
 
       {showHelp && !isMinimized && (
-        <CModal
-          visible={showHelp}
-          onClose={() => setShowHelp(false)}
-          style={{
-            position: 'absolute',
-            top: `${dragPosition.y}px`,
-            left: `${dragPosition.x}px`,
-            zIndex: 1050,
-            backgroundColor: 'rgba(255, 255, 255, 1)',
-            width: '300px',
-          }}
-          ref={modalRef}
-          onMouseDown={handleDragStart}
-          onMouseMove={handleDrag}
-        >
+        <CModal visible={showHelp} onClose={() => setShowHelp(false)}>
           <CModalHeader>
             <CModalTitle>Ayuda</CModalTitle>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <CButton size="sm" style={{backgroundColor:'white', color:'blue', borderColor:'blue'}} onClick={() => setIsMinimized(true)}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-dash" viewBox="0 0 16 16">
-                  <path d="M3.5 8a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 0 1h-8a.5.5 0 0 1-.5-.5z" />
-                </svg>
-              </CButton>
-              <CButton size="sm" style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => setShowHelp(false)}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x" viewBox="0 0 16 16">
-                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
-                </svg>
-              </CButton>
-            </div>
           </CModalHeader>
           <CModalBody>
             <video controls width="100%" style={{ borderRadius: '8px' }}>
@@ -72,75 +30,33 @@ const HelpButton = ({ videoUrl }) => {
               Tu navegador no soporta la reproducción de video.
             </video>
           </CModalBody>
+          <CModalFooter>
+
+            <CButton style={{backgroundColor:'white', color:'blue', borderColor:'blue'}} onClick={() => setIsMinimized(true)}>
+              Minimizar
+            </CButton>
+          </CModalFooter>
         </CModal>
       )}
 
       {isMinimized && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            width: '300px',
-            backgroundColor: '#fff',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            zIndex: 1050,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '8px',
-              backgroundColor: '#f7f7f7',
-              borderBottom: '1px solid #ddd',
-            }}
-          >
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          width: '300px',
+          backgroundColor: '#fff',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          zIndex: 1050
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: '#f7f7f7', borderBottom: '1px solid #ddd' }}>
             <span style={{ fontWeight: 'bold' }}>Ayuda</span>
             <div>
-              <CButton
-                size="sm"
-                style={{backgroundColor:'white', color:'blue', borderColor:'blue'}}
-                onClick={() => {
-                  setShowHelp(true);
-                  setIsMinimized(false);
-                }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  fill="currentColor"
-                  className="bi bi-arrows-fullscreen"
-                  viewBox="0 0 16 16"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8z"
-                  />
-                </svg>
-              </CButton>
-              <CButton
-                size="sm"
-                style={{backgroundColor:'white', color:'red', borderColor:'red'}}
-                onClick={() => {
-                  setShowHelp(false);
-                  setIsMinimized(false);
-                }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  fill="currentColor"
-                  className="bi bi-x"
-                  viewBox="0 0 16 16"
-                >
-                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
-                </svg>
+             
+              <CButton size="sm" style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => { setShowHelp(false); setIsMinimized(false); }}>
+                Cerrar
               </CButton>
             </div>
           </div>

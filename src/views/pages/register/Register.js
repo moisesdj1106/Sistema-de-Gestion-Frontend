@@ -31,10 +31,10 @@ const HelpButton = ({ videoUrl }) => {
             </video>
           </CModalBody>
           <CModalFooter>
-            <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => setShowHelp(false)}>
+            <CButton style={{backgroundColor:'blue', color:'white'}} onClick={() => setShowHelp(false)}>
               Cerrar
             </CButton>
-            <CButton style={{backgroundColor:'white', color:'blue', borderColor:'blue'}} onClick={() => setIsMinimized(true)}>
+            <CButton style={{backgroundColor:'red', color:'white'}} onClick={() => setIsMinimized(true)}>
               Minimizar
             </CButton>
           </CModalFooter>
@@ -56,10 +56,8 @@ const HelpButton = ({ videoUrl }) => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', backgroundColor: '#f7f7f7', borderBottom: '1px solid #ddd' }}>
             <span style={{ fontWeight: 'bold' }}>Ayuda</span>
             <div>
-              <CButton size="sm" color="info" onClick={() => setShowHelp(true)} style={{ marginRight: '8px' }}>
-                Maximizar
-              </CButton>
-              <CButton size="sm" color="danger" onClick={() => { setShowHelp(false); setIsMinimized(false); }}>
+             
+              <CButton size="sm" style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => { setShowHelp(false); setIsMinimized(false); }}>
                 Cerrar
               </CButton>
             </div>

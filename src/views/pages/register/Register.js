@@ -14,7 +14,7 @@ const HelpButton = ({ videoUrl }) => {
 
   return (
     <>
-      <CButton color="info" onClick={() => setShowHelp(true)}>
+      <CButton style={{backgroundColor:'blue', color:'white'}} onClick={() => setShowHelp(true)}>
         Ayuda
       </CButton>
 

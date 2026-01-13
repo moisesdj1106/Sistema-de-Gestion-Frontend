@@ -6,8 +6,8 @@ import {
 import bg from 'src/assets/images/carro.jpg';
 
 
-const API = 'http://localhost:4000';
-/*const API = 'https://sistema-de-gestion-backend.onrender.com';*/
+/*const API = 'http://localhost:4000';*/
+const API = 'https://sistema-de-gestion-backend.onrender.com';
 
 const HelpButton = ({ videoUrl }) => {
   const [showHelp, setShowHelp] = useState(false);

@@ -38,6 +38,26 @@ const HelpButton = () => {
   // Seleccionar el video según el rol
   const videoUrl = role === 'admin' ? '/videos/usuario.mp4' : '/videos/usuario.mp4'
 
+  const markers = [
+    { time: 5, label: 'Introducción' },
+    { time: 87, label: 'Modulo Noticias' },
+    { time: 200, label: 'Modulo afectación' },
+    { time: 260, label: 'Damnificado' },
+    { time: 328, label: 'Victima' },
+    { time: 360, label: 'Pérdidas' },
+    { time: 390, label: 'Afectado' },
+    { time: 417, label: 'Zonas de riesgo' },
+    { time: 425, label: 'Dashboard' },
+  ];
+
+  const jumpToMarker = (time) => {
+    const video = document.getElementById('help-video');
+    if (video) {
+      video.currentTime = time;
+      video.play();
+    }
+  };
+
   return (
     <>
       {showHelp && !isMinimized && (
@@ -46,10 +66,39 @@ const HelpButton = () => {
             <CModalTitle>Ayuda</CModalTitle>
           </CModalHeader>
           <CModalBody>
-            <video controls width="100%" style={{ borderRadius: '8px' }}>
+            <video id="help-video" controls width="100%" style={{ borderRadius: '8px' }}>
               <source src={videoUrl} type="video/mp4" />
               Tu navegador no soporta la reproducción de video.
             </video>
+
+            <div style={{ marginTop: '10px' }}>
+              <h4>Atajos:</h4>
+              <p style={{textAlign:'justify'}}>Si buscas una parte en especifico del sistema, utiliza un atajo para adelantar el tutorial, si es tu primera vez acá te recomiendo ver todo el tutorial</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                {markers.map((marker, index) => (
+                  <button 
+                    key={index}
+                    onClick={() => jumpToMarker(marker.time)}
+                    style={{
+                      backgroundColor: '#007BFF',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      padding: '10px 15px',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                      transition: 'background-color 0.3s ease',
+                      flex: '1 1 calc(50% - 10px)', // Dos botones por fila
+                      textAlign: 'center'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#0056b3'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = '#007BFF'}
+                  >
+                    {marker.label} ({marker.time}s)
+                  </button>
+                ))}
+              </div>
+            </div>
           </CModalBody>
           <CModalFooter>
             <CButton style={{ backgroundColor: 'white', color: 'blue', borderColor: 'blue' }} onClick={() => setIsMinimized(true)}>
@@ -97,7 +146,7 @@ const HelpButton = () => {
               </CButton>
             </div>
           </div>
-          <video controls width="100%" style={{ borderRadius: '0 0 8px 8px' }}>
+          <video id="help-video" controls width="100%" style={{ borderRadius: '0 0 8px 8px' }}>
             <source src={videoUrl} type="video/mp4" />
             Tu navegador no soporta la reproducción de video.
           </video>

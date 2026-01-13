@@ -6,12 +6,30 @@ import {
 import bg from 'src/assets/images/carro.jpg';
 
 
-/*const API = 'http://localhost:4000';*/
-const API = 'https://sistema-de-gestion-backend.onrender.com';
+const API = 'http://localhost:4000';
+/*const API = 'https://sistema-de-gestion-backend.onrender.com';*/
 
 const HelpButton = ({ videoUrl }) => {
   const [showHelp, setShowHelp] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+
+  const markers = [
+    { time: 10, label: 'Introducción' },
+
+    { time: 30, label: 'Datos personales' },
+
+    { time: 152, label: 'Datos de residencia' },
+    
+    { time: 243, label: 'Datos de la cuenta' },
+  ];
+
+  const jumpToMarker = (time) => {
+    const video = document.getElementById('help-video');
+    if (video) {
+      video.currentTime = time;
+      video.play();
+    }
+  };
 
   return (
     <>
@@ -35,13 +53,40 @@ const HelpButton = ({ videoUrl }) => {
             <CModalTitle>Ayuda</CModalTitle>
           </CModalHeader>
           <CModalBody>
-            <video controls width="100%" style={{ borderRadius: '8px' }}>
+            <video id="help-video" controls width="100%" style={{ borderRadius: '8px' }}>
               <source src={videoUrl} type="video/mp4" />
               Tu navegador no soporta la reproducción de video.
             </video>
+            <div style={{ marginTop: '10px' }}>
+              <h4>Atajos:</h4>
+              <p style={{textAlign:'justify'}}>Si buscas una parte en especifico del registro, utiliza un atajo para adelantar el tutorial, si es tu primera vez acá te recomiendo ver todo el tutorial</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                {markers.map((marker, index) => (
+                  <button 
+                    key={index}
+                    onClick={() => jumpToMarker(marker.time)}
+                    style={{
+                      backgroundColor: '#007BFF',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      padding: '10px 15px',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                      transition: 'background-color 0.3s ease',
+                      flex: '1 1 calc(50% - 10px)', // Dos botones por fila
+                      textAlign: 'center'
+                    }}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#0056b3'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = '#007BFF'}
+                  >
+                    {marker.label} ({marker.time}s)
+                  </button>
+                ))}
+              </div>
+            </div>
           </CModalBody>
           <CModalFooter>
-
             <CButton style={{backgroundColor:'white', color:'blue', borderColor:'blue'}} onClick={() => setIsMinimized(true)}>
               Minimizar
             </CButton>
@@ -70,7 +115,7 @@ const HelpButton = ({ videoUrl }) => {
               </CButton>
             </div>
           </div>
-          <video controls width="100%" style={{ borderRadius: '0 0 8px 8px' }}>
+          <video id="help-video-minimized" controls width="100%" style={{ borderRadius: '0 0 8px 8px' }}>
             <source src={videoUrl} type="video/mp4" />
             Tu navegador no soporta la reproducción de video.
           </video>

@@ -1,26 +1,25 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import {
   CCard, CCardBody, CCol, CRow, CCardHeader,
-} from '@coreui/react'
-import { Bar, Pie } from 'react-chartjs-2'
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title } from 'chart.js'
-import ChartDataLabels from 'chartjs-plugin-datalabels'
+} from '@coreui/react';
+import { Bar, Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title, ChartDataLabels)
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title, ChartDataLabels);
 
 const Dashboard = () => {
-  const [dashboard, setDashboard] = useState(null)
+  const [dashboard, setDashboard] = useState(null);
 
   useEffect(() => {
-    /*fetch('http://localhost:4000/dashboard')*/
     fetch('https://sistema-de-gestion-backend.onrender.com/dashboard')
       .then(res => res.json())
-      .then(setDashboard)
-  }, [])
+      .then(setDashboard);
+  }, []);
 
-  if (!dashboard) return <div>Cargando...</div>
+  if (!dashboard) return <div>Cargando...</div>;
 
-  const { resumen, desastresPorTipo, estadosSalud, perdidasPorTipo } = dashboard
+  const { resumen, desastresPorTipo, estadosSalud, perdidasPorTipo } = dashboard;
 
   // Gráfica de barras: cantidad de desastres por tipo
   const barData = {
@@ -33,21 +32,26 @@ const Dashboard = () => {
         borderRadius: 8,
       },
     ],
-  }
+  };
 
   const barOptions = {
     responsive: true,
     plugins: {
       legend: { display: false },
       title: { display: true, text: 'Cantidad de Desastres por Tipo' },
+      datalabels: {
+        color: 'white',
+        font: { weight: 'bold' },
+        formatter: (value) => value,
+      },
     },
     scales: {
       y: { beginAtZero: true, stepSize: 1 },
     },
-  }
+  };
 
-  // Gráfica de torta: estados de salud de damnificados + víctimas fatales
-  const totalEstados = estadosSalud.reduce((acc, e) => acc + e.cantidad, 0)
+  // Gráfica de torta: estados de salud de damnificados
+  const totalEstados = estadosSalud.reduce((acc, e) => acc + e.cantidad, 0);
   const estadosSaludPieData = {
     labels: estadosSalud.map(e => e.estado),
     datasets: [
@@ -61,47 +65,37 @@ const Dashboard = () => {
           '#20c997', // verde
           '#6f42c1', // morado
           '#fd7e14', // naranja
-          '#343a40', // gris oscuro para "Fallecidos" si quieres
+          '#343a40', // gris oscuro
         ],
       },
     ],
-  }
+  };
 
   const estadosSaludPieOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'bottom' },
-      title: { display: true, text: 'Estados de Salud de Damnificados y Fallecidos' },
+      title: { display: true, text: 'Estados de Salud de Damnificados' },
       datalabels: {
         color: 'white',
         font: { weight: 'bold' },
-        formatter: (value, context) => {
-          const percent = totalEstados ? (value / totalEstados * 100) : 0
-          return percent > 0 ? percent.toFixed(1) + '%' : ''
-        }
-      }
+        formatter: (value) => value,
+      },
     },
-  }
+  };
 
   // Gráfica de torta: pérdidas por tipo
-  const totalPerdidas = perdidasPorTipo.reduce((acc, d) => acc + d.cantidad, 0)
   const perdidasPieData = {
-    labels: perdidasPorTipo.map(d => d.tipo),
+    labels: perdidasPorTipo.map(p => p.tipo),
     datasets: [
       {
-        label: 'Pérdidas por tipo',
-        data: perdidasPorTipo.map(d => d.cantidad),
-        backgroundColor: [
-          '#0d6efd',
-          '#20c997',
-          '#ffc107',
-          '#dc3545',
-          '#6f42c1'
-        ],
+        label: 'Pérdidas por Tipo',
+        data: perdidasPorTipo.map(p => p.cantidad),
+        backgroundColor: ['#0d6efd', '#ffc107', '#dc3545', '#20c997', '#6f42c1'],
       },
     ],
-  }
+  };
 
   const perdidasPieOptions = {
     responsive: true,
@@ -112,13 +106,10 @@ const Dashboard = () => {
       datalabels: {
         color: 'white',
         font: { weight: 'bold' },
-        formatter: (value, context) => {
-          const percent = totalPerdidas ? (value / totalPerdidas * 100) : 0
-          return percent > 0 ? percent.toFixed(1) + '%' : ''
-        }
-      }
+        formatter: (value) => value,
+      },
     },
-  }
+  };
 
   return (
     <div className="container-fluid py-4">
@@ -152,20 +143,22 @@ const Dashboard = () => {
         </CCol>
         <CCol md={6} className="mb-4">
           <CCard className="shadow">
-            <CCardHeader className="fw-bold">Estados de Salud de Damnificados y Fallecidos</CCardHeader>
+            <CCardHeader className="fw-bold">Estados de Salud y Pérdidas por Tipo</CCardHeader>
             <CCardBody>
-              <div style={{ width: 300, height: 300, margin: "0 auto"}}>
-                <Pie data={estadosSaludPieData} options={estadosSaludPieOptions} plugins={[ChartDataLabels]} />
-              </div>
-              <div style={{ width: 300, height: 300, margin: "20px auto 0 auto" }}>
-                <Pie data={perdidasPieData} options={perdidasPieOptions} plugins={[ChartDataLabels]} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <div style={{ width: 300, height: 300 }}>
+                  <Pie data={estadosSaludPieData} options={estadosSaludPieOptions} plugins={[ChartDataLabels]} />
+                </div>
+                <div style={{ width: 300, height: 300 }}>
+                  <Pie data={perdidasPieData} options={perdidasPieOptions} />
+                </div>
               </div>
             </CCardBody>
           </CCard>
         </CCol>
       </CRow>
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;

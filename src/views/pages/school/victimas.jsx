@@ -15,7 +15,7 @@ const VictimasModulo = () => {
   // Modal edición
   const [visible, setVisible] = useState(false);
   const [editForm, setEditForm] = useState({
-    cedula: '', tipodo: '', nombre: '', apelli: '', coafec: '', certif: ''
+    cedula: '', tipodo: '', nombre: '', apelli: '', coafec: ''
   });
   const [tiposDoc, setTiposDoc] = useState([]);
   const [afectaciones, setAfectaciones] = useState([]);
@@ -48,8 +48,7 @@ const VictimasModulo = () => {
       tipodo: v.TTR_TIPODO || '',
       nombre: v.TTR_NOMBRE || '',
       apelli: v.TTR_APELLI || '',
-      coafec: v.TTR_COAFEC || '',
-      certif: v.TTR_CERTIF || ''
+      coafec: v.TTR_COAFEC || ''
     });
     setEditId(v.TTR_COVICT);
     setErrorsEdit({});
@@ -64,7 +63,6 @@ const VictimasModulo = () => {
   const nombreRef = useRef(null);
   const apelliRef = useRef(null);
   const coafecRef = useRef(null);
-  const certifRef = useRef(null);
   const saveRef = useRef(null);
 
   const handleEnter = (e, nextRef) => {
@@ -225,7 +223,7 @@ const VictimasModulo = () => {
   };
 
   const validateEditAll = () => {
-    const fields = ['nombre','apelli','cedula','tipodo','coafec','certif'];
+    const fields = ['nombre','apelli','cedula','tipodo','coafec'];
     const newErr = {};
     fields.forEach(f => {
       const ok = validateEditField(f, editForm[f]);
@@ -238,7 +236,7 @@ const VictimasModulo = () => {
     e.preventDefault();
     setApiError('');
     // validar todos los campos
-    const fieldsOrder = ['nombre','apelli','cedula','tipodo','certif','coafec'];
+    const fieldsOrder = ['nombre','apelli','cedula','tipodo','coafec'];
     const newErrors = {};
     for (const f of fieldsOrder) {
       const ok = validateEditField(f, editForm[f]);
@@ -248,7 +246,7 @@ const VictimasModulo = () => {
 
     const firstError = fieldsOrder.find(f => errorsEdit[f] || newErrors[f]);
     if (firstError) {
-      const map = { nombre: nombreRef, apelli: apelliRef, cedula: cedulaRef, tipodo: tipodoRef, certif: certifRef, coafec: coafecRef };
+      const map = { nombre: nombreRef, apelli: apelliRef, cedula: cedulaRef, tipodo: tipodoRef, coafec: coafecRef };
       if (map[firstError] && map[firstError].current) map[firstError].current.focus();
       return;
     }
@@ -269,7 +267,7 @@ const VictimasModulo = () => {
         setVisible(false);
         fetchData();
         // limpiar después de guardar
-        setEditForm({ cedula: '', tipodo: '', nombre: '', apelli: '', coafec: '', certif: '' });
+        setEditForm({ cedula: '', tipodo: '', nombre: '', apelli: '', coafec: '' });
         setErrorsEdit({});
         setEditId(null);
       } else {
@@ -389,22 +387,6 @@ const VictimasModulo = () => {
               pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]+$" title="Solo letras y espacios" />
             {errorsEdit.apelli && <div className="text-danger small mb-2">{errorsEdit.apelli}</div>}
             {errorsEdit.tipodo && <div className="text-danger small mb-2">{errorsEdit.tipodo}</div>}
-
-            <CFormInput
-              className="mb-2"
-              label="Certificado"
-              name="certif"
-              maxLength={9}
-              value={editForm.certif}
-              onChange={handleEditChange}
-              ref={certifRef}
-              onKeyDown={e => handleEnter(e, coafecRef)}
-              inputMode="text"
-              pattern="^[A-Z0-9-]{0,9}$"
-              title="Solo letras mayúsculas, números y guion (máx. 9)"
-              placeholder="Ej: ABC-1234"
-            />
-            {errorsEdit.certif && <div className="text-danger small mb-2">{errorsEdit.certif}</div>}
 
             <CFormSelect className="mb-2" label="Comunidad afectada" name="coafec" value={editForm.coafec} onChange={handleEditChange} required ref={coafecRef} onKeyDown={e => handleEnter(e, saveRef)}>
               <option value="">Seleccione afectación</option>

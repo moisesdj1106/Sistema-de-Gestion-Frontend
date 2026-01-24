@@ -214,9 +214,7 @@ const ListarAfectados = () => {
     }
   };
 
-  /* =======================
-     FILTRO
-  ======================= */
+
   const filteredAfectados = afectados.filter(
     (a) =>
       a.TTR_NOMBRE?.toLowerCase().includes(search.toLowerCase()) ||
@@ -270,7 +268,7 @@ const ListarAfectados = () => {
                   <CTableDataCell>{getComunidad(a.TTR_COAFEC)}</CTableDataCell>
                   <CTableDataCell>
                     <CButton
-                      color="warning"
+                      style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}}
                       size="sm"
                       onClick={() => handleEdit(a)}
                       className="me-2"
@@ -278,7 +276,7 @@ const ListarAfectados = () => {
                       Editar
                     </CButton>
                     <CButton
-                      color="danger"
+                      style={{backgroundColor:'white', color:'red', borderColor:'red'}}
                       size="sm"
                       onClick={() => handleDelete(a)}
                     >

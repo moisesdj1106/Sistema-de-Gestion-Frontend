@@ -54,7 +54,7 @@ const Login = () => {
                   <CForm onSubmit={handleLogin}>
                     <h1 className="text-black fw-bold mb-3">Iniciar Sesión</h1>
                     <p className="mb-4" style={{ color: '#1976D2', fontWeight: 500 }}>
-                      Accede a la plataforma de gestión de desastres
+                      Accede a la plataforma de gestión de afectaciones Naturales
                     </p>
                     <div className="mb-3 text-secondary" style={{ fontStyle: 'italic', fontSize: 15 }}>
                       "Preparados para ayudar, unidos para salvar"
@@ -120,7 +120,7 @@ const Login = () => {
                   <div>
                     <h2 className="fw-bold mb-3">¡Bienvenido!</h2>
                     <p className="mb-4" style={{ fontSize: 17 }}>
-                      Únete a nuestra comunidad y contribuye a la gestión y prevención de desastres en tu localidad.
+                      Únete a nuestra comunidad y contribuye a la gestión y prevención de afectaciones Naturales en tu localidad.
                     </p>
                     <Link to="/register">
                       <CButton color="light" className="mt-3 fw-bold text-black" active tabIndex={-1}>

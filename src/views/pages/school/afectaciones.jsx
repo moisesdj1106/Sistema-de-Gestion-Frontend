@@ -35,7 +35,6 @@ const RegistrarAfectacion = () => {
     tipodo: '',
     nombre: '',
     apelli: '',
-    certif: '',
     coafec: ''
   });
   const [errorsVictima, setErrorsVictima] = useState({});
@@ -189,7 +188,6 @@ const RegistrarAfectacion = () => {
   const victCeduRef = useRef(null);
   const victNombreRef = useRef(null);
   const victApelliRef = useRef(null);
-  const victCertifRef = useRef(null);
   const victCoafecRef = useRef(null);
 
   const perCoafecRef = useRef(null);
@@ -321,14 +319,6 @@ const RegistrarAfectacion = () => {
   const handleVictChange = (e) => {
     const { name, value } = e.target;
     let val = value;
-    if (name === 'certif') {
-      // convertir a mayúsculas y permitir solo A-Z, 0-9 y guion en tiempo real
-      const v = String(value).toUpperCase().replace(/[^A-Z0-9-]/g, '');
-      setFormVictima(prev => ({ ...prev, certif: v }));
-      setErrorsVictima(prev => ({ ...prev, certif: validateCertif(v) }));
-      setMsgVictima({ type: '', text: '' });
-      return; // ya procesado
-    }
     if (name === 'nombre' || name === 'apelli') val = onlyLetters(value);
     if (name === 'cedula') {
       setFormVictima(prev => {
@@ -346,9 +336,7 @@ const RegistrarAfectacion = () => {
     }
  
     // validaciones inmediatas
-    if (name === 'certif') {
-      setErrorsVictima(prev => ({ ...prev, certif: validateCertif(val) }));
-    } else if (name === 'cedula' || name === 'tipodo') {
+    if (name === 'cedula' || name === 'tipodo') {
       const typeId = name === 'tipodo' ? val : formVictima.tipodo;
       const cedulaValue = name === 'cedula' ? (isPassportId(typeId) ? String(val).replace(/[^A-Za-z0-9-]/g, '').toUpperCase() : onlyDigits(val)) : formVictima.cedula;
       setErrorsVictima(prev => ({ ...prev, cedula: validateIdByDocType(cedulaValue, typeId) }));
@@ -374,8 +362,6 @@ const RegistrarAfectacion = () => {
     if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(formVictima.nombre)) errs.nombre = 'Nombre inválido';
     if (!formVictima.apelli) errs.apelli = 'Apellido obligatorio';
     if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'-]{2,}$/.test(formVictima.apelli)) errs.apelli = 'Apellido inválido';
-    const certErr = validateCertif(formVictima.certif);
-    if (certErr) errs.certif = certErr;
     if (!formVictima.coafec) errs.coafec = 'Seleccione afectación';
     setErrorsVictima(errs);
     return Object.keys(errs).length === 0;
@@ -386,8 +372,8 @@ const RegistrarAfectacion = () => {
     setMsgVictima({ type: '', text: '' });
     if (!validateVictima()) {
       // enfocar primer error
-      const map = { tipodo: victTipoRef, cedula: victCeduRef, nombre: victNombreRef, apelli: victApelliRef, certif: victCertifRef, coafec: victCoafecRef };
-      const order = ['tipodo','cedula','nombre','apelli','certif','coafec'];
+      const map = { tipodo: victTipoRef, cedula: victCeduRef, nombre: victNombreRef, apelli: victApelliRef, coafec: victCoafecRef };
+      const order = ['tipodo','cedula','nombre','apelli','coafec'];
       for (const k of order) {
         if (errorsVictima[k]) { if (map[k] && map[k].current) map[k].current.focus(); break; }
       }
@@ -399,7 +385,6 @@ const RegistrarAfectacion = () => {
       tipodo: Number(formVictima.tipodo),
       nombre: formVictima.nombre,
       apelli: formVictima.apelli,
-      certif: formVictima.certif,
       coafec: Number(formVictima.coafec)
     };
     try {
@@ -411,7 +396,7 @@ const RegistrarAfectacion = () => {
       const data = await res.json();
       if (res.ok) {
         setMsgVictima({ type: 'success', text: 'Víctima registrada correctamente.' });
-        setFormVictima({ cedula: '', tipodo: '', nombre: '', apelli: '', certif: '', coafec: '' });
+        setFormVictima({ cedula: '', tipodo: '', nombre: '', apelli: '', coafec: '' });
         setErrorsVictima({});
         setModalVictima(false);
       } else {
@@ -792,7 +777,7 @@ const RegistrarAfectacion = () => {
                 <div className="mb-3" style={{fontSize: '1rem'}}>
                   <strong>¿Tienes personas afectadas?</strong>
                   <div style={{fontSize: '0.95rem', marginTop: 8}}>
-                    Si tienes damnificados, víctimas o pérdidas, regístralos aquí:
+                    Si tienes damnificados, víctimas, pérdidas o afectados regístralos aquí:
                   </div>
                 </div>
                 <CButton variant="outline" style={{ minWidth: 180, backgroundColor:'white', color:'green', borderColor:'green' }} onClick={() => setModalDamnificado(true)}>
@@ -971,7 +956,7 @@ const RegistrarAfectacion = () => {
         setModalVictima(false);
         setErrorsVictima({});
         // mantener msgVictima para mostrar notificación global al cerrar
-        setFormVictima({ cedula: '', tipodo: '', nombre: '', apelli: '', certif: '', coafec: '' });
+        setFormVictima({ cedula: '', tipodo: '', nombre: '', apelli: '', coafec: '' });
       }} size="lg" backdrop="static" keyboard={false}>
         <CModalHeader closeButton><strong>Registrar Víctima</strong></CModalHeader>
         <CModalBody>
@@ -981,7 +966,7 @@ const RegistrarAfectacion = () => {
                 <strong>¿Quién es una víctima?</strong>
                 <ul className="text-start" style={{ paddingLeft: 18, marginBottom: 0, marginTop: 8 }}>
                   <li>Persona que fallecio a causa del suceso.</li>
-                  <li>Debes registrar el tipo de documento, nombre, apellido y certificado de defuncion.</li>
+                  <li>Debes registrar el tipo de documento, nombre y apellido.</li>
                 </ul>
                 <hr className="my-2" />
               </div>
@@ -1043,24 +1028,9 @@ const RegistrarAfectacion = () => {
                   maxLength={20}
                   required
                   ref={victApelliRef}
-                  onKeyDown={e => handleEnter(e, victCertifRef)}
+                  onKeyDown={e => handleEnter(e, victCoafecRef)}
                 />
                 {errorsVictima.apelli && <div className="text-danger small mb-2">{errorsVictima.apelli}</div>}
-
-                <CFormInput
-                  label="Certificado de defunción"
-                  name="certif"
-                  placeholder='Ejm 1234567 o ABC-123'
-                  value={formVictima.certif}
-                  onChange={handleVictChange}
-                  className="mb-2"
-                  maxLength={9}
-                  minLength={9}
-                  ref={victCertifRef}
-                  onKeyDown={e => handleEnter(e, victCoafecRef)}
-                  inputMode="text"
-                />
-                {errorsVictima.certif && <div className="text-danger small mb-2">{errorsVictima.certif}</div>}
 
                 <CFormSelect
                   label="Afectación"

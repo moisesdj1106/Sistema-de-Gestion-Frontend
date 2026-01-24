@@ -331,10 +331,10 @@ const ListarAfectados = () => {
             {errors.TTR_COAFEC && <div className="text-danger small">{errors.TTR_COAFEC}</div>}
 
             <CModalFooter>
-              <CButton color="secondary" onClick={() => setShowEditModal(false)}>
+              <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={() => setShowEditModal(false)}>
                 Cancelar
               </CButton>
-              <CButton color="primary" type="submit">
+              <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} type="submit">
                 Guardar
               </CButton>
             </CModalFooter>
@@ -349,10 +349,10 @@ const ListarAfectados = () => {
           ¿Eliminar a <strong>{selectedAfectado?.TTR_NOMBRE}</strong>?
         </CModalBody>
         <CModalFooter>
-          <CButton color="secondary" onClick={() => setShowDeleteModal(false)}>
+          <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} onClick={() => setShowDeleteModal(false)}>
             Cancelar
           </CButton>
-          <CButton color="danger" onClick={confirmDelete}>
+          <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={confirmDelete}>
             Eliminar
           </CButton>
         </CModalFooter>

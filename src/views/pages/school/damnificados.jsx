@@ -295,39 +295,38 @@ const DamnificadosModulo = () => {
           onChange={e => { setSearch(e.target.value); setPage(1); }}
           className="mb-3"
         />
-        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <CTable hover>
-            <CTableHead>
-              <CTableRow>
-                <CTableHeaderCell>Tipo Doc</CTableHeaderCell>
-                <CTableHeaderCell>Cédula</CTableHeaderCell>
-                <CTableHeaderCell>Nombre</CTableHeaderCell>
-                <CTableHeaderCell>Apellido</CTableHeaderCell>
-                <CTableHeaderCell>Contacto</CTableHeaderCell>
-                <CTableHeaderCell>Comunidad afectada</CTableHeaderCell>
-                <CTableHeaderCell>Acciones</CTableHeaderCell>
+        <CTable responsive hover>
+          <CTableHead style={{textAlign:'center'}}>
+            <CTableRow>
+              <CTableHeaderCell>Tipo Doc</CTableHeaderCell>
+              <CTableHeaderCell>Cédula</CTableHeaderCell>
+              <CTableHeaderCell>Nombre</CTableHeaderCell>
+              <CTableHeaderCell>Apellido</CTableHeaderCell>
+              <CTableHeaderCell>Contacto</CTableHeaderCell>
+              <CTableHeaderCell>Comunidad afectada</CTableHeaderCell>
+              <CTableHeaderCell>Acciones</CTableHeaderCell>
+            </CTableRow>
+          </CTableHead>
+          <CTableBody style={{textAlign:'center'}}>
+            {data.map(d => (
+              <CTableRow key={d.TTR_CODAMN}>
+                <CTableDataCell>{tiposDoc.find(t => t.TMA_CODDOC === d.TTR_TIPODO)?.TMA_NOMBRE || ''}</CTableDataCell>
+                <CTableDataCell>{d.TTR_CEDULA}</CTableDataCell>
+                <CTableDataCell>{d.TTR_NOMBRE}</CTableDataCell>
+                <CTableDataCell>{d.TTR_APELLI}</CTableDataCell>
+                <CTableDataCell>{d.TTR_CONTAC}</CTableDataCell>
+                
+                <CTableDataCell>
+                  {afectaciones.find(a => a.TTR_COAFEC === d.TTR_COAFEC)?.comunidad || d.TTR_COAFEC}
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CButton style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}} size="sm" className="me-2" onClick={() => openEdit(d)}>Editar</CButton>
+                  <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} size="sm" onClick={() => confirmDelete(d.TTR_CODAMN)}>Eliminar</CButton>
+                </CTableDataCell>
               </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              {data.map(d => (
-                <CTableRow key={d.TTR_CODAMN}>
-                  <CTableDataCell>{tiposDoc.find(t => t.TMA_CODDOC === d.TTR_TIPODO)?.TMA_NOMBRE || ''}</CTableDataCell>
-                  <CTableDataCell>{d.TTR_CEDULA}</CTableDataCell>
-                  <CTableDataCell>{d.TTR_NOMBRE}</CTableDataCell>
-                  <CTableDataCell>{d.TTR_APELLI}</CTableDataCell>
-                  <CTableDataCell>{d.TTR_CONTAC}</CTableDataCell>
-                  <CTableDataCell>
-                    {afectaciones.find(a => a.TTR_COAFEC === d.TTR_COAFEC)?.comunidad || d.TTR_COAFEC}
-                  </CTableDataCell>
-                  <CTableDataCell>
-                    <CButton size="sm" className="me-2" onClick={() => openEdit(d)}>Editar</CButton>
-                    <CButton size="sm" color="danger" onClick={() => confirmDelete(d.TTR_CODAMN)}>Eliminar</CButton>
-                  </CTableDataCell>
-                </CTableRow>
-              ))}
-            </CTableBody>
-          </CTable>
-        </div>
+            ))}
+          </CTableBody>
+        </CTable>
         <CPagination align="center" className="mt-3">
           {[...Array(totalPages)].map((_, idx) => (
             <CPaginationItem key={idx+1} active={page === idx+1} onClick={() => setPage(idx+1)}>

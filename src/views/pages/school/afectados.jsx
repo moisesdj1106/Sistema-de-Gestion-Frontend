@@ -243,7 +243,7 @@ const ListarAfectados = () => {
           <CTable bordered hover responsive>
             <CTableHead>
               <CTableRow>
-                <CTableHeaderCell>#</CTableHeaderCell>
+                
                 <CTableHeaderCell>Tipo</CTableHeaderCell>
                 <CTableHeaderCell>Documento</CTableHeaderCell>
                 <CTableHeaderCell>Nombre</CTableHeaderCell>
@@ -257,7 +257,7 @@ const ListarAfectados = () => {
             <CTableBody>
               {filteredAfectados.map((a, i) => (
                 <CTableRow key={a.TTR_COHERI}>
-                  <CTableDataCell>{i + 1}</CTableDataCell>
+                  
                   <CTableDataCell className="text-center">
                     {mostrarTipoDocumento(a.TTR_TIPODO)}
                   </CTableDataCell>

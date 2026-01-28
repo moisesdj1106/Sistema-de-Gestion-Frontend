@@ -103,7 +103,7 @@ const HelpButton = () => {
           </CModalBody>
           <CModalFooter>
             <div style={{ marginTop: '12px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <a href="/manualusuario.pdf" download style={{ textDecoration: 'none' }}>
+                <a href="/manualusuarioo.pdf" download style={{ textDecoration: 'none' }}>
                   <CButton color="primary" style={{ backgroundColor: '#ff7043', borderColor: '#ff7043' }}>
                     Descargar manual (PDF)
                   </CButton>

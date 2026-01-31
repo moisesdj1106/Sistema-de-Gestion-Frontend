@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
   CCard, CCardBody, CCol, CRow, CCardHeader,
 } from '@coreui/react';
-import { Bar, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend, Title } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, Title, ChartDataLabels);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, Title, ChartDataLabels);
 
 const Dashboard = () => {
   const [dashboard, setDashboard] = useState(null);
@@ -50,9 +50,8 @@ const Dashboard = () => {
     },
   };
 
-  // Gráfica de torta: estados de salud de damnificados
-  const totalEstados = estadosSalud.reduce((acc, e) => acc + e.cantidad, 0);
-  const estadosSaludPieData = {
+  // Gráfica de barras: estados de salud de damnificados
+  const estadosSaludBarData = {
     labels: estadosSalud.map(e => e.estado),
     datasets: [
       {
@@ -67,15 +66,15 @@ const Dashboard = () => {
           '#fd7e14', // naranja
           '#343a40', // gris oscuro
         ],
+        borderRadius: 8,
       },
     ],
   };
 
-  const estadosSaludPieOptions = {
+  const estadosSaludBarOptions = {
     responsive: true,
-    maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom' },
+      legend: { position: 'top' },
       title: { display: true, text: 'Estados de Salud de Damnificados' },
       datalabels: {
         color: 'white',
@@ -83,31 +82,37 @@ const Dashboard = () => {
         formatter: (value) => value,
       },
     },
+    scales: {
+      y: { beginAtZero: true },
+    },
   };
 
-  // Gráfica de torta: pérdidas por tipo
-  const perdidasPieData = {
+  // Gráfica de barras: pérdidas por tipo
+  const perdidasBarData = {
     labels: perdidasPorTipo.map(p => p.tipo),
     datasets: [
       {
         label: 'Pérdidas por Tipo',
         data: perdidasPorTipo.map(p => p.cantidad),
         backgroundColor: ['#0d6efd', '#ffc107', '#dc3545', '#20c997', '#6f42c1'],
+        borderRadius: 8,
       },
     ],
   };
 
-  const perdidasPieOptions = {
+  const perdidasBarOptions = {
     responsive: true,
-    maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom' },
+      legend: { position: 'top' },
       title: { display: true, text: 'Pérdidas por Tipo' },
       datalabels: {
         color: 'white',
         font: { weight: 'bold' },
         formatter: (value) => value,
       },
+    },
+    scales: {
+      y: { beginAtZero: true },
     },
   };
 
@@ -126,7 +131,7 @@ const Dashboard = () => {
           <CCard className="text-center shadow">
             <CCardBody>
               <h5 className="text-primary mb-2">Desastre más frecuente</h5>
-              <div style={{ fontSize: 24, fontWeight: 'bold' }}>{resumen.desastreMasFrecuente}</div>
+              <div style={{ fontSize: 32, fontWeight: 'bold' }}>{resumen.desastreMasFrecuente}</div>
             </CCardBody>
           </CCard>
         </CCol>
@@ -143,16 +148,20 @@ const Dashboard = () => {
         </CCol>
         <CCol md={6} className="mb-4">
           <CCard className="shadow">
-            <CCardHeader className="fw-bold">Estados de Salud y Pérdidas por Tipo</CCardHeader>
+            <CCardHeader className="fw-bold">Estados de Salud</CCardHeader>
             <CCardBody>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-                <div style={{ width: 300, height: 300 }}>
-                  <Pie data={estadosSaludPieData} options={estadosSaludPieOptions} plugins={[ChartDataLabels]} />
-                </div>
-                <div style={{ width: 300, height: 300 }}>
-                  <Pie data={perdidasPieData} options={perdidasPieOptions} />
-                </div>
-              </div>
+              <Bar data={estadosSaludBarData} options={estadosSaludBarOptions} height={300} />
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
+
+      <CRow>
+        <CCol md={6} className="mb-4 mx-auto"> {/* Se agrega mx-auto para centrar la columna */}
+          <CCard className="shadow">
+            <CCardHeader className="fw-bold">Pérdidas por Tipo</CCardHeader>
+            <CCardBody className="d-flex justify-content-center"> {/* Se centra el contenido dentro del cuerpo de la tarjeta */}
+              <Bar data={perdidasBarData} options={perdidasBarOptions} height={300} />
             </CCardBody>
           </CCard>
         </CCol>

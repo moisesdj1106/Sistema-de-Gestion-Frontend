@@ -26,7 +26,7 @@ const Dashboard = () => {
     labels: desastresPorTipo.map(d => d.tipo),
     datasets: [
       {
-        label: 'Cantidad de Desastres',
+        label: 'Cantidad de Afectaciones',
         data: desastresPorTipo.map(d => d.cantidad),
         backgroundColor: ['#0d6efd', '#ffc107', '#dc3545', '#20c997', '#6f42c1'],
         borderRadius: 8,
@@ -38,7 +38,7 @@ const Dashboard = () => {
     responsive: true,
     plugins: {
       legend: { display: false },
-      title: { display: true, text: 'Cantidad de Desastres por Tipo' },
+      title: { display: true, text: 'Cantidad de Afectaciones por Tipo' },
       datalabels: {
         color: 'white',
         font: { weight: 'bold' },
@@ -130,7 +130,7 @@ const Dashboard = () => {
         <CCol md={6}>
           <CCard className="text-center shadow">
             <CCardBody>
-              <h5 className="text-primary mb-2">Desastre más frecuente</h5>
+              <h5 className="text-primary mb-2">Afectación más frecuente</h5>
               <div style={{ fontSize: 32, fontWeight: 'bold' }}>{resumen.desastreMasFrecuente}</div>
             </CCardBody>
           </CCard>
@@ -140,7 +140,7 @@ const Dashboard = () => {
       <CRow>
         <CCol md={6} className="mb-4">
           <CCard className="shadow">
-            <CCardHeader className="fw-bold">Desastres por Tipo</CCardHeader>
+            <CCardHeader className="fw-bold">Afectaciones por Tipo</CCardHeader>
             <CCardBody>
               <Bar data={barData} options={barOptions} height={300} />
             </CCardBody>

@@ -36,18 +36,18 @@ const HelpButton = () => {
   const role = localStorage.getItem('rol')
 
   // Seleccionar el video según el rol
-  const videoUrl = role === 'admin' ? '/videos/usuario.mp4' : '/videos/usuario.mp4'
+  const videoUrl = role === 'admin' ? '/videos/videomanual.mp4' : '/videos/videomanual.mp4'
 
   const markers = [
     { time: 5, label: 'Introducción' },
     { time: 87, label: 'Modulo Noticias' },
-    { time: 200, label: 'Modulo afectación' },
-    { time: 260, label: 'Damnificado' },
+    { time: 205, label: 'Modulo afectación' },
+    { time: 261, label: 'Damnificado' },
     { time: 328, label: 'Victima' },
-    { time: 360, label: 'Pérdidas' },
-    { time: 390, label: 'Afectado' },
-    { time: 417, label: 'Zonas de riesgo' },
-    { time: 425, label: 'Dashboard' },
+    { time: 350, label: 'Pérdidas' },
+    { time: 377, label: 'Afectado' },
+    { time: 400, label: 'Zonas de riesgo' },
+    { time: 414, label: 'Dashboard' },
   ];
 
   const jumpToMarker = (time) => {
@@ -103,7 +103,7 @@ const HelpButton = () => {
           </CModalBody>
           <CModalFooter>
             <div style={{ marginTop: '12px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <a href="/manualusuarioo.pdf" download style={{ textDecoration: 'none' }}>
+                <a href="/manualdeusuariopc.pdf" download style={{ textDecoration: 'none' }}>
                   <CButton color="primary" style={{ backgroundColor: '#ff7043', borderColor: '#ff7043' }}>
                     Descargar manual (PDF)
                   </CButton>

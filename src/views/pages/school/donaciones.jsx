@@ -1,300 +1,385 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useState } from "react";
 import {
-  CCard, CCardBody, CCol, CRow, CForm, CFormInput, CFormSelect, CButton, CAlert
-} from '@coreui/react'
+  CButton,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CCol,
+  CForm,
+  CFormInput,
+  CFormTextarea,
+  CFormCheck,
+  CRow,
+  CFormLabel,
+  CAlert,
+  CContainer
+} from "@coreui/react";
 
-const API = 'https://sistema-de-gestion-backend.onrender.com'
-
-const RegistrarDonacion = () => {
-  const [donantes, setDonantes] = useState([])
-  const [afectaciones, setAfectaciones] = useState([])
-  const [tiposDonacion, setTiposDonacion] = useState([])
+export default function ReporteForm() {
   const [form, setForm] = useState({
-    cantidad: '',
-    fedona: '',
-    coafec: '',
-    codont: '',
-    tipodo: '',
-    descri: ''
-  })
-  const [msg, setMsg] = useState({ type: '', text: '' })
-  const [fieldErrors, setFieldErrors] = useState({})
-  const [busquedaDonante, setBusquedaDonante] = useState('') // Nuevo estado para filtro
+    fecha: "",
+    unidad_numero: "",
+    folio_numero: "",
+    direccion: "",
+    hora_inicio_llamada: "",
+    hora_activacion: "",
+    hora_en_sitio: "",
+    hora_culminacion: "",
+    tipos_actividad: [],
+    condicion: "",
+    acciones_tomadas: [],
+    danos: [],
+    comision: [
+      { posicion: "OPERADOR/DESPACHADOR", nombre: "", organismo: "INAPROCET" },
+      { posicion: "JEFE DE COMISION", nombre: "", organismo: "INAPROCET" },
+      { posicion: "CONDUCTOR", nombre: "", organismo: "INAPROCET" },
+      { posicion: "AUXILIAR", nombre: "", organismo: "INAPROCET" },
+      { posicion: "AUXILIAR", nombre: "", organismo: "INAPROCET" },
+      { posicion: "AUXILIAR", nombre: "", organismo: "INAPROCET" }
+    ],
+    observaciones: "",
+    elaborado_por: "",
+    cargo: "",
+    cedula_identidad: ""
+  });
 
-  const firstInvalidRef = useRef(null)
+  const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    fetch(`${API}/donantesregistrados`)
-      .then(res => res.json())
-      .then(setDonantes)
-    fetch(`${API}/afectacion`)
-      .then(res => res.json())
-      .then(setAfectaciones)
-    fetch(`${API}/tipos-estilo-donacion`)
-      .then(res => res.json())
-      .then(setTiposDonacion)
-  }, [])
+  const toggleArray = (field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: prev[field].includes(value)
+        ? prev[field].filter((v) => v !== value)
+        : [...prev[field], value]
+    }));
+  };
 
-  const today = new Date();
-  // corregir por desfase de zona horaria y obtener YYYY-MM-DD local
-  const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
-  const maxFecha = localToday.toISOString().split('T')[0];
+  const validateField = (field, value) => {
+    const currentDate = new Date().toISOString().split("T")[0];
+    let error = "";
 
-  // Filtrar donantes por nombre
-  const donantesFiltrados = donantes.filter(d =>
-    (d.TMA_NOMBRE || '').toLowerCase().includes(busquedaDonante.toLowerCase())
-  )
-
-  const sanitizeNumber = v => {
-    // permite solo dígitos y evita números negativos
-    const s = String(v ?? '').replace(/[^\d]/g, '')
-    return s
-  }
-
-  const handleChange = e => {
-    const { name, value } = e.target
-    let val = value
-    if (name === 'cantidad') val = sanitizeNumber(value)
-    setForm(prev => ({ ...prev, [name]: val }))
-    // validar en tiempo real solo ese campo
-    const err = validateField(name, val)
-    setFieldErrors(prev => ({ ...prev, [name]: err }))
-    setMsg({ type: '', text: '' })
-  }
-
-  const validateField = (name, value) => {
-    const v = String(value ?? '').trim()
-    if (name === 'codont') {
-      if (!v) return 'Seleccione un donante.'
-    }
-    if (name === 'coafec') {
-      if (!v) return 'Seleccione una afectación.'
-    }
-    if (name === 'tipodo') {
-      if (!v) return 'Seleccione tipo de donación.'
-    }
-    if (name === 'cantidad') {
-      if (!v) return 'Cantidad obligatoria.'
-      const n = Number(v)
-      if (!Number.isFinite(n) || n <= 0) return 'Cantidad debe ser un número mayor que 0.'
-      // ejemplo: limitar a 1e9 para evitar entradas absurdas
-      if (n > 1e9) return 'Cantidad demasiado grande.'
-    }
-    if (name === 'fedona') {
-      if (!v) return 'Fecha obligatoria.'
-      if (v > maxFecha) return 'La fecha no puede ser futura.'
-    }
-    if (name === 'descri') {
-      if (v.length > 500) return 'Descripción demasiado larga (máx 500 caracteres).'
-    }
-    return ''
-  }
-
-  const validateAll = () => {
-    const fields = ['codont','coafec','tipodo','cantidad','fedona','descri']
-    const errors = {}
-    fields.forEach(f => {
-      const err = validateField(f, form[f])
-      if (err) errors[f] = err
-    })
-    setFieldErrors(errors)
-    return errors
-  }
-
-  const handleSubmit = async e => {
-    e.preventDefault()
-    setMsg({ type: '', text: '' })
-    const errors = validateAll()
-    const firstKey = Object.keys(errors)[0]
-    if (firstKey) {
-      // enfocar primer campo con error (intenta buscar elemento)
-      setTimeout(() => {
-        const el = document.querySelector(`[name="${firstKey}"]`)
-        if (el) el.focus()
-      }, 50)
-      // mostrar mensajes concatenados
-      const mensajes = Object.values(errors).filter(Boolean)
-      setMsg({ type: 'danger', text: mensajes.join('\n') })
-      return
+    if (field === "fecha" && value > currentDate) {
+      error = "La fecha no puede ser futura.";
     }
 
-    try {
-      const res = await fetch(`${API}/donaciones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          cantidad: Number(form.cantidad),
-          codont: Number(form.codont),
-          coafec: Number(form.coafec),
-          tipodo: Number(form.tipodo)
-        })
-      })
-      const data = await res.json().catch(() => ({}))
-      if (res.ok) {
-        setMsg({ type: 'success', text: 'Donación registrada correctamente.' })
-        setForm({ cantidad: '', fedona: '', coafec: '', codont: '', tipodo: '', descri: '' })
-        setFieldErrors({})
-      } else {
-        // si la API devuelve errores por campo, mapearlos
-        // se soportan varias formas: { errores: [{ campo, mensaje }...] } o { errores: { campo: mensaje } } o { mensaje: '...' }
-        const fieldErrs = {}
-        if (Array.isArray(data.errores)) {
-          // array de strings o de objetos
-          data.errores.forEach(it => {
-            if (typeof it === 'string') {
-              // intentar inferir campo
-              if (/cedula|contacto|telefono|tel/i.test(it)) fieldErrs.codont = it
-              else if (/fecha/i.test(it)) fieldErrs.fedona = it
-              else if (/cantidad/i.test(it)) fieldErrs.cantidad = it
-            } else if (it.campo && it.mensaje) {
-              fieldErrs[it.campo] = it.mensaje
-            }
-          })
-        } else if (data.errores && typeof data.errores === 'object') {
-          Object.assign(fieldErrs, data.errores)
-        } else if (data.mensaje) {
-          // mensaje general
-          setMsg({ type: 'danger', text: data.mensaje })
-        }
+    setErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
+  };
 
-        if (Object.keys(fieldErrs).length) {
-          setFieldErrors(prev => ({ ...prev, ...fieldErrs }))
-          const mensajes = Object.values(fieldErrs).filter(Boolean)
-          setMsg({ type: 'danger', text: mensajes.join('\n') })
-        } else if (!data.mensaje) {
-          setMsg({ type: 'danger', text: 'Error al registrar. Revise los datos e intente de nuevo.' })
-        }
-      }
-    } catch (err) {
-      console.error(err)
-      setMsg({ type: 'danger', text: 'Error de conexión. Intente más tarde.' })
+  const handleChange = (field, value) => {
+    validateField(field, value);
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateComision = (index, field, value) => {
+    setForm((prev) => {
+      const updatedComision = [...prev.comision];
+      updatedComision[index][field] = value;
+      return { ...prev, comision: updatedComision };
+    });
+  };
+
+  const guardar = async () => {
+    const hasErrors = Object.values(errors).some((error) => error);
+    if (hasErrors) {
+      alert("Por favor corrige los errores antes de guardar.");
+      return;
     }
-  }
+
+    const formattedForm = {
+      ...form,
+      hora_inicio_llamada: form.hora_inicio_llamada ? form.hora_inicio_llamada.slice(0, 5) : null,
+      hora_activacion: form.hora_activacion ? form.hora_activacion.slice(0, 5) : null,
+      hora_en_sitio: form.hora_en_sitio ? form.hora_en_sitio.slice(0, 5) : null,
+      hora_culminacion: form.hora_culminacion ? form.hora_culminacion.slice(0, 5) : null
+    };
+
+    await fetch("https://sistema-de-gestion-backend.onrender.com/reportes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formattedForm)
+    });
+    alert("Reporte guardado");
+  };
 
   return (
-    <CRow className="justify-content-center mt-4">
-      <CCol xs={12} md={11} lg={10}>
-        <CCard className="shadow">
-          <CCardBody>
-            <h4 className="mb-4 text-center">Registrar Donación</h4>
-            <div className="mb-3 text-secondary">
-              <strong>¿Cómo registrar una donación?</strong>
-              <ul className="text-start" style={{ paddingLeft: 18, marginBottom: 0, marginTop: 8 }}>
-                <li>Seleccione el donante y la afectación a la que va dirigida la donación.</li>
-                <li>Elija el tipo de donación y complete la cantidad y fecha.</li>
-                <li>Puede agregar una descripción si lo desea.</li>
-                <li>Presione "Registrar Donación" para guardar.</li>
-              </ul>
-            </div>
-            <CForm onSubmit={handleSubmit}>
-              <CRow className="g-3 align-items-end">
-                <CCol md={4}>
-                  {/* Filtro de búsqueda */}
-                  <CFormInput
-                    placeholder="Buscar donante por nombre..."
-                    value={busquedaDonante}
-                    onChange={e => setBusquedaDonante(e.target.value)}
-                    className="mb-2"
-                  />
-                  <CFormSelect
-                    label="Donante"
-                    name="codont"
-                    value={form.codont}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Seleccione donante</option>
-                    {donantesFiltrados.map(d => (
-                      <option key={d.TMA_CODONT} value={d.TMA_CODONT}>
-                        {d.TMA_NOMBRE} - {d.TMA_CEDULA}
-                      </option>
+    <CContainer>
+      <CRow className="justify-content-center">
+        <CCol md={12}>
+          <CCard>
+            <CCardHeader className="text-center">
+              <h2>Reporte de Actividades</h2>
+            </CCardHeader>
+            <CCardBody>
+              <CForm>
+                {errors.global && <CAlert color="danger">{errors.global}</CAlert>}
+                <CRow className="mb-3">
+                  <CCol md={4}>
+                    <CFormLabel>Fecha</CFormLabel>
+                    <CFormInput
+                      type="date"
+                      value={form.fecha}
+                      max={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => handleChange("fecha", e.target.value)}
+                    />
+                    {errors.fecha && <small className="text-danger">{errors.fecha}</small>}
+                  </CCol>
+                  <CCol md={4}>
+                    <CFormLabel>Unidad Nº</CFormLabel>
+                    <CFormInput
+                      placeholder="Unidad Nº"
+                      value={form.unidad_numero}
+                      onChange={(e) => handleChange("unidad_numero", e.target.value)}
+                    />
+                  </CCol>
+                  <CCol md={4}>
+                    <CFormLabel>Folio Nº</CFormLabel>
+                    <CFormInput
+                      placeholder="Folio Nº"
+                      value={form.folio_numero}
+                      onChange={(e) => handleChange("folio_numero", e.target.value)}
+                    />
+                  </CCol>
+                </CRow>
+                <hr />
+                <CRow className="mb-3">
+                  <CCol md={12}>
+                    <CFormLabel>Dirección</CFormLabel>
+                    <CFormTextarea
+                      placeholder="Dirección"
+                      value={form.direccion}
+                      onChange={(e) => handleChange("direccion", e.target.value)}
+                      style={{ resize: "none", overflow: "auto", maxHeight: "150px" }}
+                    />
+                  </CCol>
+                </CRow>
+                <hr />
+                <CRow className="mb-3">
+                  <CCol md={3}>
+                    <CFormLabel>Hora inicio de llamada</CFormLabel>
+                    <CFormInput
+                      type="time"
+                      value={form.hora_inicio_llamada}
+                      onChange={(e) => handleChange("hora_inicio_llamada", e.target.value)}
+                    />
+                    {errors.hora_inicio_llamada && (
+                      <small className="text-danger">{errors.hora_inicio_llamada}</small>
+                    )}
+                  </CCol>
+                  <CCol md={3}>
+                    <CFormLabel>Hora activación</CFormLabel>
+                    <CFormInput
+                      type="time"
+                      value={form.hora_activacion}
+                      onChange={(e) => handleChange("hora_activacion", e.target.value)}
+                    />
+                    {errors.hora_activacion && (
+                      <small className="text-danger">{errors.hora_activacion}</small>
+                    )}
+                  </CCol>
+                  <CCol md={3}>
+                    <CFormLabel>Hora en sitio</CFormLabel>
+                    <CFormInput
+                      type="time"
+                      value={form.hora_en_sitio}
+                      onChange={(e) => handleChange("hora_en_sitio", e.target.value)}
+                    />
+                    {errors.hora_en_sitio && (
+                      <small className="text-danger">{errors.hora_en_sitio}</small>
+                    )}
+                  </CCol>
+                  <CCol md={3}>
+                    <CFormLabel>Hora culminación</CFormLabel>
+                    <CFormInput
+                      type="time"
+                      value={form.hora_culminacion}
+                      onChange={(e) => handleChange("hora_culminacion", e.target.value)}
+                    />
+                    {errors.hora_culminacion && (
+                      <small className="text-danger">{errors.hora_culminacion}</small>
+                    )}
+                  </CCol>
+                </CRow>
+                <hr />
+                <CRow className="mb-3">
+                  <CCol md={12}>
+                    <CFormLabel>Tipo de Actividad</CFormLabel>
+                    <CRow>
+                      {[
+                        "ACCIDENTE DE TRANSITO",
+                        "MAT-PEL",
+                        "TALA DE ARBOL",
+                        "EMERGENCIAS MEDICAS",
+                        "DETRESFA",
+                        "BUSQUEDA",
+                        "INCENDIO DE ESTRUCTURA",
+                        "RECUPERACION DE CADAVER",
+                        "POV",
+                        "INCENDIO VEHICULAR",
+                        "INSPECCION",
+                        "EVENTO",
+                        "INCENDIO FORESTAL",
+                        "RESCATE DE PERSONA",
+                        "OTROS"
+                      ].map((t) => (
+                        <CCol md={4} key={t}>
+                          <CFormCheck
+                            label={t}
+                            checked={form.tipos_actividad.includes(t)}
+                            onChange={() => toggleArray("tipos_actividad", t)}
+                          />
+                        </CCol>
+                      ))}
+                    </CRow>
+                  </CCol>
+                </CRow>
+                <hr />
+                <CRow className="mb-3">
+                  <CCol md={12}>
+                    <CFormLabel>Condición</CFormLabel>
+                    <CRow>
+                      {[
+                        "NORMAL",
+                        "URGENTE",
+                        "EMERGENCIA",
+                        "OTROS"
+                      ].map((c) => (
+                        <CCol md={3} key={c}>
+                          <CFormCheck
+                            type="radio"
+                            name="condicion"
+                            label={c}
+                            checked={form.condicion === c}
+                            onChange={() => setForm({ ...form, condicion: c })}
+                          />
+                        </CCol>
+                      ))}
+                    </CRow>
+                  </CCol>
+                </CRow>
+                <hr />
+                <CRow className="mb-3">
+                  <CCol md={12}>
+                    <CFormLabel>Acciones Tomadas</CFormLabel>
+                    <CRow>
+                      {[
+                        "ELIMINACIÓN DE RIESGOS",
+                        "ACORDONAMIENTO",
+                        "ESTABILIZACIÓN DEL PACIENTE",
+                        "INMOVILIZACIÓN DEL PACIENTE",
+                        "OTROS"
+                      ].map((a) => (
+                        <CCol md={4} key={a}>
+                          <CFormCheck
+                            label={a}
+                            checked={form.acciones_tomadas.includes(a)}
+                            onChange={() => toggleArray("acciones_tomadas", a)}
+                          />
+                        </CCol>
+                      ))}
+                    </CRow>
+                  </CCol>
+                </CRow>
+                <hr />
+                <CRow className="mb-3">
+                  <CCol md={12}>
+                    <CFormLabel>Daños</CFormLabel>
+                    <CRow>
+                      {[
+                        "ALUMBRADO PUBLICO",
+                        "HIDRANTES",
+                        "VIVIENDAS",
+                        "PUENTES",
+                        "VIAS COMUNICACION",
+                        "VEHICULOS",
+                        "INST PUB",
+                        "INST PRIV",
+                        "OTROS"
+                      ].map((d) => (
+                        <CCol md={4} key={d}>
+                          <CFormCheck
+                            label={d}
+                            checked={form.danos.includes(d)}
+                            onChange={() => toggleArray("danos", d)}
+                          />
+                        </CCol>
+                      ))}
+                    </CRow>
+                  </CCol>
+                </CRow>
+                <hr />
+                <CRow className="mb-3">
+                  <CCol className="mt-4">
+                    <CFormLabel>Comisión</CFormLabel>
+                    {form.comision.map((c, i) => (
+                      <CRow key={i} className="mb-3">
+                        <CCol md={4}>
+                          <CFormLabel>{c.posicion}</CFormLabel>
+                        </CCol>
+                        <CCol md={8}>
+                          <CFormInput
+                            placeholder="Nombre"
+                            value={c.nombre}
+                            onChange={(e) =>
+                              updateComision(i, "nombre", e.target.value)
+                            }
+                          />
+                        </CCol>
+                      </CRow>
                     ))}
-                  </CFormSelect>
-                  {fieldErrors.codont && <div className="text-danger small mt-1">{fieldErrors.codont}</div>}
-                </CCol>
-                <CCol md={4}>
-                  <CFormSelect
-                    label="Afectación"
-                    name="coafec"
-                    value={form.coafec}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Seleccione afectación</option>
-                    {afectaciones.map(a => (
-                      <option key={a.TTR_COAFEC} value={a.TTR_COAFEC}>
-                         - {a.comunidad ? a.comunidad : ''}
-                      </option>
-                    ))}
-                  </CFormSelect>
-                  {fieldErrors.coafec && <div className="text-danger small mt-1">{fieldErrors.coafec}</div>}
-                </CCol>
-                <CCol md={4}>
-                  <CFormSelect
-                    label="Tipo de Donación"
-                    name="tipodo"
-                    value={form.tipodo}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Seleccione tipo de donación</option>
-                    {tiposDonacion.map(t => (
-                      <option key={t.TTR_ESTIDO} value={t.TTR_ESTIDO}>
-                        {t.TTR_NOMBRE}
-                      </option>
-                    ))}
-                  </CFormSelect>
-                  {fieldErrors.tipodo && <div className="text-danger small mt-1">{fieldErrors.tipodo}</div>}
-                </CCol>
-                <CCol md={4}>
-                  <CFormInput
-                    label="Cantidad"
-                    name="cantidad"
-                    placeholder='Ejm 100'
-                    type="number"
-                    value={form.cantidad}
-                    min={1}
-                    onChange={handleChange}
-                    required
-                  />
-                  {fieldErrors.cantidad && <div className="text-danger small mt-1">{fieldErrors.cantidad}</div>}
-                </CCol>
-                <CCol md={4}>
-                  <CFormInput
-                    label="Fecha de Donación"
-                    name="fedona"
-                    type="date"
-                    value={form.fedona}
-                    onChange={handleChange}
-                    max={maxFecha}
-                    required
-                  />
-                  {fieldErrors.fedona && <div className="text-danger small mt-1">{fieldErrors.fedona}</div>}
-                </CCol>
-                <CCol md={4}>
-                  <CFormInput
-                    label="Descripción"
-                    name="descri"
-                    value={form.descri}
-                    onChange={handleChange}
-                    placeholder="Detalle de la donación (opcional)"
-                  />
-                  {fieldErrors.descri && <div className="text-danger small mt-1">{fieldErrors.descri}</div>}
-                </CCol>
-                <CCol xs={12}>
-                  <CButton style={{backgroundColor:'#ff7043', color:'white'}} type="submit" className="w-100">Registrar Donación</CButton>
-                </CCol>
-              </CRow>
-              {msg.text && (
-                <CAlert color={msg.type} className="text-center mt-3" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</CAlert>
-              )}
-            </CForm>
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
-  )
+                  </CCol>
+                </CRow>
+                <hr />
+                <CRow className="mb-3">
+                  <CCol md={12}>
+                    <CFormLabel>Observaciones</CFormLabel>
+                    <CFormTextarea
+                      value={form.observaciones}
+                      onChange={(e) => handleChange("observaciones", e.target.value)}
+                      style={{ resize: "none", overflow: "auto", maxHeight: "150px" }}
+                    />
+                  </CCol>
+                </CRow>
+                <hr />
+                <CRow className="mb-3">
+                  <CCol md={6}>
+                    <CFormLabel>Elaborado por</CFormLabel>
+                    <CFormInput
+                      placeholder="Elaborado por"
+                      value={form.elaborado_por}
+                      onChange={(e) => handleChange("elaborado_por", e.target.value)}
+                    />
+                  </CCol>
+                  <CCol md={6}>
+                    <CFormLabel>Cargo</CFormLabel>
+                    <CFormInput
+                      placeholder="Cargo"
+                      value={form.cargo}
+                      onChange={(e) => handleChange("cargo", e.target.value)}
+                    />
+                  </CCol>
+                </CRow>
+                <CRow className="mb-3">
+                  <CCol md={6}>
+                    <CFormLabel>Cédula de identidad</CFormLabel>
+                    <CFormInput
+                      placeholder="Cédula de identidad"
+                      value={form.cedula_identidad}
+                      onChange={(e) => handleChange("cedula_identidad", e.target.value)}
+                    />
+                  </CCol>
+                </CRow>
+                <CRow className="text-center">
+                  <CCol>
+                    <CButton style={{backgroundColor:'#ff7043', color:'white', borderColor:'#ff7043'}} onClick={guardar} className="mt-3">
+                      Guardar
+                    </CButton>
+                  </CCol>
+                </CRow>
+              </CForm>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
+    </CContainer>
+  );
 }
-
-export default RegistrarDonacion

@@ -159,6 +159,20 @@ export default function getNav() {
           to: '/general',
           icon: <CIcon icon={cilShareBoxed} customClassName="nav-icon" />,
         },
+
+
+        {
+          component: CNavItem,
+          name: 'Reporte Actividades',
+          to: '/donaciones',
+          icon: <CIcon icon={cilGift} customClassName="nav-icon" />,
+        },
+         {
+          component: CNavItem,
+          name: 'Listado de RA',
+          to: '/donantes',
+          icon: <CIcon icon={cilHeart} customClassName="nav-icon" />,
+        },
        
   
             
@@ -224,18 +238,7 @@ export default function getNav() {
           icon: <CIcon icon={cilHospital} customClassName="nav-icon" />,
         },
        
-         /*{
-          component: CNavItem,
-          name: 'Donantes',
-          to: '/donantes',
-          icon: <CIcon icon={cilHeart} customClassName="nav-icon" />,
-        },
-        {
-          component: CNavItem,
-          name: 'Donaciones',
-          to: '/donaciones',
-          icon: <CIcon icon={cilGift} customClassName="nav-icon" />,
-        },*/
+   
        
         {
           component: CNavItem,

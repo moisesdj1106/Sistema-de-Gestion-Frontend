@@ -1,382 +1,313 @@
-import React, { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from "react";
 import {
-  CCard, CCardBody, CCol, CRow, CForm, CFormInput, CFormSelect, CButton, CAlert
-} from '@coreui/react'
+  CButton,
+  CButtonGroup,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CCol,
+  CRow,
+  CForm,
+  CFormInput,
+  CTable,
+  CTableBody,
+  CTableDataCell,
+  CTableHead,
+  CTableHeaderCell,
+  CTableRow,
+  CPagination,
+  CPaginationItem,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
+} from "@coreui/react";
+import { CIcon } from "@coreui/icons-react";
+import { cilPrint, cilTrash } from "@coreui/icons";
 
-const API = 'https://sistema-de-gestion-backend.onrender.com';
-/*const API = 'http://localhost:4000'*/
+export default function ReporteList() {
+  const [reportes, setReportes] = useState([]);
+  const [filteredReportes, setFilteredReportes] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterDireccion, setFilterDireccion] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
-const RegistrarDonante = () => {
-  const [tiposDocumento, setTiposDocumento] = useState([])
-  const [tiposDonante, setTiposDonante] = useState([])
-  const [form, setForm] = useState({
-    nombre: '',
-    contac: '',
-    tipodn: '',
-    cedula: '',
-    coddoc: ''
-  })
-  const [msg, setMsg] = useState({ type: '', text: '' })
-  const [fieldErrors, setFieldErrors] = useState({})
-  const [loading, setLoading] = useState(false)
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
-  const cedulaRef = useRef(null)
-  const tipodnRef = useRef(null)
-  const nombreRef = useRef(null)
-  const contacRef = useRef(null)
-  const submitRef = useRef(null)
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [reporteAEliminar, setReporteAEliminar] = useState(null);
 
- 
-  const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$/
-  const digitsOnly = /^\d+$/
-  const passportRegex = /^[A-Za-z0-9\-]{6,15}$/ // permite letras/números/guion para pasaporte
-  const allowedPhonePrefixes = ['0412', '0414', '0416', '0424', '0426'] // prefijos válidos
+  const itemsPerPage = 10;
 
-  const getDocNameById = (id) =>
-    tiposDocumento && tiposDocumento.length
-      ? tiposDocumento.find((t) => String(t.TMA_CODDOC) === String(id))?.TMA_NOMBRE || ''
-      : ''
-
-
-  const isPassportType = (id) => {
-    const idStr = String(id || '').trim().toUpperCase()
-    if (idStr === 'P' || idStr === '3' || idStr === '03') return true
-    const name = getDocNameById(id) || ''
-    return /pasap|pasaporte/i.test(name)
-  }
-
-
-  const validateCedulaField = (value, coddoc) => {
-    // normalizar coddoc
-    const cod = String(coddoc || '').trim()
-    // detectar pasaporte por tipo seleccionado o, como respaldo, por la presencia de letras en el valor
-    const passportByType = isPassportType(cod)
-    const passportByValue = /[A-Za-z]/.test(String(value || ''))
-    const passport = passportByType || passportByValue
-
-    if (!cod && !passportByValue) return 'Seleccione tipo de documento'
-
-    if (passport) {
-      if (!value) return 'Número de pasaporte requerido'
-      if (!passportRegex.test(value)) return 'Formato inválido (letras y números, y guion)'
-      if (value.startsWith('-') || value.endsWith('-')) return 'Guion no puede estar al inicio o final'
-      if (/--/.test(value)) return 'Guiones consecutivos no permitidos'
-      return ''
-    } else {
-      if (!value) return 'Documento es obligatorio'
-      if (!digitsOnly.test(value)) return 'Solo dígitos'
-      if (value.length < 7 || value.length > 9) return '7-9 dígitos'
-      return ''
-    }
-  }
-
-  // valida teléfono en tiempo real (prefijo + 11 dígitos)
-  const validatePhoneField = (value) => {
-    if (!value) return 'Contacto es obligatorio'
-    if (!digitsOnly.test(value)) return 'Solo dígitos'
-    if (value.length !== 11) return 'Debe tener 11 dígitos'
-    const pref = value.slice(0, 4)
-    if (!allowedPhonePrefixes.includes(pref)) return `Prefijo inválido (${allowedPhonePrefixes.join(', ')})`
-    return ''
-  }
-
+  /* =========================
+     CARGAR REPORTES
+  ========================= */
   useEffect(() => {
-    fetch(`${API}/documento`)
-      .then(res => res.json())
-      .then(setTiposDocumento)
-      .catch(() => setTiposDocumento([]))
+    fetch("https://sistema-de-gestion-backend.onrender.com/reportes")
+      .then((res) => res.json())
+      .then((data) => {
+        setReportes(data);
+        setFilteredReportes(data);
+      });
+  }, []);
 
-    fetch(`${API}/tipos-donante`)
-      .then(res => res.json())
-      .then(setTiposDonante)
-      .catch(() => setTiposDonante([]))
-  }, [])
+  /* =========================
+     FILTROS
+  ========================= */
+  const filterReports = (searchValue, dateValue, direccionValue) => {
+    let filtered = reportes;
 
-  const handleChange = e => {
-    const { name, value } = e.target
-    // Si cambia el tipo de documento, actualizar y revalidar la cédula según el nuevo tipo
-    if (name === 'coddoc') {
-      const newCoddoc = value
-      setForm(prev => ({ ...prev, coddoc: newCoddoc }))
-      // revalidar cedula actual con el nuevo coddoc
-      const cedErr = validateCedulaField(form.cedula, newCoddoc)
-      setFieldErrors(prev => ({ ...prev, coddoc: '', cedula: cedErr }))
-      setMsg({ type: '', text: '' })
-      return
+    if (searchValue) {
+      filtered = filtered.filter((r) =>
+        r.RA_FOLIO_NUMERO.toLowerCase().includes(searchValue.toLowerCase())
+      );
     }
 
-    setForm(prev => ({ ...prev, [name]: value }))
-    setFieldErrors(prev => ({ ...prev, [name]: '' }))
-    setMsg({ type: '', text: '' })
-    // validación en directo para algunos campos
-    if (name === 'nombre') {
-      if (value && !nameRegex.test(value)) setFieldErrors(prev => ({ ...prev, nombre: 'Formato inválido' }))
-    }
-    if (name === 'contac') {
-      const phoneErr = value ? validatePhoneField(value) : ''
-      setFieldErrors(prev => ({ ...prev, contac: phoneErr }))
-    }
-  }
-
-  // helpers de sanitización en tiempo real
-  const handleCedulaChange = (e) => {
-    let value = e.target.value
-    // obtener el tipo de documento más actualizado (select o estado en form)
-    const selectCoddoc = document.querySelector('select[name="coddoc"]')?.value
-    const coddoc = String(selectCoddoc || form.coddoc || '')
-    if (isPassportType(coddoc)) {
-      // permitir letras y números y guion; mantener mayúsculas para pasaporte
-      value = value.replace(/[^A-Za-z0-9\-]/g, '').toUpperCase()
-      if (value.length > 15) value = value.slice(0, 15)
-    } else {
-      // solo dígitos para cédula venezolana
-      value = value.replace(/\D/g, '')
-      if (value.length > 9) value = value.slice(0, 9)
-    }
-    setForm(prev => ({ ...prev, cedula: value }))
-    const cedErr = validateCedulaField(value, coddoc)
-    setFieldErrors(prev => ({ ...prev, cedula: cedErr }))
-    setMsg({ type: '', text: '' })
-  }
-
-  const handleNombreChange = (e) => {
-    // solo letras, espacios, guiones y apóstrofe, incluyendo tildes y ñ
-    const value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]/g, '')
-    setForm(prev => ({ ...prev, nombre: value }))
-    // validación en directo
-    setFieldErrors(prev => ({ ...prev, nombre: value && !nameRegex.test(value) ? 'Formato inválido' : '' }))
-    setMsg({ type: '', text: '' })
-  }
-
-  const handleContactoChange = (e) => {
-    let value = e.target.value.replace(/\D/g, '') // solo dígitos
-    if (value.length > 11) value = value.slice(0, 11)
-    setForm(prev => ({ ...prev, contac: value }))
-    // validación en tiempo real para prefijo y longitud
-    const phoneErr = value ? validatePhoneField(value) : ''
-    setFieldErrors(prev => ({ ...prev, contac: phoneErr }))
-    setMsg({ type: '', text: '' })
-  }
-
-  const handleEnter = (e, nextRef) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      if (nextRef && nextRef.current) nextRef.current.focus()
-    }
-  }
-
-  const validateClient = () => {
-    const errors = []
-    const fieldErr = {}
-
-    if (!form.coddoc) {
-      errors.push('Seleccione tipo de documento')
-      fieldErr.coddoc = 'Requerido'
+    if (dateValue) {
+      filtered = filtered.filter((r) => r.RA_FECHA === dateValue);
     }
 
-    const cedulaError = validateCedulaField(form.cedula, form.coddoc)
-    if (cedulaError) {
-      errors.push(cedulaError)
-      fieldErr.cedula = cedulaError
+    if (direccionValue) {
+      filtered = filtered.filter((r) =>
+        r.RA_DIRECCION.toLowerCase().includes(direccionValue.toLowerCase())
+      );
     }
 
-    if (!form.tipodn) {
-      errors.push('Seleccione tipo de donante')
-      fieldErr.tipodn = 'Requerido'
-    }
+    setFilteredReportes(filtered);
+    setCurrentPage(1);
+  };
 
-    if (!form.nombre) {
-      errors.push('Nombre es obligatorio')
-      fieldErr.nombre = 'Requerido'
-    } else if (!nameRegex.test(form.nombre)) {
-      errors.push('Nombre inválido (solo letras y espacios)')
-      fieldErr.nombre = 'Formato inválido'
-    }
+  const handleSearch = (e) => {
+    const v = e.target.value;
+    setSearch(v);
+    filterReports(v, filterDate, filterDireccion);
+  };
 
-    const phoneError = validatePhoneField(form.contac)
-    if (phoneError) {
-      errors.push(phoneError)
-      fieldErr.contac = phoneError
-    }
+  const handleDateFilter = (e) => {
+    const v = e.target.value;
+    setFilterDate(v);
+    filterReports(search, v, filterDireccion);
+  };
 
-    return { errors, fieldErr }
-  }
+  const handleDireccionFilter = (e) => {
+    const v = e.target.value;
+    setFilterDireccion(v);
+    filterReports(search, filterDate, v);
+  };
 
-  const handleSubmit = async e => {
-    e.preventDefault()
-    setMsg({ type: '', text: '' })
-    setFieldErrors({})
-
-    const { errors, fieldErr } = validateClient()
-    if (errors.length) {
-      setFieldErrors(fieldErr)
-      setMsg({ type: 'danger', text: errors.join('\n') })
-      return
-    }
-
-    setLoading(true)
+  /* =========================
+     ACCIONES
+  ========================= */
+  const imprimir = async (id) => {
     try {
-      const res = await fetch(`${API}/donantes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      })
-      const data = await res.json().catch(() => ({}))
+      const res = await fetch(`https://sistema-de-gestion-backend.onrender.com/reportes/${id}/pdf`);
+      const blob = await res.blob();
+      window.open(URL.createObjectURL(blob));
+      setModalMessage("El PDF se generó correctamente.");
+    } catch {
+      setModalMessage("Error al generar el PDF.");
+    } finally {
+      setModalVisible(true);
+    }
+  };
+
+  const abrirConfirmacion = (id) => {
+    setReporteAEliminar(id);
+    setConfirmVisible(true);
+  };
+
+  const confirmarEliminacion = async () => {
+    try {
+      const res = await fetch(
+        `https://sistema-de-gestion-backend.onrender.com/reportes/${reporteAEliminar}`,
+        { method: "DELETE" }
+      );
 
       if (res.ok) {
-        setMsg({ type: 'success', text: 'Donante registrado correctamente.' })
-        setForm({ nombre: '', contac: '', tipodn: '', cedula: '', coddoc: '' })
-        setFieldErrors({})
-      } else if (res.status === 400 && (data.codigo === 'VALIDATION_ERROR' || Array.isArray(data.errores))) {
-        // servidor devolvió lista de errores
-        const mensajes = data.errores || [data.mensaje || 'Error de validación']
-        // mapear algunos mensajes a campos
-        const mapped = {}
-        mensajes.forEach(m => {
-          if (/cédula|cedula/i.test(m)) mapped.cedula = m
-          if (/nombre/i.test(m)) mapped.nombre = m
-          if (/contacto|contac/i.test(m)) mapped.contac = m
-          if (/tipo de documento|documento/i.test(m)) mapped.coddoc = mapped.coddoc || m
-        })
-        setFieldErrors(mapped)
-        setMsg({ type: 'danger', text: mensajes.join('\n') })
-      } else if (res.status === 409) {
-        // conflicto (ej. cédula duplicada)
-        const detalles = data.detalles || [data.mensaje || 'Conflicto en datos']
-        const mapped = {}
-        detalles.forEach(d => {
-          if (/Cédula|cedula/i.test(d)) mapped.cedula = d
-          if (/Usuario|usuario/i.test(d)) mapped.usuario = d
-          if (/Correo|correo/i.test(d)) mapped.email = d
-        })
-        setFieldErrors(mapped)
-        setMsg({ type: 'danger', text: detalles.join('\n') })
+        setFilteredReportes((prev) =>
+          prev.filter((r) => r.RA_ID !== reporteAEliminar)
+        );
+        setModalMessage("Reporte eliminado correctamente.");
       } else {
-        setMsg({ type: 'danger', text: data.mensaje || 'Error al registrar.' })
+        setModalMessage("Error al eliminar el reporte.");
       }
-    } catch (err) {
-      setMsg({ type: 'danger', text: 'Error de conexión.' })
+    } catch {
+      setModalMessage("Error de conexión.");
     } finally {
-      setLoading(false)
+      setConfirmVisible(false);
+      setModalVisible(true);
     }
-  }
+  };
+
+  /* =========================
+     FORMATO FECHA
+  ========================= */
+  const formatFecha = (fecha) => {
+    if (!fecha) return "";
+    const d = new Date(fecha);
+    return `${String(d.getDate()).padStart(2, "0")}/${String(
+      d.getMonth() + 1
+    ).padStart(2, "0")}/${d.getFullYear()}`;
+  };
+
+  /* =========================
+     PAGINACIÓN
+  ========================= */
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredReportes.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(filteredReportes.length / itemsPerPage);
 
   return (
-    <CRow className="justify-content-center mt-4">
-      <CCol xs={12} md={8} lg={7}>
-        <CCard className="shadow">
+    <CRow className="justify-content-center">
+      <CCol md={11}>
+        <CCard>
+          <CCardHeader className="text-center">
+            <h3>Lista de Reportes</h3>
+          </CCardHeader>
+
           <CCardBody>
-            <h4 className="mb-4 text-center">Registrar Donante</h4>
-            <div className="mb-3 text-secondary">
-              <strong>¿Cómo registrar un donante?</strong>
-              <ul className="text-start" style={{ paddingLeft: 18, marginBottom: 0, marginTop: 8 }}>
-                <li>Seleccione el tipo de documento y escriba el número de identificación.</li>
-                <li>Elija el tipo de donante (persona o institución).</li>
-                <li>Complete el nombre y un contacto válido.</li>
-                <li>Presione "Registrar" para guardar el donante.</li>
-              </ul>
-            </div>
-            <CForm onSubmit={handleSubmit}>
-              <CRow className="g-3">
-                <CCol xs={12} md={6}>
-                  <CFormSelect
-                    label="Tipo de Documento"
-                    name="coddoc"
-                    value={form.coddoc}
-                    onChange={handleChange}
-                    aria-invalid={!!fieldErrors.coddoc}
-                  >
-                    <option value="">Seleccione tipo</option>
-                    {tiposDocumento.map(t => (
-                      <option key={t.TMA_CODDOC} value={t.TMA_CODDOC}>
-                        {t.TMA_NOMBRE}
-                      </option>
-                    ))}
-                  </CFormSelect>
-                  {fieldErrors.coddoc && <div className="text-danger small mt-1">{fieldErrors.coddoc}</div>}
-                </CCol>
-                <CCol xs={12} md={6}>
+            {/* FILTROS */}
+            <CForm className="mb-4">
+              <CRow>
+                <CCol md={4}>
                   <CFormInput
-                    label="N° Documento"
-                    name="cedula"
-                    type="text"
-                    placeholder={isPassportType(form.coddoc) ? 'Ejm AB12345' : 'Ejm 1234567'}
-                    value={form.cedula}
-                    onChange={handleCedulaChange}
-                    ref={cedulaRef}
-                    onKeyDown={e => handleEnter(e, tipodnRef)}
-                    aria-invalid={!!fieldErrors.cedula}
-                    title={isPassportType(form.coddoc) ? 'Pasaporte: letras y números (4-15)' : 'Solo números (7-9 dígitos)'}
-                    maxLength={isPassportType(form.coddoc) ? 15 : 9}
-                    autoComplete="off"
+                    placeholder="Buscar por folio"
+                    value={search}
+                    onChange={handleSearch}
                   />
-                  {fieldErrors.cedula && <div className="text-danger small mt-1">{fieldErrors.cedula}</div>}
                 </CCol>
-                <CCol xs={12} md={6}>
-                  <CFormSelect
-                    label="Tipo de Donante"
-                    name="tipodn"
-                    value={form.tipodn}
-                    onChange={handleChange}
-                    ref={tipodnRef}
-                    onKeyDown={e => handleEnter(e, nombreRef)}
-                    aria-invalid={!!fieldErrors.tipodn}
-                  >
-                    <option value="">Seleccione tipo</option>
-                    {tiposDonante.map(t => (
-                      <option key={t.TTR_TIPODN} value={t.TTR_TIPODN}>
-                        {t.TTR_NOMBRE}
-                      </option>
-                    ))}
-                  </CFormSelect>
-                  {fieldErrors.tipodn && <div className="text-danger small mt-1">{fieldErrors.tipodn}</div>}
-                </CCol>
-                <CCol xs={12} md={6}>
+                <CCol md={4}>
                   <CFormInput
-                    label="Nombre"
-                    name="nombre"
-                    value={form.nombre}
-                    onChange={handleNombreChange}
-                    ref={nombreRef}
-                    onKeyDown={e => handleEnter(e, contacRef)}
-                    aria-invalid={!!fieldErrors.nombre}
-                    pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s'\-]+$"
-                    title="Solo letras y espacios"
+                    type="date"
+                    value={filterDate}
+                    onChange={handleDateFilter}
+                    max={new Date().toISOString().split("T")[0]}
                   />
-                  {fieldErrors.nombre && <div className="text-danger small mt-1">{fieldErrors.nombre}</div>}
                 </CCol>
-                <CCol xs={12} md={6}>
+                <CCol md={4}>
                   <CFormInput
-                    label="Contacto"
-                    name="contac"
-                    placeholder='Ejm 04141234567'
-                    value={form.contac}
-                    onChange={handleContactoChange}
-                    inputMode="numeric"
-                    pattern="\d*"
-                    ref={contacRef}
-                    onKeyDown={e => handleEnter(e, submitRef)}
-                    aria-invalid={!!fieldErrors.contac}
-                    title="Solo números (11 dígitos)"
-                    maxLength={11}
+                    placeholder="Buscar por dirección"
+                    value={filterDireccion}
+                    onChange={handleDireccionFilter}
                   />
-                  {fieldErrors.contac && <div className="text-danger small mt-1">{fieldErrors.contac}</div>}
-                </CCol>
-                <CCol xs={12} md={6} className="d-flex align-items-end">
-                  <CButton disabled={loading} style={{backgroundColor:'#ff7043', color:'white'}} type="submit" className="w-100" ref={submitRef}>
-                    {loading ? 'Registrando...' : 'Registrar'}
-                  </CButton>
                 </CCol>
               </CRow>
-              {msg.text && (
-                <CAlert color={msg.type} className="text-center mt-3" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</CAlert>
-              )}
             </CForm>
+
+            {/* TABLA */}
+            <CTable hover responsive align="middle">
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell>Fecha</CTableHeaderCell>
+                  <CTableHeaderCell>Dirección</CTableHeaderCell>
+                  <CTableHeaderCell>Folio</CTableHeaderCell>
+                  <CTableHeaderCell className="text-center">
+                    Acciones
+                  </CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+
+              <CTableBody>
+                {currentItems.map((r) => (
+                  <CTableRow key={r.RA_ID}>
+                    <CTableDataCell>{formatFecha(r.RA_FECHA)}</CTableDataCell>
+                    <CTableDataCell>{r.RA_DIRECCION}</CTableDataCell>
+                    <CTableDataCell>{r.RA_FOLIO_NUMERO}</CTableDataCell>
+                    <CTableDataCell>
+                      <CButtonGroup className="w-100">
+                        <CButton
+                          style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}}
+                          size="sm"
+                          className="w-50"
+                          onClick={() => imprimir(r.RA_ID)}
+                        >
+                          <CIcon icon={cilPrint} className="me-1" />
+                          PDF
+                        </CButton>
+                        <CButton
+                         style={{backgroundColor:'white', color:'red', borderColor:'red'}}
+                          size="sm"
+                          className="w-50"
+                          onClick={() => abrirConfirmacion(r.RA_ID)}
+                        >
+                          <CIcon icon={cilTrash} className="me-1" />
+                          Eliminar
+                        </CButton>
+                      </CButtonGroup>
+                    </CTableDataCell>
+                  </CTableRow>
+                ))}
+              </CTableBody>
+            </CTable>
+
+            {/* PAGINACIÓN */}
+            <CPagination align="center" className="mt-3">
+              <CPaginationItem
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
+                Anterior
+              </CPaginationItem>
+
+              {Array.from({ length: totalPages }, (_, i) => (
+                <CPaginationItem
+                  key={i}
+                  active={currentPage === i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                >
+                  {i + 1}
+                </CPaginationItem>
+              ))}
+
+              <CPaginationItem
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Siguiente
+              </CPaginationItem>
+            </CPagination>
           </CCardBody>
         </CCard>
       </CCol>
-    </CRow>
-  )
-}
 
-export default RegistrarDonante
+      {/* MODAL INFO */}
+      <CModal visible={modalVisible} onClose={() => setModalVisible(false)}>
+        <CModalHeader>
+          <CModalTitle>Información</CModalTitle>
+        </CModalHeader>
+        <CModalBody>{modalMessage}</CModalBody>
+        <CModalFooter>
+          <CButton onClick={() => setModalVisible(false)}>Cerrar</CButton>
+        </CModalFooter>
+      </CModal>
+
+      {/* MODAL CONFIRMACIÓN */}
+      <CModal visible={confirmVisible} onClose={() => setConfirmVisible(false)}>
+        <CModalHeader>
+          <CModalTitle>Confirmar eliminación</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          ¿Seguro que deseas eliminar este reporte?
+          <br />
+          <strong>Esta acción no se puede deshacer.</strong>
+        </CModalBody>
+        <CModalFooter>
+          <CButton style={{backgroundColor:'white', color:'gray', borderColor:'gray'}} onClick={() => setConfirmVisible(false)}>
+            Cancelar
+          </CButton>
+          <CButton style={{backgroundColor:'white', color:'red', borderColor:'red'}} onClick={confirmarEliminacion}>
+            <CIcon icon={cilTrash} className="me-1" />
+            Eliminar
+          </CButton>
+        </CModalFooter>
+      </CModal>
+    </CRow>
+  );
+}

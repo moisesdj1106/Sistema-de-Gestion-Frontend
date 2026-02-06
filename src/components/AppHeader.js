@@ -103,12 +103,20 @@ const HelpButton = () => {
           </CModalBody>
           <CModalFooter>
             <div style={{ marginTop: '12px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <a href="/manualdeusuariopc.pdf" download style={{ textDecoration: 'none' }}>
+              {role === 'admin' ? (
+                <a href="/manualadmin.pdf" download style={{ textDecoration: 'none' }}>
                   <CButton color="primary" style={{ backgroundColor: '#ff7043', borderColor: '#ff7043' }}>
-                    Descargar manual (PDF)
+                    Descargar manual (Admin)
                   </CButton>
                 </a>
-              </div>
+              ) : (
+                <a href="/manualusuario.pdf" download style={{ textDecoration: 'none' }}>
+                  <CButton color="primary" style={{ backgroundColor: '#ff7043', borderColor: '#ff7043' }}>
+                    Descargar manual (Usuario)
+                  </CButton>
+                </a>
+              )}
+            </div>
             <CButton style={{ backgroundColor: 'white', color: 'blue', borderColor: 'blue' }} onClick={() => setIsMinimized(true)}>
               Minimizar
             </CButton>

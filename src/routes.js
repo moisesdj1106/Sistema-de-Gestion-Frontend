@@ -24,6 +24,7 @@ const General = React.lazy(() => import('./views/pages/school/general'))
 const Editar = React.lazy(() => import('./views/pages/school/editarusuario'))
 const Cambiar = React.lazy(() => import('./views/pages/school/RestablecerContrasena'))
 const Afectados = React.lazy(() => import('./views/pages/school/afectados'))
+const Sismos = React.lazy(() => import('./views/pages/school/sismos'))
 
 
 
@@ -54,6 +55,7 @@ const routes = [
   { path: '/editarusuario', name: 'Editar', element: Editar},
   { path: '/RestablecerContrasena', name: 'Cambiar', element: Cambiar},
   { path: '/afectados', name: 'Afectados', element: Afectados},
+    { path: '/sismos', name: 'Sismos', element: Sismos},
 
    
 

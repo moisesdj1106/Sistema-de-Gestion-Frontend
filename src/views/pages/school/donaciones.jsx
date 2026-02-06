@@ -12,7 +12,12 @@ import {
   CRow,
   CFormLabel,
   CAlert,
-  CContainer
+  CContainer,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter
 } from "@coreui/react";
 
 export default function ReporteForm() {
@@ -44,6 +49,8 @@ export default function ReporteForm() {
   });
 
   const [errors, setErrors] = useState({});
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
   const toggleArray = (field, value) => {
     setForm((prev) => ({
@@ -78,10 +85,33 @@ export default function ReporteForm() {
     });
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!form.fecha) newErrors.fecha = "La fecha es obligatoria.";
+    if (!form.unidad_numero) newErrors.unidad_numero = "El número de unidad es obligatorio.";
+    if (!form.folio_numero) newErrors.folio_numero = "El número de folio es obligatorio.";
+    if (!form.direccion) newErrors.direccion = "La dirección es obligatoria.";
+    if (!form.elaborado_por) newErrors.elaborado_por = "Elaborado por es obligatorio.";
+    if (!form.cargo) newErrors.cargo = "El cargo es obligatorio.";
+    if (!form.cedula_identidad) newErrors.cedula_identidad = "La cédula de identidad es obligatoria.";
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
   const guardar = async () => {
+    if (!validateForm()) {
+      setModalMessage("Por favor completa todos los campos obligatorios antes de guardar.");
+      setModalVisible(true);
+      return;
+    }
+
     const hasErrors = Object.values(errors).some((error) => error);
     if (hasErrors) {
-      alert("Por favor corrige los errores antes de guardar.");
+      setModalMessage("Por favor corrige los errores antes de guardar.");
+      setModalVisible(true);
       return;
     }
 
@@ -98,7 +128,14 @@ export default function ReporteForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formattedForm)
     });
-    alert("Reporte guardado");
+
+    setModalMessage("Reporte guardado correctamente.");
+    setModalVisible(true);
+  };
+
+  const handleCedulaChange = (value) => {
+    const numericValue = value.replace(/[^0-9]/g, "");
+    setForm((prev) => ({ ...prev, cedula_identidad: numericValue }));
   };
 
   return (
@@ -130,6 +167,7 @@ export default function ReporteForm() {
                       value={form.unidad_numero}
                       onChange={(e) => handleChange("unidad_numero", e.target.value)}
                     />
+                    {errors.unidad_numero && <small className="text-danger">{errors.unidad_numero}</small>}
                   </CCol>
                   <CCol md={4}>
                     <CFormLabel>Folio Nº</CFormLabel>
@@ -138,6 +176,7 @@ export default function ReporteForm() {
                       value={form.folio_numero}
                       onChange={(e) => handleChange("folio_numero", e.target.value)}
                     />
+                    {errors.folio_numero && <small className="text-danger">{errors.folio_numero}</small>}
                   </CCol>
                 </CRow>
                 <hr />
@@ -150,6 +189,7 @@ export default function ReporteForm() {
                       onChange={(e) => handleChange("direccion", e.target.value)}
                       style={{ resize: "none", overflow: "auto", maxHeight: "150px" }}
                     />
+                    {errors.direccion && <small className="text-danger">{errors.direccion}</small>}
                   </CCol>
                 </CRow>
                 <hr />
@@ -348,6 +388,7 @@ export default function ReporteForm() {
                       value={form.elaborado_por}
                       onChange={(e) => handleChange("elaborado_por", e.target.value)}
                     />
+                    {errors.elaborado_por && <small className="text-danger">{errors.elaborado_por}</small>}
                   </CCol>
                   <CCol md={6}>
                     <CFormLabel>Cargo</CFormLabel>
@@ -356,6 +397,7 @@ export default function ReporteForm() {
                       value={form.cargo}
                       onChange={(e) => handleChange("cargo", e.target.value)}
                     />
+                    {errors.cargo && <small className="text-danger">{errors.cargo}</small>}
                   </CCol>
                 </CRow>
                 <CRow className="mb-3">
@@ -363,9 +405,12 @@ export default function ReporteForm() {
                     <CFormLabel>Cédula de identidad</CFormLabel>
                     <CFormInput
                       placeholder="Cédula de identidad"
+                      maxLength={9}
+                      minLength={7}
                       value={form.cedula_identidad}
-                      onChange={(e) => handleChange("cedula_identidad", e.target.value)}
+                      onChange={(e) => handleCedulaChange(e.target.value)}
                     />
+                    {errors.cedula_identidad && <small className="text-danger">{errors.cedula_identidad}</small>}
                   </CCol>
                 </CRow>
                 <CRow className="text-center">
@@ -380,6 +425,15 @@ export default function ReporteForm() {
           </CCard>
         </CCol>
       </CRow>
+      <CModal visible={modalVisible} onClose={() => setModalVisible(false)}>
+        <CModalHeader>
+          <CModalTitle>Información</CModalTitle>
+        </CModalHeader>
+        <CModalBody>{modalMessage}</CModalBody>
+        <CModalFooter>
+          <CButton onClick={() => setModalVisible(false)}>Cerrar</CButton>
+        </CModalFooter>
+      </CModal>
     </CContainer>
   );
 }

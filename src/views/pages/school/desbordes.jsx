@@ -4,16 +4,13 @@ import {
   CCarousel, CCarouselItem, CCarouselCaption, CImage
 } from '@coreui/react'
 
-import img1 from 'src/assets/images/rio.jpg'
 import img2 from 'src/assets/images/rio3.png'
 import img3 from 'src/assets/images/rio2.png'
-import img4 from 'src/assets/images/a3-rio.webp'
+
 
 const imagenes = [
-  { src: img1 },
   { src: img2 },
   { src: img3 },
-  { src: img4 }
 ]
 
 const Desbordes = () => {
@@ -22,9 +19,9 @@ const Desbordes = () => {
       <CCol xs={12} md={10} lg={8}>
         <CCard className="shadow-lg border-0" style={{ background: 'rgba(255,255,255,0.97)' }}>
           <CCardHeader className="bg-info text-white text-center py-4 rounded-top">
-            <h2 className="fw-bold mb-1">Desbordamientos de Rios</h2>
+            <h2 className="fw-bold mb-1">Desbordamientos de afluentes hidrícos</h2>
             <span className="fst-italic" style={{ fontSize: 17 }}>
-              Información esencial para la prevención y actuación ante desastres hídricos
+              Información esencial para la prevención y actuación ante afectaciones hídricos
             </span>
           </CCardHeader>
           <CCardBody className="p-4">

@@ -447,7 +447,7 @@ const ComunidadesCrudCoreUI = () => {
                 </CRow>
 
                 <CFormInput
-                  label="Nombre"
+                  label="Nombre del Sector"
                   name="nombre"
                   placeholder='Ejm Barrio San Andrés'
                   value={form.nombre}

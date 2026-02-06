@@ -5,9 +5,8 @@ import {
 } from '@coreui/react'
 
 // Importa tus imágenes locales
-import img1 from 'src/assets/images/torbes.jpg'
-import img2 from 'src/assets/images/rio.jpg'
-import img3 from 'src/assets/images/a3-rio.webp'
+import img1 from 'src/assets/images/epicentro.webp'
+import img2 from 'src/assets/images/sismo.webp'
 
 
 const imagenes = [
@@ -17,21 +16,19 @@ const imagenes = [
   },
   {
     src: img2,
-  },
-  {
-    src: img3,
+    style: { maxHeight: 320, objectFit: 'cover' },
   }
 ]
 
-const MovimientosTierra = () => {
+const Sismos = () => {
   return (
     <CRow className="justify-content-center mt-4" style={{ marginBottom: '50px' }}>
       <CCol md={10} lg={8}>
         <CCard className="shadow-lg border-0" style={{ background: 'rgba(255,255,255,0.97)' }}>
           <CCardHeader className="bg-info text-white text-center py-4 rounded-top">
-            <h2 className="fw-bold mb-1">Deslizamientos De Tierra</h2>
+            <h2 className="fw-bold mb-1">Sismos</h2>
             <span className="fst-italic" style={{ fontSize: 17 }}>
-              Información clave para la prevención y respuesta ante afectaciones geológicos
+              Información clave para la prevención y respuesta ante sismos
             </span>
           </CCardHeader>
           <CCardBody className="p-4">
@@ -49,17 +46,17 @@ const MovimientosTierra = () => {
               </CCarousel>
             </div>
             <section className="mb-4">
-              <h4 className="fw-semibold text-warning mb-2">¿Qué son los movimientos de tierra?</h4>
+              <h4 className="fw-semibold text-warning mb-2">¿Qué son los sismos?</h4>
               <p>
-                Los <b>movimientos de tierra</b> incluyen deslizamientos, derrumbes y aludes, causados por la inestabilidad del suelo, lluvias intensas o actividad sísmica.
+                Un <b>sismo</b> es un movimiento brusco de la corteza terrestre, que puede provocar daños severos en infraestructuras y poner en riesgo vidas humanas.
               </p>
             </section>
-            <section className="mb-4">
+                        <section className="mb-4">
               <h4 className="fw-semibold text-warning mb-2">Características principales</h4>
               <ul>
-                <li><b>Imprevisibilidad:</b>Pueden ocurrir sin previo aviso.</li>
-                <li><b>Desplazamiento de masas:</b> Los deslizamientos pueden arrastrar tierra, rocas y vegetación.</li>
-                <li><b>Daños estructurales:</b> Riesgo de colapso de viviendas, puentes y carreteras.</li>
+                <li><b>Sacudida y Ruptura del Suelo:</b> Esto puede fracturar carreteras, colapsar edificios y dañar infraestructuras subterráneas (tuberías de gas o agua). La violencia del movimiento depende de la cercanía al epicentro y del tipo de suelo</li>
+                <li><b>Desplazamiento de masas:</b>El sismo desestabiliza laderas, provocando deslaves, caída de rocas o avalanchas. Esto suele ser especialmente devastador en zonas montañosas, ya que puede bloquear caminos o sepultar comunidades enteras en segundos.</li>
+                <li><b>Tsunamis y Maremotos</b> Si la ruptura de la falla ocurre bajo el lecho marino y genera un desplazamiento vertical del agua, se produce un tsunami.</li>
                 <li><b>Impacto social:</b> Posibles evacuaciones, heridos y pérdidas materiales.</li>
               </ul>
             </section>
@@ -113,7 +110,7 @@ const MovimientosTierra = () => {
                 </CCol>
               </CRow>
             </section>
-            <section className="mb-4">
+                        <section className="mb-4">
               <h4 className="fw-semibold text-warning mb-2">Puntos resaltantes</h4>
               <ul>
                 <li><b>La prevención es fundamental:</b> Infórmate y prepara tu entorno.</li>
@@ -123,11 +120,11 @@ const MovimientosTierra = () => {
             </section>
             <div className="text-center mt-4">
               <CBadge
-                color="warning"
+                
                 className="fs-5 px-4 py-2 w-100 w-md-auto text-white text-center"
-                style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
+                style={{ whiteSpace: 'normal', wordBreak: 'break-word', backgroundColor: '#ff7043' }}
               >
-                ¡La información y la prevención son tus mejores aliados ante los movimientos de tierra!
+                ¡La información y la prevención son tus mejores aliados ante los sismos!
               </CBadge>
             </div>
           </CCardBody>
@@ -137,4 +134,4 @@ const MovimientosTierra = () => {
   )
 }
 
-export default MovimientosTierra
+export default Sismos

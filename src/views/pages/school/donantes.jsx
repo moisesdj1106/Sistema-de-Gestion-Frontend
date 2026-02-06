@@ -42,6 +42,8 @@ export default function ReporteList() {
 
   const itemsPerPage = 10;
 
+  const userRole = localStorage.getItem("rol");
+
   /* =========================
      CARGAR REPORTES
   ========================= */
@@ -223,7 +225,7 @@ export default function ReporteList() {
                     <CTableDataCell>
                       <CButtonGroup className="w-100">
                         <CButton
-                          style={{backgroundColor:'white', color:'#ff7043', borderColor:'#ff7043'}}
+                          style={{ backgroundColor: 'white', color: '#ff7043', borderColor: '#ff7043' }}
                           size="sm"
                           className="w-50"
                           onClick={() => imprimir(r.RA_ID)}
@@ -231,15 +233,17 @@ export default function ReporteList() {
                           <CIcon icon={cilPrint} className="me-1" />
                           PDF
                         </CButton>
-                        <CButton
-                         style={{backgroundColor:'white', color:'red', borderColor:'red'}}
-                          size="sm"
-                          className="w-50"
-                          onClick={() => abrirConfirmacion(r.RA_ID)}
-                        >
-                          <CIcon icon={cilTrash} className="me-1" />
-                          Eliminar
-                        </CButton>
+                        {userRole === "admin" && (
+                          <CButton
+                            style={{ backgroundColor: 'white', color: 'red', borderColor: 'red' }}
+                            size="sm"
+                            className="w-50"
+                            onClick={() => abrirConfirmacion(r.RA_ID)}
+                          >
+                            <CIcon icon={cilTrash} className="me-1" />
+                            Eliminar
+                          </CButton>
+                        )}
                       </CButtonGroup>
                     </CTableDataCell>
                   </CTableRow>

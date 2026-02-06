@@ -16,9 +16,13 @@ import {
   cilMedicalCross,
   cilSofa,
   cilArrowThickBottom,
+  cilVolumeHigh,
+  cilTerrain,
   cilChevronBottom,
   cilShareBoxed,
-  cilPrint
+  cilPrint,
+  cilDataTransferDown,
+  cilCommentSquare
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -52,9 +56,15 @@ export default function getNav() {
         
         {
           component: CNavItem,
-          name: 'Movimientos de tierra',
+          name: 'Deslizamientos de tierra',
           to: '/prueba',
           icon: <CIcon icon={cilBuilding} customClassName="nav-icon" />,
+        },
+                {
+          component: CNavItem,
+          name: 'Sismos',
+          to: '/sismos',
+          icon: <CIcon icon={cilVolumeHigh} customClassName="nav-icon" />,
         },
         {
           component: CNavItem,
@@ -69,7 +79,7 @@ export default function getNav() {
           items: [
             {
               component: CNavItem,
-              name: 'Comunidad',
+              name: 'Sector',
               to: '/comunidad',
               icon: <CIcon icon={cilGlobeAlt} customClassName="nav-icon" />,
             },
@@ -130,7 +140,7 @@ export default function getNav() {
            
         {
           component: CNavItem,
-          name: 'Listado Afectaciones',
+          name: 'Afectaciones',
           to: '/listadoafectaciones',
           icon: <CIcon icon={cilList} customClassName="nav-icon" />,
         },
@@ -141,7 +151,7 @@ export default function getNav() {
           ],
         },
 
-                {
+      {
           component: CNavGroup,
           name: 'Reportes',
           icon: <CIcon icon={cilChevronBottom} customClassName="nav-icon" />,
@@ -163,15 +173,15 @@ export default function getNav() {
 
         {
           component: CNavItem,
-          name: 'Reporte Actividades',
+          name: 'Crear RA',
           to: '/donaciones',
-          icon: <CIcon icon={cilGift} customClassName="nav-icon" />,
+          icon: <CIcon icon={cilCommentSquare} customClassName="nav-icon" />,
         },
          {
           component: CNavItem,
           name: 'Listado de RA',
           to: '/donantes',
-          icon: <CIcon icon={cilHeart} customClassName="nav-icon" />,
+          icon: <CIcon icon={cilDataTransferDown} customClassName="nav-icon" />,
         },
        
   
@@ -209,7 +219,7 @@ export default function getNav() {
       
         {
           component: CNavItem,
-          name: 'Movimientos de tierra',
+          name: 'Deslizamientos de tierra',
           to: '/prueba',
           icon: <CIcon icon={cilBuilding} customClassName="nav-icon" />,
         },
@@ -218,6 +228,12 @@ export default function getNav() {
           name: 'Desbordamientos de Rios',
           to: '/desbordes',
           icon: <CIcon icon={cilRain} customClassName="nav-icon" />,
+        },
+                {
+          component: CNavItem,
+          name: 'Sismos',
+          to: '/sismos',
+          icon: <CIcon icon={cilVolumeHigh} customClassName="nav-icon" />,
         },
           {
           component: CNavItem,
@@ -246,6 +262,63 @@ export default function getNav() {
           to: '/zonas',
           icon: <CIcon icon={cilMap} customClassName="nav-icon" />,
         },
+
+      ]
+      : []
+    ),
+
+
+
+
+    
+        ...(rol === 'coordinador'
+      ? [
+          {
+            component: CNavItem,
+            name: 'Inicio',
+            to: '/docents',
+            icon: <CIcon icon={cilHome} customClassName="nav-icon" />,
+          },
+
+
+          {
+            component: CNavItem,
+            name: 'Reporte Individual',
+            to: '/documentos',
+            icon: <CIcon icon={cilPrint} customClassName="nav-icon" />,
+          },
+          {
+            component: CNavItem,
+            name: 'Reporte General',
+            to: '/general',
+            icon: <CIcon icon={cilShareBoxed} customClassName="nav-icon" />,
+          },
+
+
+          {
+            component: CNavItem,
+            name: 'Crear RA',
+            to: '/donaciones',
+            icon: <CIcon icon={cilCommentSquare} customClassName="nav-icon" />,
+          },
+          {
+            component: CNavItem,
+            name: 'Listado de RA',
+            to: '/donantes',
+            icon: <CIcon icon={cilDataTransferDown} customClassName="nav-icon" />,
+          },
+
+         {
+          component: CNavItem,
+          name: 'Zonas De Riesgo',
+          to: '/zonas',
+          icon: <CIcon icon={cilMap} customClassName="nav-icon" />,
+        },
+       
+  
+            
+          
+       
 
       ]
       : []

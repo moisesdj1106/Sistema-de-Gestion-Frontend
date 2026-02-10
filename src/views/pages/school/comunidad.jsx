@@ -379,7 +379,7 @@ const ComunidadesCrudCoreUI = () => {
         <CCol xs={12} md={5}>
           <CCard className="shadow-sm">
             <CCardHeader className="d-flex justify-content-between align-items-center">
-              <strong>Registrar Comunidad</strong>
+              <strong>Registrar Sector</strong>
             </CCardHeader>
             <CCardBody>
               <CForm onSubmit={handleSubmit}>
@@ -546,7 +546,7 @@ const ComunidadesCrudCoreUI = () => {
         <CCol xs={12} md={7}>
           <CCard className="shadow-sm" style={{ maxWidth: 900, margin: '0 auto' }}>
             <CCardHeader className="d-flex flex-column gap-2 align-items-center">
-              <strong>Comunidades Registradas</strong>
+              <strong>Sectores Registrados</strong>
               <div style={{ width: '100%', maxWidth: 700 }}>
                 <CFormInput
                   size="sm"
@@ -637,7 +637,7 @@ const ComunidadesCrudCoreUI = () => {
 
       
       <CModal visible={visible} onClose={() => setVisible(false)} backdrop="static" keyboard={false}>
-        <CModalHeader><CModalTitle>Editar Comunidad</CModalTitle></CModalHeader>
+        <CModalHeader><CModalTitle>Editar Sector</CModalTitle></CModalHeader>
         <CModalBody>
           <CForm>
             <CFormInput id="modal-nombre" label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} required className="mb-3" maxLength={40} minLength={5} onFocus={handleFocusClear} onBlur={handleBlurRestore} />
